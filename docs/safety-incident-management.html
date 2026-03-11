@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Safety & Incident Management — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+    --bg: #f8f9fb;
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; }
+
+/* NAV */
+.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg-white); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; height: 52px; padding: 0 1.5rem; gap: 1.5rem;
+    box-shadow: var(--shadow);
+}
+.topnav .logo { font-weight: 800; font-size: 0.85rem; color: var(--accent); letter-spacing: 0.04em; white-space: nowrap; }
+.topnav .logo span { color: var(--text-muted); font-weight: 500; }
+.topnav .nav-links { display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; }
+.topnav .nav-links::-webkit-scrollbar { display: none; }
+.topnav a { color: var(--text-muted); text-decoration: none; font-size: 0.72rem; font-weight: 500; padding: 6px 10px; border-radius: 6px; white-space: nowrap; transition: all 0.15s; }
+.topnav a:hover, .topnav a.active { color: var(--accent); background: var(--accent-light); }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.file { border-style: dashed; justify-content: center; min-height: 64px; }
+.wf-field .input.person { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-node.warning { border-color: var(--warning); }
+.flow-node.danger { border-color: var(--danger); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* HORIZONTAL FLOW */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* KANBAN */
+.kanban { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 1rem; }
+.kanban-col { background: var(--bg-panel); border-radius: var(--radius); padding: 10px; min-height: 180px; }
+.kanban-col-header { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.kanban-col-header .count { background: var(--border); color: var(--text-muted); font-size: 0.6rem; padding: 1px 6px; border-radius: 10px; }
+.kanban-card {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; margin-bottom: 6px; font-size: 0.72rem; box-shadow: var(--shadow);
+}
+.kanban-card .card-title { font-weight: 600; margin-bottom: 3px; }
+.kanban-card .card-meta { font-size: 0.62rem; color: var(--text-muted); }
+
+/* DASHBOARD MOCK */
+.dash-mock { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
+.dash-toolbar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.dash-toolbar h3 { font-size: 0.9rem; margin: 0; }
+.dash-tabs { display: flex; gap: 2px; }
+.dash-tab { font-size: 0.68rem; padding: 4px 10px; border-radius: 5px; color: var(--text-muted); cursor: pointer; border: none; background: none; font-family: var(--font); font-weight: 500; }
+.dash-tab.active { background: var(--accent); color: white; }
+.dash-body { padding: 1.25rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.6rem; font-weight: 800; font-family: var(--mono); }
+.kpi .kpi-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 4px; }
+.kpi.green .kpi-value { color: var(--success); }
+.kpi.amber .kpi-value { color: var(--orange); }
+.kpi.blue .kpi-value { color: var(--accent); }
+.kpi.red .kpi-value { color: var(--danger); }
+.chart-grid { display: grid; grid-template-columns: 5fr 3fr; gap: 12px; margin-bottom: 1.25rem; }
+.chart-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.chart-box h4 { font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 10px; }
+.chart-wrap { height: 200px; position: relative; }
+
+/* INCIDENT FEED ROWS */
+.feed { display: flex; flex-direction: column; gap: 6px; }
+.feed-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.78rem; background: var(--bg); }
+.feed-row:hover { border-color: var(--accent); }
+.feed-title { flex: 1; font-weight: 500; }
+.feed-meta { font-size: 0.68rem; color: var(--text-muted); font-family: var(--mono); }
+
+/* DETAIL PAGE WIREFRAME */
+.detail-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; }
+.detail-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
+.detail-tab { padding: 8px 16px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; }
+.detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.detail-sidebar { display: flex; flex-direction: column; gap: 12px; }
+.sidebar-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.sidebar-card h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+.sidebar-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.sidebar-field:last-child { border-bottom: none; }
+.sidebar-field .fk { color: var(--text-muted); }
+.sidebar-field .fv { font-weight: 600; }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* NOTIFICATION MATRIX */
+.notif-matrix { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.notif-matrix th { background: var(--bg-panel); padding: 8px 10px; font-weight: 600; text-align: center; border: 1px solid var(--border); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.notif-matrix th:first-child { text-align: left; }
+.notif-matrix td { padding: 8px 10px; border: 1px solid var(--border); text-align: center; }
+.notif-matrix td:first-child { text-align: left; font-weight: 500; }
+.notif-matrix .dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; line-height: 18px; text-align: center; font-size: 0.55rem; font-weight: 700; }
+.notif-matrix .dot.yes { background: var(--success-light); color: var(--success); }
+.notif-matrix .dot.cond { background: var(--orange-light); color: var(--orange); }
+.notif-matrix .dot.no { background: var(--bg-panel); color: var(--border-strong); }
+
+/* PERM MATRIX */
+.perm-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.perm-table th { background: var(--bg-panel); padding: 6px 10px; font-weight: 600; text-align: left; border: 1px solid var(--border); font-size: 0.65rem; text-transform: uppercase; }
+.perm-table td { padding: 6px 10px; border: 1px solid var(--border); }
+.perm-table .perm-name { font-family: var(--mono); font-size: 0.68rem; color: var(--accent); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .detail-layout { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid { grid-template-columns: 1fr; }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4 { grid-template-columns: 1fr; }
+    .kanban { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kanban { grid-template-columns: 1fr; }
+    .topnav .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+    <div class="logo">APPELLO <span>/ Design Spec</span></div>
+    <div class="nav-links">
+        <a href="#report-form">Report Form</a>
+        <a href="#incident-list">List View</a>
+        <a href="#incident-detail">Detail Page</a>
+        <a href="#lifecycle">Lifecycle</a>
+        <a href="#investigation">Investigation</a>
+        <a href="#capa">Actions</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#osha">OSHA</a>
+        <a href="#notifications">Notifications</a>
+        <a href="#permissions">Permissions</a>
+    </div>
+</div>
+
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: INCIDENT REPORT FORM -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="report-form">
+    <div class="section-tag">Interface 1</div>
+    <h2>Incident Report Form</h2>
+    <p class="desc">This is the primary capture form. Available from mobile dashboard, job detail page (Safety tab), and Safety Dashboard. GPS auto-captured on mobile. Job auto-populated when opened from a job page.</p>
+
+    <div class="two-col">
+        <div>
+            <h3>Desktop / Flyout</h3>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">flyout — Report Incident</div></div>
+                <div class="wireframe-body">
+                    <div class="wf-form">
+                        <div class="wf-section-title">Classification</div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field">
+                                <label>Incident Type <span class="req">*</span></label>
+                                <div class="input select">Select type...</div>
+                                <div class="field-hint">PropertyValue dropdown — 11 configurable types</div>
+                            </div>
+                            <div class="wf-field">
+                                <label>Severity <span class="req">*</span></label>
+                                <div class="input select">Select severity...</div>
+                                <div class="field-hint">Low / Medium / High / Critical</div>
+                            </div>
+                        </div>
+
+                        <div class="wf-section-title">What Happened</div>
+                        <div class="wf-field">
+                            <label>Title <span class="req">*</span></label>
+                            <div class="input">Brief description of incident...</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Description <span class="req">*</span></label>
+                            <div class="input textarea">Detailed description of what happened, conditions, circumstances...</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Immediate Actions Taken</label>
+                            <div class="input textarea">What was done immediately after the event?</div>
+                        </div>
+
+                        <div class="wf-section-title">When & Where</div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field">
+                                <label>Date <span class="req">*</span></label>
+                                <div class="input">2026-03-11</div>
+                                <div class="field-hint">Defaults to today</div>
+                            </div>
+                            <div class="wf-field">
+                                <label>Time <span class="req">*</span></label>
+                                <div class="input">14:30</div>
+                                <div class="field-hint">Defaults to now</div>
+                            </div>
+                        </div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field">
+                                <label>Job</label>
+                                <div class="input select">Search jobs...</div>
+                                <div class="field-hint">Auto-populated if opened from job page</div>
+                            </div>
+                            <div class="wf-field">
+                                <label>Project</label>
+                                <div class="input select">Auto from Job</div>
+                                <div class="field-hint">Auto-set from job.projectId</div>
+                            </div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Location Description</label>
+                            <div class="input">e.g. "Bay 4, north scaffold platform"</div>
+                        </div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field">
+                                <label>Latitude</label>
+                                <div class="input" style="color: var(--success);">43.0896 (auto)</div>
+                            </div>
+                            <div class="wf-field">
+                                <label>Longitude</label>
+                                <div class="input" style="color: var(--success);">-79.0849 (auto)</div>
+                            </div>
+                        </div>
+
+                        <div class="wf-section-title">People</div>
+                        <div class="wf-field">
+                            <label>Involved Workers</label>
+                            <div class="input person">+ Add workers (Person picker — repeatable)</div>
+                            <div class="field-hint">SafetyIncidentWorker records — role: INVOLVED, WITNESS, FIRST_RESPONDER</div>
+                        </div>
+
+                        <div class="wf-section-title">Evidence</div>
+                        <div class="wf-field">
+                            <label>Photos / Documents</label>
+                            <div class="input file">📎 Drop files or click to upload — Camera on mobile</div>
+                            <div class="field-hint">AssetReference(referenceTable: "SafetyIncident")</div>
+                        </div>
+
+                        <div class="wf-btn-row">
+                            <div class="wf-btn secondary">Save Draft</div>
+                            <div class="wf-btn primary">Submit Incident</div>
+                        </div>
+                    </div>
+                    <div class="dev-note">
+                        <strong>Dev:</strong> Flyout pattern — same as useFlyout() for Job/Equipment creation. On submit: status = REPORTED, incidentNumber auto-generated (INC-{sequential}), notifications fire per severity.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Mobile (PWA)</h3>
+            <div class="wireframe" style="max-width: 360px;">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">mobile — 375px</div></div>
+                <div class="wireframe-body" style="padding: 1rem;">
+                    <div style="background: var(--accent); color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 0.85rem; margin-bottom: 12px;">⚠ Report Incident</div>
+                    <div class="wf-form" style="gap: 8px;">
+                        <div class="wf-field"><label>Type <span class="req">*</span></label><div class="input select" style="font-size: 0.78rem;">Near Miss</div></div>
+                        <div class="wf-field"><label>Severity <span class="req">*</span></label>
+                            <div style="display: flex; gap: 6px;">
+                                <div style="flex:1; text-align:center; padding:8px; border-radius:6px; border:2px solid var(--border); font-size:0.7rem; font-weight:600;">Low</div>
+                                <div style="flex:1; text-align:center; padding:8px; border-radius:6px; border:2px solid var(--orange); background:var(--orange-light); font-size:0.7rem; font-weight:600; color:#92400e;">Med</div>
+                                <div style="flex:1; text-align:center; padding:8px; border-radius:6px; border:2px solid var(--border); font-size:0.7rem; font-weight:600;">High</div>
+                                <div style="flex:1; text-align:center; padding:8px; border-radius:6px; border:2px solid var(--border); font-size:0.7rem; font-weight:600;">Crit</div>
+                            </div>
+                        </div>
+                        <div class="wf-field"><label>Title <span class="req">*</span></label><div class="input" style="font-size:0.78rem;">Falling debris near scaffold</div></div>
+                        <div class="wf-field"><label>Description <span class="req">*</span></label><div class="input textarea" style="font-size:0.78rem; min-height:60px;">Unsecured material fell from...</div></div>
+                        <div class="wf-field"><label>Job</label><div class="input select" style="font-size:0.78rem;">Sarnia Refinery — Unit 4</div></div>
+                        <div class="wf-field"><label>📍 Location</label><div class="input" style="font-size:0.78rem; color:var(--success);">GPS: 43.089, -79.084 (auto)</div></div>
+                        <div class="wf-field"><label>📷 Photos</label>
+                            <div style="display:flex; gap:6px;">
+                                <div style="width:56px; height:56px; border:2px dashed var(--border-strong); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📷</div>
+                                <div style="width:56px; height:56px; background:var(--bg-panel); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">IMG_01</div>
+                            </div>
+                        </div>
+                        <div class="wf-field"><label>Workers</label><div class="input person" style="font-size:0.78rem;">+ Add workers</div></div>
+                        <div style="display:flex; gap:6px; margin-top:4px;">
+                            <div class="wf-btn secondary" style="flex:1; justify-content:center;">Save Draft</div>
+                            <div class="wf-btn primary" style="flex:1; justify-content:center;">Submit</div>
+                        </div>
+                    </div>
+                    <div class="dev-note" style="margin-top: 10px;">
+                        <strong>Mobile:</strong> Severity = segmented control. Camera = native capture. GPS = auto. Same data model, single-column layout.
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Entry Points</h3>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:0.5rem;">
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;"><span class="badge blue">1</span> Mobile Dashboard → prominent "⚠ Report Incident" button</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;"><span class="badge blue">2</span> Job Detail → Safety tab → "Report Incident" (job auto-filled)</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;"><span class="badge blue">3</span> Safety Dashboard → "+ New Incident" button</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;"><span class="badge blue">4</span> Desktop sidebar → Safety → Incidents → Create</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: INCIDENT LIST VIEW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="incident-list">
+    <div class="section-tag">Interface 2</div>
+    <h2>Incident List View</h2>
+    <p class="desc">Route: <code>/safety-incidents</code> — Standard TableFeed list view with Kanban toggle. Follows the same pattern as Equipment list, RFI list.</p>
+
+    <h3>Table View</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/safety-incidents</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <h3 style="margin:0;">Safety Incidents</h3>
+                    <span class="badge gray">37 total</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">☰ Table</div>
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">▦ Kanban</div>
+                    <div class="wf-btn primary" style="font-size:0.7rem;">+ Report Incident</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:12px;">
+                <div class="input select" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg);">Status: All</div>
+                <div class="input select" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg);">Type: All</div>
+                <div class="input select" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg);">Severity: All</div>
+                <div class="input" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg); flex:1;">🔍 Search incidents...</div>
+            </div>
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Job</th>
+                        <th>Reported By</th>
+                        <th>Date</th>
+                        <th>Recordable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono">INC-047</td>
+                        <td><strong>Falling debris near scaffold — Bay 4</strong></td>
+                        <td><span class="badge blue">Near Miss</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                        <td><span class="badge orange">Reported</span></td>
+                        <td>Sarnia Refinery</td>
+                        <td>J. Rodriguez</td>
+                        <td class="mono">Mar 1</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">INC-046</td>
+                        <td><strong>Minor laceration during insulation removal</strong></td>
+                        <td><span class="badge orange">First Aid</span></td>
+                        <td><span class="badge green">Low</span></td>
+                        <td><span class="badge blue">Under Review</span></td>
+                        <td>Dow Chemical</td>
+                        <td>K. Patel</td>
+                        <td class="mono">Feb 28</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">INC-045</td>
+                        <td><strong>Excellent PPE compliance on night shift</strong></td>
+                        <td><span class="badge green">Observation</span></td>
+                        <td><span class="badge green">Low</span></td>
+                        <td><span class="badge green">Closed</span></td>
+                        <td>NOVA Chemicals</td>
+                        <td>N. Newman</td>
+                        <td class="mono">Feb 27</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">INC-044</td>
+                        <td><strong>Eye irritation requiring medical flush</strong></td>
+                        <td><span class="badge red">Medical Tx</span></td>
+                        <td><span class="badge red">High</span></td>
+                        <td><span class="badge purple">Investigating</span></td>
+                        <td>Sarnia Refinery</td>
+                        <td>M. Thompson</td>
+                        <td class="mono">Feb 25</td>
+                        <td><strong style="color:var(--danger);">Yes</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="dev-note"><strong>Dev:</strong> Use existing TableFeed/configureColumns pattern. Column config in <code>configureColumns.ts</code>. Route: <code>/safety-incidents</code>. Permission: <code>incident___view</code>.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Kanban View</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/safety-incidents?view=kanban</div></div>
+        <div class="wireframe-body">
+            <div class="kanban">
+                <div class="kanban-col" style="border-top: 3px solid var(--text-muted);">
+                    <div class="kanban-col-header" style="color:var(--text-muted);">Draft <span class="count">1</span></div>
+                    <div class="kanban-card"><div class="card-title">Loose railing on platform</div><div class="card-meta">INC-048 · J. Kemp · Today</div></div>
+                </div>
+                <div class="kanban-col" style="border-top: 3px solid var(--orange);">
+                    <div class="kanban-col-header" style="color:var(--orange);">Reported <span class="count">2</span></div>
+                    <div class="kanban-card"><div class="card-title">Falling debris near scaffold</div><div class="card-meta">INC-047 · <span class="badge orange" style="font-size:0.55rem;">Medium</span></div></div>
+                    <div class="kanban-card"><div class="card-title">Slip on wet surface</div><div class="card-meta">INC-043 · <span class="badge green" style="font-size:0.55rem;">Low</span></div></div>
+                </div>
+                <div class="kanban-col" style="border-top: 3px solid var(--info);">
+                    <div class="kanban-col-header" style="color:var(--info);">Under Review <span class="count">1</span></div>
+                    <div class="kanban-card"><div class="card-title">Minor laceration</div><div class="card-meta">INC-046 · Assigned: J. Crotwell</div></div>
+                </div>
+                <div class="kanban-col" style="border-top: 3px solid var(--purple);">
+                    <div class="kanban-col-header" style="color:var(--purple);">Investigation <span class="count">1</span></div>
+                    <div class="kanban-card"><div class="card-title">Eye irritation — medical</div><div class="card-meta">INC-044 · <span class="badge red" style="font-size:0.55rem;">High</span></div></div>
+                </div>
+                <div class="kanban-col" style="border-top: 3px solid var(--accent);">
+                    <div class="kanban-col-header" style="color:var(--accent);">Actions Assigned <span class="count">1</span></div>
+                    <div class="kanban-card"><div class="card-title">Chemical splash — Unit 7</div><div class="card-meta">INC-039 · 2 actions pending</div></div>
+                </div>
+                <div class="kanban-col" style="border-top: 3px solid var(--success);">
+                    <div class="kanban-col-header" style="color:var(--success);">Closed <span class="count">31</span></div>
+                    <div class="kanban-card"><div class="card-title">PPE compliance ✓</div><div class="card-meta">INC-045</div></div>
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Existing BoardCard pattern — create BoardCard on incident creation. Drag-drop triggers status transition (with permission check). Same as Equipment Kanban.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: INCIDENT DETAIL PAGE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="incident-detail">
+    <div class="section-tag">Interface 3</div>
+    <h2>Incident Detail Page</h2>
+    <p class="desc">Route: <code>/safety-incidents/[id]</code> — Follows the Job/RFI detail page pattern with tabs on the left and a sidebar panel on the right.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/safety-incidents/INC-044</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px;"><span class="mono" style="font-size:0.7rem; color:var(--text-muted);">INC-044</span><span class="badge red">Medical Treatment</span><span class="badge red">High</span><span class="badge purple">Investigation Started</span></div>
+                    <h3 style="margin-top:4px;">Eye irritation requiring medical flush</h3>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Export PDF</div>
+                    <div class="wf-btn primary" style="font-size:0.7rem;">Edit</div>
+                </div>
+            </div>
+
+            <div class="detail-layout">
+                <div>
+                    <div class="detail-tabs">
+                        <div class="detail-tab active">Details</div>
+                        <div class="detail-tab">Investigation</div>
+                        <div class="detail-tab">Corrective Actions</div>
+                        <div class="detail-tab">Activity</div>
+                        <div class="detail-tab">Files</div>
+                        <div class="detail-tab">Notes</div>
+                    </div>
+
+                    <div style="padding:0;">
+                        <h4>Description</h4>
+                        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Worker was removing insulation cladding in Unit 4 when a piece of fiberglass became airborne and caused eye irritation. Worker flushed eyes with safety shower and was transported to occupational health clinic for examination. Medicated eye drops prescribed.</p>
+
+                        <h4>Immediate Actions Taken</h4>
+                        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Worker immediately used safety shower. Supervisor secured the area and ensured proper ventilation. Crew stood down for safety briefing.</p>
+
+                        <h4>Involved Workers</h4>
+                        <table class="wf-table" style="margin-bottom:1rem;">
+                            <thead><tr><th>Worker</th><th>Role</th><th>Injury</th><th>Body Part</th><th>Treatment</th></tr></thead>
+                            <tbody>
+                                <tr><td>M. Thompson</td><td><span class="badge red">Involved</span></td><td>Eye irritation</td><td>Eyes (both)</td><td>Medical flush + drops</td></tr>
+                                <tr><td>J. Rodriguez</td><td><span class="badge blue">Witness</span></td><td>—</td><td>—</td><td>—</td></tr>
+                                <tr><td>B. Viers</td><td><span class="badge green">First Responder</span></td><td>—</td><td>—</td><td>—</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Evidence (3 files)</h4>
+                        <div style="display:flex; gap:8px; margin-top:0.5rem;">
+                            <div style="width:80px; height:60px; background:var(--bg-panel); border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">📷 Scene</div>
+                            <div style="width:80px; height:60px; background:var(--bg-panel); border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">📷 PPE</div>
+                            <div style="width:80px; height:60px; background:var(--bg-panel); border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">📄 Clinic</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-sidebar">
+                    <div class="sidebar-card">
+                        <h4>Status</h4>
+                        <div style="text-align:center; padding:8px 0;"><span class="badge purple" style="font-size:0.78rem; padding:6px 14px;">Investigation Started</span></div>
+                        <div style="display:flex; justify-content:center; margin-top:6px;"><div class="wf-btn primary" style="font-size:0.68rem;">Advance Status →</div></div>
+                    </div>
+                    <div class="sidebar-card">
+                        <h4>Details</h4>
+                        <div class="sidebar-field"><span class="fk">Reported By</span><span class="fv">M. Thompson</span></div>
+                        <div class="sidebar-field"><span class="fk">Reported</span><span class="fv mono" style="font-size:0.7rem;">Feb 25, 14:30</span></div>
+                        <div class="sidebar-field"><span class="fk">Assigned To</span><span class="fv">J. Crotwell</span></div>
+                        <div class="sidebar-field"><span class="fk">Investigator</span><span class="fv">J. Crotwell</span></div>
+                        <div class="sidebar-field"><span class="fk">Job</span><span class="fv" style="color:var(--accent);">Sarnia Refinery</span></div>
+                        <div class="sidebar-field"><span class="fk">Project</span><span class="fv" style="color:var(--accent);">Unit 4 Turnaround</span></div>
+                        <div class="sidebar-field"><span class="fk">Location</span><span class="fv">Bay 4, north side</span></div>
+                    </div>
+                    <div class="sidebar-card" style="border: 1px solid var(--danger); background: var(--danger-light);">
+                        <h4 style="color: var(--danger);">OSHA Classification</h4>
+                        <div class="sidebar-field"><span class="fk">Recordable</span><span class="fv" style="color:var(--danger);">Yes</span></div>
+                        <div class="sidebar-field"><span class="fk">Classification</span><span class="fv">OTHER_RECORDABLE</span></div>
+                        <div class="sidebar-field"><span class="fk">Days Away</span><span class="fv">0</span></div>
+                        <div class="sidebar-field"><span class="fk">Restricted Days</span><span class="fv">0</span></div>
+                        <div class="sidebar-field"><span class="fk">Death</span><span class="fv">No</span></div>
+                    </div>
+                    <div class="sidebar-card">
+                        <h4>Corrective Actions</h4>
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;"><span class="badge orange">1 In Progress</span><span class="badge gray">1 Assigned</span></div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary);">
+                            <div style="padding:4px 0; border-bottom:1px solid var(--border);">✏ Install eye wash station — <strong>Due Mar 10</strong></div>
+                            <div style="padding:4px 0;">✏ Update PPE checklist — <strong>Due Mar 15</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Same layout pattern as Job Detail / RFI Detail. Tabs: Details, Investigation, Corrective Actions, Activity (audit feed), Files (AssetReference), Notes. Sidebar = status card + metadata + OSHA panel + actions summary.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: LIFECYCLE STATE MACHINE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="lifecycle">
+    <div class="section-tag orange">Workflow 1</div>
+    <h2>Incident Lifecycle — State Machine</h2>
+    <p class="desc">Every incident follows this 7-stage workflow. Permissions, required fields, and notifications are enforced at each transition.</p>
+
+    <div class="two-col">
+        <div>
+            <div class="flow">
+                <div class="flow-node" style="border-color: var(--text-muted);">
+                    <h4>Draft</h4>
+                    <p>Reporter starts entry. Min: title, type, date/time.</p>
+                    <span class="who">incident.create</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Submit →</span></div>
+                <div class="flow-node warning">
+                    <h4>Reported</h4>
+                    <p>Submitted. Safety Manager notified. Critical → SMS escalation.</p>
+                    <span class="who">auto-notification</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Triage →</span></div>
+                <div class="flow-node" style="border-color: var(--info);">
+                    <h4>Under Review</h4>
+                    <p>Safety Manager confirms severity, sets OSHA recordability, assigns investigator.</p>
+                    <span class="who">Safety Manager</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Open investigation →</span></div>
+                <div class="flow-node" style="border-color: var(--purple);">
+                    <h4>Investigation Started</h4>
+                    <p>Investigator assigned. 5 Whys, witnesses, evidence collection.</p>
+                    <span class="who">Assigned Investigator</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Actions identified →</span></div>
+                <div class="flow-node active">
+                    <h4>Corrective Actions Assigned</h4>
+                    <p>Actions created, each with assignee + due date + priority.</p>
+                    <span class="who">Investigator creates</span>
+                </div>
+                <div class="flow-arrow"><span class="label">All actions done →</span></div>
+                <div class="flow-node" style="border-color: var(--success);">
+                    <h4>Actions Completed</h4>
+                    <p>System auto-transitions when all actions complete. Manager notified.</p>
+                    <span class="who">System (automatic)</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Final review →</span></div>
+                <div class="flow-node success">
+                    <h4>Closed</h4>
+                    <p>All docs verified, OSHA fields confirmed, investigation complete.</p>
+                    <span class="who">Safety Manager sign-off</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Transition Rules</h3>
+            <table class="wf-table" style="font-size: 0.72rem;">
+                <thead><tr><th>From</th><th>To</th><th>Who</th><th>Gate</th></tr></thead>
+                <tbody>
+                    <tr><td>Draft</td><td>Reported</td><td>Reporter</td><td>title + type + description + severity required</td></tr>
+                    <tr><td>Reported</td><td>Under Review</td><td>Safety Mgr</td><td>incident.edit permission</td></tr>
+                    <tr><td>Under Review</td><td>Investigation</td><td>Safety Mgr</td><td>investigatedByUserId required</td></tr>
+                    <tr><td>Under Review</td><td>Closed</td><td>Safety Mgr</td><td>Direct close for observations/minor</td></tr>
+                    <tr><td>Investigation</td><td>Actions Assigned</td><td>Investigator</td><td>≥ 1 CorrectiveAction created</td></tr>
+                    <tr><td>Actions Assigned</td><td>Actions Completed</td><td>System</td><td>All actions COMPLETED</td></tr>
+                    <tr><td>Actions Completed</td><td>Closed</td><td>Safety Mgr</td><td>Final review sign-off</td></tr>
+                    <tr style="background:var(--orange-light);"><td>Closed</td><td>Under Review</td><td>Safety Mgr</td><td>Reopen — reason required</td></tr>
+                </tbody>
+            </table>
+            <div class="dev-note"><strong>Dev:</strong> Transition enforcement in model layer (<code>SafetyIncident.editItem()</code>), same pattern as <code>EstimateChangeOrderRecord</code> where status changes trigger side effects.</div>
+
+            <h3 style="margin-top:1.5rem;">Per-Status Required Fields</h3>
+            <table class="wf-table" style="font-size: 0.72rem;">
+                <thead><tr><th>Status</th><th>Required Fields</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge gray">Draft</span></td><td>title, typeId, incidentDateTime</td></tr>
+                    <tr><td><span class="badge orange">Reported</span></td><td>+ description, severityId, reportedByUserId</td></tr>
+                    <tr><td><span class="badge blue">Under Review</span></td><td>+ isRecordable decision</td></tr>
+                    <tr><td><span class="badge purple">Investigation</span></td><td>+ investigatedByUserId</td></tr>
+                    <tr><td><span class="badge blue">Actions Assigned</span></td><td>≥ 1 CorrectiveAction</td></tr>
+                    <tr><td><span class="badge green">Closed</span></td><td>All OSHA fields if recordable</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: INVESTIGATION WORKFLOW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="investigation">
+    <div class="section-tag orange">Workflow 2</div>
+    <h2>Investigation Workflow</h2>
+    <p class="desc">Investigations reuse the existing SafetyForm engine. A pre-built "Incident Investigation" form template provides structure without building new UI.</p>
+
+    <div class="two-col">
+        <div>
+            <h3>Investigation Form (SafetyForm Template)</h3>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">SafetyForm: Incident Investigation</div></div>
+                <div class="wireframe-body">
+                    <div class="wf-form">
+                        <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--purple-light); border-radius:6px; font-size:0.72rem; color:#5b21b6; font-weight:600;">📋 Linked to INC-044 — Eye irritation requiring medical flush</div>
+
+                        <div class="wf-section-title">1. Incident Summary</div>
+                        <div class="wf-field"><label>Narrative <span class="req">*</span></label><div class="input textarea">Question Type: TEXT — What happened in detail?</div></div>
+
+                        <div class="wf-section-title">2. Timeline of Events <span class="badge blue" style="font-size:0.55rem;">REPEATABLE</span></div>
+                        <div class="wf-field"><label>Event 1</label><div class="input">Question Type: TEXT (repeatable section) — 14:15 Worker begins removal...</div></div>
+                        <div class="wf-field"><label>Event 2</label><div class="input">14:22 Fiberglass becomes airborne...</div></div>
+                        <div style="font-size:0.68rem; color:var(--accent); cursor:pointer; font-weight:600;">+ Add Event</div>
+
+                        <div class="wf-section-title">3. Immediate Causes</div>
+                        <div class="wf-field"><label>Select all that apply</label>
+                            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                                <span class="badge blue">Inadequate PPE ✓</span>
+                                <span class="badge gray">Inadequate Training</span>
+                                <span class="badge gray">Equipment Failure</span>
+                                <span class="badge blue">Procedure Not Followed ✓</span>
+                                <span class="badge gray">Environmental Conditions</span>
+                            </div>
+                            <div class="field-hint">Question Type: MULTISELECT</div>
+                        </div>
+
+                        <div class="wf-section-title">4. 5 Whys Analysis <span class="badge blue" style="font-size:0.55rem;">REPEATABLE · 5 CYCLES</span></div>
+                        <div class="wf-field"><label>Why 1</label><div class="input">Why did the worker get eye irritation? → Fiberglass particles were airborne.</div></div>
+                        <div class="wf-field"><label>Why 2</label><div class="input">Why were particles airborne? → Insulation was cut without wetting.</div></div>
+                        <div class="wf-field"><label>Why 3</label><div class="input">Why wasn't it wetted? → No water source at that bay.</div></div>
+                        <div class="wf-field"><label>Why 4</label><div class="input">Why no water source? → Not in the pre-job plan.</div></div>
+                        <div class="wf-field"><label>Why 5 (Root Cause)</label><div class="input" style="border-color:var(--danger);">Pre-job planning checklist does not include dust mitigation.</div></div>
+
+                        <div class="wf-section-title">5. Root Cause Determination</div>
+                        <div class="wf-field"><label>Root Cause <span class="req">*</span></label><div class="input textarea">Pre-job planning checklist omits dust/particle mitigation requirements for insulation removal tasks.</div></div>
+
+                        <div class="wf-section-title">6. Witness Statements <span class="badge blue" style="font-size:0.55rem;">REPEATABLE + PERSON</span></div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field"><label>Witness</label><div class="input person">J. Rodriguez</div></div>
+                            <div class="wf-field"><label>Statement</label><div class="input">"I saw the dust cloud form when he cut..."</div></div>
+                        </div>
+
+                        <div class="wf-section-title">7. Corrective Actions Needed <span class="badge blue" style="font-size:0.55rem;">REPEATABLE</span></div>
+                        <div class="wf-field"><label>Action 1</label><div class="input">Install portable eye wash station at all active removal zones</div></div>
+                        <div class="wf-field"><label>Action 2</label><div class="input">Update pre-job planning checklist to include dust mitigation</div></div>
+
+                        <div class="wf-section-title">8. Sign-Off</div>
+                        <div class="wf-form-row col2">
+                            <div class="wf-field"><label>Investigator Signature <span class="req">*</span></label><div class="input" style="min-height:50px; border-style:dashed;">✍ SIGNATURE question type</div></div>
+                            <div class="wf-field"><label>Management Signature <span class="req">*</span></label><div class="input" style="min-height:50px; border-style:dashed;">✍ SIGNATURE question type</div></div>
+                        </div>
+
+                        <div class="wf-btn-row">
+                            <div class="wf-btn secondary">Save Draft</div>
+                            <div class="wf-btn primary">Submit Investigation</div>
+                        </div>
+                    </div>
+                    <div class="dev-note"><strong>Dev:</strong> This is a standard SafetyForm. Pre-built as a template on instance setup. Completed form = Feedback record, linked to incident via <code>feedbackId</code>. All existing form features work: conditional logic, PDF export, repeatable sections.</div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Investigation Workflow</h3>
+            <div class="flow">
+                <div class="flow-node" style="border-color:var(--purple);">
+                    <h4>1. Investigation Assigned</h4>
+                    <p>Investigator receives notification with incident link</p>
+                    <span class="who">INCIDENT_ASSIGNED notification</span>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">
+                    <h4>2. Review Initial Report</h4>
+                    <p>Read incident details, photos, worker info</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">
+                    <h4>3. Interview Witnesses</h4>
+                    <p>Add SafetyIncidentWorker records (role: WITNESS)</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">
+                    <h4>4. Collect Evidence</h4>
+                    <p>Photos, docs via AssetReference</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node active">
+                    <h4>5. Complete Investigation Form</h4>
+                    <p>5 Whys, root cause, witness statements, sign-off</p>
+                    <span class="who">SafetyForm → Feedback</span>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">
+                    <h4>6. Update Incident Record</h4>
+                    <p>rootCause, contributingFactors, investigationNotes</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node success">
+                    <h4>7. Create Corrective Actions</h4>
+                    <p>Each action: title, assignee, due date, priority</p>
+                    <span class="who">→ Incident status: CORRECTIVE ACTIONS ASSIGNED</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">When Investigation is Required</h3>
+            <table class="wf-table" style="font-size: 0.72rem;">
+                <thead><tr><th>Incident Type</th><th>Required?</th></tr></thead>
+                <tbody>
+                    <tr><td>Near Miss</td><td>Optional (recommended for repeats)</td></tr>
+                    <tr><td>First Aid</td><td>Optional</td></tr>
+                    <tr><td style="color:var(--danger); font-weight:600;">Medical Treatment</td><td><strong>Required</strong></td></tr>
+                    <tr><td style="color:var(--danger); font-weight:600;">Lost Time Injury</td><td><strong>Required</strong></td></tr>
+                    <tr><td style="color:var(--danger); font-weight:600;">Restricted Duty</td><td><strong>Required</strong></td></tr>
+                    <tr><td style="color:var(--danger); font-weight:600;">Fatality</td><td><strong>Required</strong> (OSHA: 8 hours)</td></tr>
+                    <tr><td>Property Damage</td><td>Required if above threshold</td></tr>
+                    <tr><td style="color:var(--danger); font-weight:600;">Environmental</td><td><strong>Required</strong></td></tr>
+                    <tr><td>Safety Observation</td><td>No</td></tr>
+                    <tr><td>Unsafe Condition / Act</td><td>No (creates action directly)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: CORRECTIVE ACTIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="capa">
+    <div class="section-tag orange">Workflow 3</div>
+    <h2>Corrective Actions (CAPA)</h2>
+    <p class="desc">Each investigation generates actionable corrective items. Actions have their own 6-stage lifecycle with overdue escalation built in.</p>
+
+    <h3>Action Lifecycle</h3>
+    <div class="hflow">
+        <div class="hflow-node" style="border-color:var(--text-muted);"><h4>Created</h4><p>From investigation</p></div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--info);"><h4>Assigned</h4><p>Assignee notified</p></div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--orange);"><h4>In Progress</h4><p>Work underway</p></div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--accent);"><h4>Completed</h4><p>Notes + evidence</p></div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--success);"><h4>Verified</h4><p>Manager confirms</p></div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--success); background:var(--success-light);"><h4>Closed</h4><p>Fully resolved</p></div>
+    </div>
+
+    <h3>Corrective Action Detail (within Incident Detail → Actions tab)</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">INC-044 → Corrective Actions tab</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="margin:0;">2 Corrective Actions</h4>
+                <div class="wf-btn primary" style="font-size:0.7rem;">+ Add Action</div>
+            </div>
+            <table class="wf-table">
+                <thead><tr><th>Action</th><th>Priority</th><th>Assigned To</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Install portable eye wash station at all active removal zones</strong><br><span style="font-size:0.68rem; color:var(--text-muted);">Ensure stations are within 10-second walk of all insulation removal areas</span></td>
+                        <td><span class="badge red">Critical</span></td>
+                        <td>B. Viers</td>
+                        <td class="mono">Mar 10</td>
+                        <td><span class="badge orange">In Progress</span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.6rem;">Edit</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Update pre-job planning checklist to include dust mitigation</strong><br><span style="font-size:0.68rem; color:var(--text-muted);">Add "Dust/particle mitigation plan" as mandatory item on pre-job safety checklist</span></td>
+                        <td><span class="badge orange">High</span></td>
+                        <td>J. Crotwell</td>
+                        <td class="mono">Mar 15</td>
+                        <td><span class="badge blue">Assigned</span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.6rem;">Edit</div></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 style="margin-top:1.5rem;">Overdue Escalation Rules</h4>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:8px;">
+                <div style="background:var(--success-light); border-radius:6px; padding:10px; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:#065f46;">Priority SLAs</div><div style="font-size:0.62rem; color:var(--text-secondary); margin-top:4px;">Critical: 24h<br>High: 3 days<br>Medium: 7 days<br>Low: 30 days</div></div>
+                <div style="background:var(--orange-light); border-radius:6px; padding:10px; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:#92400e;">Day 1 Overdue</div><div style="font-size:0.62rem; color:var(--text-secondary); margin-top:4px;">Reminder → Assignee</div></div>
+                <div style="background:var(--orange-light); border-radius:6px; padding:10px; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:#92400e;">Day 3 Overdue</div><div style="font-size:0.62rem; color:var(--text-secondary); margin-top:4px;">Escalate → Safety Mgr</div></div>
+                <div style="background:var(--danger-light); border-radius:6px; padding:10px; text-align:center;"><div style="font-size:0.68rem; font-weight:700; color:#991b1b;">Day 7 Overdue</div><div style="font-size:0.62rem; color:var(--text-secondary); margin-top:4px;">Escalate → Director</div></div>
+            </div>
+
+            <div class="dev-note"><strong>Dev:</strong> CorrectiveAction model extends BaseAuditableModel. Overdue check via scheduled job (same pattern as cert expiry). When ALL actions reach COMPLETED → incident auto-transitions to ACTIONS COMPLETED.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7: SAFETY DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="dashboard">
+    <div class="section-tag green">Interface 4</div>
+    <h2>Safety Dashboard</h2>
+    <p class="desc">Route: <code>/safety-dashboard</code> — Dedicated safety analytics page. TRIR and DART auto-calculated from SafetyIncident + TimeSheetRecord. Follows main dashboard pattern with CompanyMetricCard widgets.</p>
+
+    <div class="dash-mock">
+        <div class="dash-toolbar">
+            <h3>Safety Dashboard</h3>
+            <div class="dash-tabs">
+                <button class="dash-tab active">Overview</button>
+                <button class="dash-tab">OSHA 300</button>
+                <button class="dash-tab">Trends</button>
+                <button class="dash-tab">Actions</button>
+            </div>
+        </div>
+        <div class="dash-body">
+            <div class="kpi-grid">
+                <div class="kpi green">
+                    <div class="kpi-label">Accident-Free Days</div>
+                    <div class="kpi-value"><span class="counter" data-target="147">0</span></div>
+                    <div class="kpi-sub">Since last recordable</div>
+                </div>
+                <div class="kpi amber">
+                    <div class="kpi-label">TRIR (YTD)</div>
+                    <div class="kpi-value"><span class="counter" data-target="1.82" data-decimals="2">0</span></div>
+                    <div class="kpi-sub">Industry avg: 2.8</div>
+                </div>
+                <div class="kpi blue">
+                    <div class="kpi-label">DART Rate</div>
+                    <div class="kpi-value"><span class="counter" data-target="0.91" data-decimals="2">0</span></div>
+                    <div class="kpi-sub">Industry avg: 1.5</div>
+                </div>
+                <div class="kpi red">
+                    <div class="kpi-label">Open Incidents</div>
+                    <div class="kpi-value"><span class="counter" data-target="3">0</span></div>
+                    <div class="kpi-sub">2 under investigation</div>
+                </div>
+            </div>
+            <div class="dev-note" style="margin-bottom:12px;"><strong>TRIR Formula:</strong> <code>(Recordable Incidents × 200,000) / Total Hours Worked</code> — Hours from TimeSheetRecord. Nick Newman (Rival) provided this formula directly.</div>
+
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h4>TRIR Trend (12 Months)</h4>
+                    <div class="chart-wrap"><canvas id="trirChart"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <h4>Incidents by Severity</h4>
+                    <div class="chart-wrap"><canvas id="severityChart"></canvas></div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:1.25rem;">
+                <div class="kpi"><div class="kpi-label">Near Misses (Month)</div><div class="kpi-value" style="color:var(--info);">8</div><div class="kpi-sub">Leading indicator ↑</div></div>
+                <div class="kpi"><div class="kpi-label">Observations (Month)</div><div class="kpi-value" style="color:var(--success);">14</div><div class="kpi-sub">Proactive reporting</div></div>
+                <div class="kpi"><div class="kpi-label">Overdue Actions</div><div class="kpi-value" style="color:var(--danger);">2</div><div class="kpi-sub">Need attention</div></div>
+                <div class="kpi"><div class="kpi-label">Form Completion</div><div class="kpi-value" style="color:var(--success);">94%</div><div class="kpi-sub">JHA + toolbox talks</div></div>
+            </div>
+
+            <h4 style="margin-bottom:8px;">Recent Incidents</h4>
+            <div class="feed">
+                <div class="feed-row"><span class="badge blue">Near Miss</span><span class="feed-title">Falling debris near scaffold — Bay 4</span><span class="feed-meta">INC-047</span><span class="badge orange">Reported</span></div>
+                <div class="feed-row"><span class="badge orange">First Aid</span><span class="feed-title">Minor laceration during insulation removal</span><span class="feed-meta">INC-046</span><span class="badge blue">Under Review</span></div>
+                <div class="feed-row"><span class="badge green">Observation</span><span class="feed-title">Excellent PPE compliance on night shift</span><span class="feed-meta">INC-045</span><span class="badge green">Closed</span></div>
+                <div class="feed-row"><span class="badge red">Medical Tx</span><span class="feed-title">Eye irritation requiring medical flush</span><span class="feed-meta">INC-044</span><span class="badge purple">Investigating</span></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:1.25rem;">
+                <div class="chart-box">
+                    <h4>Certifications</h4>
+                    <div class="sidebar-field"><span class="fk">Expiring (30 days)</span><span class="fv" style="color:var(--orange);">12</span></div>
+                    <div class="sidebar-field"><span class="fk">Expired</span><span class="fv" style="color:var(--danger);">3</span></div>
+                    <div class="dev-note" style="margin-top:8px;"><strong>Jared Crotwell (Rival):</strong> "Dashboard should link directly to expiring certifications, showing the specific cert needed for each individual."</div>
+                </div>
+                <div class="chart-box">
+                    <h4>Overdue Actions</h4>
+                    <div style="font-size:0.75rem;">
+                        <div style="padding:6px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;"><span>Install eye wash station</span><span class="badge red">2 days late</span></div>
+                        <div style="padding:6px 0; display:flex; justify-content:space-between;"><span>Update PPE checklist</span><span class="badge orange">Due tomorrow</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top:8px;"><strong>Dev:</strong> New MetricOption slugs: <code>accident-free-days</code>, <code>trir</code>, <code>dart-rate</code>, <code>open-incidents</code>, <code>open-corrective-actions</code>, <code>overdue-corrective-actions</code>, <code>near-miss-count</code>, <code>form-completion-rate</code>. Charts: Recharts (already in package.json). Cert widgets: <strong>already exist</strong>.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8: OSHA COMPLIANCE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="osha">
+    <div class="section-tag red">Interface 5</div>
+    <h2>OSHA 300 / 300A / 301 Reports</h2>
+    <p class="desc">Auto-generated from SafetyIncident records where <code>isRecordable = true</code>. Accessible from the Safety Dashboard OSHA tab. Exportable to PDF using existing pipeline.</p>
+
+    <div class="dash-mock">
+        <div class="dash-toolbar">
+            <h3>OSHA 300 Log — 2026</h3>
+            <div class="dash-tabs">
+                <button class="dash-tab active">300 Log</button>
+                <button class="dash-tab">300A Summary</button>
+                <button class="dash-tab">Export PDF</button>
+            </div>
+        </div>
+        <div class="dash-body">
+            <div style="overflow-x:auto;">
+                <table class="wf-table">
+                    <thead>
+                        <tr>
+                            <th>Case #</th><th>Employee</th><th>Job Title</th><th>Date</th><th>Location</th><th>Description</th><th>Death</th><th>Days Away</th><th>Restricted</th><th>Other Rec.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="mono">INC-044</td><td>M. Thompson</td><td>Insulator</td><td class="mono">Feb 25</td><td>Sarnia Refinery — Unit 4</td><td>Eye irritation requiring medical flush</td><td></td><td></td><td></td><td style="color:var(--danger); font-weight:700;">✓</td></tr>
+                        <tr><td class="mono">INC-038</td><td>J. Rodriguez</td><td>Scaffold Builder</td><td class="mono">Feb 12</td><td>Dow Chemical — Bay 7</td><td>Sprained ankle from platform misstep</td><td></td><td><strong>3</strong></td><td></td><td></td></tr>
+                        <tr><td class="mono">INC-031</td><td>K. Patel</td><td>Pipe Fitter</td><td class="mono">Jan 28</td><td>NOVA Chemicals — Coker</td><td>Hand laceration from metal edge</td><td></td><td></td><td><strong>5</strong></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 style="margin-top:1.5rem;">300A Annual Summary (Auto-Calculated)</h4>
+            <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-top:8px;">
+                <div class="kpi"><div class="kpi-label">Deaths</div><div class="kpi-value">0</div></div>
+                <div class="kpi"><div class="kpi-label">Days Away Cases</div><div class="kpi-value">1</div></div>
+                <div class="kpi"><div class="kpi-label">Restricted Cases</div><div class="kpi-value">1</div></div>
+                <div class="kpi"><div class="kpi-label">Other Recordable</div><div class="kpi-value">1</div></div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-top:8px;">
+                <div class="kpi"><div class="kpi-label">Total Days Away</div><div class="kpi-value">3</div></div>
+                <div class="kpi"><div class="kpi-label">Total Restricted</div><div class="kpi-value">5</div></div>
+                <div class="kpi"><div class="kpi-label">Avg Employees</div><div class="kpi-value">142</div></div>
+                <div class="kpi"><div class="kpi-label">Total Hours</div><div class="kpi-value" style="font-size:1.2rem;">329,680</div></div>
+            </div>
+
+            <h4 style="margin-top:1.5rem;">Compliance Alerts</h4>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-light); border:1px solid var(--danger); border-radius:6px; font-size:0.75rem; color:#991b1b;">⚠ <strong>Fatality</strong> → OSHA requires reporting within <strong>8 hours</strong></div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--danger-light); border:1px solid var(--danger); border-radius:6px; font-size:0.75rem; color:#991b1b;">⚠ <strong>3+ hospitalizations</strong> → OSHA requires reporting within <strong>24 hours</strong></div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--orange-light); border:1px solid var(--orange); border-radius:6px; font-size:0.75rem; color:#92400e;">📅 300A must be posted <strong>Feb 1 – Apr 30</strong> annually</div>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top:8px;"><strong>Dev:</strong> OSHA 300 = filtered view of SafetyIncident where <code>isRecordable = true</code>. 300A = aggregation query. 301 = individual incident PDF export. All use existing PDF pipeline (PSPDFKit). Classification logic: death → DEATH, daysAway > 0 → DAYS_AWAY, restricted > 0 → RESTRICTED_TRANSFER, else → OTHER_RECORDABLE.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 9: NOTIFICATION MATRIX -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="notifications">
+    <div class="section-tag purple">System</div>
+    <h2>Notification & Escalation Matrix</h2>
+    <p class="desc">Severity determines channels. Overdue actions escalate automatically. Uses existing <code>Notification.sendNotifications()</code> pattern with 9 new notification types.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Notification Matrix</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <table class="notif-matrix">
+                <thead>
+                    <tr><th>Trigger Event</th><th>Who</th><th>In-App</th><th>Push</th><th>Email</th><th>SMS</th><th>Urgency</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Incident Reported (Low/Med)</td><td>Safety Manager</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="badge green">Normal</span></td></tr>
+                    <tr style="background:var(--orange-light);"><td><strong>High Severity Incident</strong></td><td>Safety Mgr + Director</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="badge orange">High</span></td></tr>
+                    <tr style="background:var(--danger-light);"><td><strong>Critical / Fatality</strong></td><td>All executives + Safety team</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="badge red">Critical</span></td></tr>
+                    <tr><td>Investigation Assigned</td><td>Investigator</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="badge green">Normal</span></td></tr>
+                    <tr><td>Corrective Action Assigned</td><td>Action Assignee</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="badge green">Normal</span></td></tr>
+                    <tr style="background:var(--orange-light);"><td><strong>Corrective Action Overdue</strong></td><td>Assignee + Safety Mgr</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="badge orange">High</span></td></tr>
+                    <tr><td>Action Completed</td><td>Investigator</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="dot no">—</span></td><td><span class="badge green">Normal</span></td></tr>
+                    <tr><td>All Actions Completed</td><td>Safety Manager</td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="badge green">Normal</span></td></tr>
+                    <tr><td>Incident Closed</td><td>All involved parties</td><td><span class="dot yes">✓</span></td><td><span class="dot no">—</span></td><td><span class="dot no">—</span></td><td><span class="dot no">—</span></td><td><span class="badge gray">Info</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3 style="margin-top:1.5rem;">Time-Based Escalation</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:8px;">
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--orange);">Incident Stale</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                REPORTED > 24 hours → Re-notify Safety Manager<br>
+                UNDER REVIEW > 48 hours → Escalate to Director
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--danger);">Action Overdue</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                Day 1 → Reminder to assignee<br>
+                Day 3 → Escalate to Safety Manager<br>
+                Day 7 → Escalate to Director
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--accent);">Safety Manager Identification</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                Users with <code style="font-size:0.68rem;">incident___escalation</code> permission<br>
+                (role-based, not hardcoded userId)
+            </div>
+        </div>
+    </div>
+    <div class="dev-note"><strong>Dev:</strong> New NotificationType enums: INCIDENT_REPORTED, INCIDENT_ASSIGNED, INCIDENT_STATUS_CHANGED, INCIDENT_ESCALATED, CORRECTIVE_ACTION_ASSIGNED, CORRECTIVE_ACTION_OVERDUE, CORRECTIVE_ACTION_COMPLETED, INVESTIGATION_COMPLETED, INCIDENT_CLOSED. Escalation via scheduled job (same pattern as cert expiry check).</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 10: PERMISSIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="permissions">
+    <div class="section-tag purple">System</div>
+    <h2>Permission Matrix</h2>
+    <p class="desc">Follows the existing permission system pattern. <code>permissionName = "incident"</code> on the SafetyIncident model. Scoping: ALL, OWN, PROJECT_BASED, NONE.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Permission Configuration</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <table class="perm-table">
+                <thead>
+                    <tr><th>Permission</th><th>Description</th><th>Field Worker</th><th>Supervisor</th><th>Safety Manager</th><th>Admin</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="perm-name">incident___view</td><td>View incident list and detail</td><td>OWN</td><td>PROJECT_BASED</td><td>ALL</td><td>ALL</td></tr>
+                    <tr><td class="perm-name">incident___create</td><td>Report new incidents</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___edit</td><td>Edit incident details, change status</td><td>OWN (draft only)</td><td>—</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___delete</td><td>Soft-delete incidents</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___escalation</td><td>Receive escalation notifications</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___viewDashboard</td><td>Access Safety Dashboard</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___manageActions</td><td>Create/edit corrective actions</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___verifyActions</td><td>Verify corrective actions</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+                    <tr><td class="perm-name">incident___exportOSHA</td><td>Export OSHA 300/300A/301 reports</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="dev-note"><strong>Dev:</strong> Add to PermissionMap in <code>apps/api/src/models/Permission.ts</code>. Scope field: <code>getScopeTargetField() = "assignedToUserId"</code> for OWN scope. Same pattern as RFI/EstimateChangeOrder permissions.</div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Safety & Incident Management — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Confidential · March 2026 · For customer sign-off and developer reference</div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Counter animation
+    const counters = document.querySelectorAll(".counter");
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+            if (!e.isIntersecting || e.target.dataset.animated) return;
+            e.target.dataset.animated = "true";
+            const target = parseFloat(e.target.dataset.target);
+            const dec = parseInt(e.target.dataset.decimals || "0");
+            const dur = 1200, start = performance.now();
+            function update(now) {
+                const p = Math.min((now - start) / dur, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                e.target.textContent = (eased * target).toFixed(dec);
+                if (p < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        });
+    }, { threshold: 0.5 });
+    counters.forEach((c) => obs.observe(c));
+
+    // TRIR chart
+    const tc = document.getElementById("trirChart");
+    if (tc) new Chart(tc, {
+        type: "line",
+        data: {
+            labels: ["Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb"],
+            datasets: [{
+                label: "TRIR", data: [3.2,2.9,2.7,2.4,2.6,2.3,2.1,2.0,1.9,1.85,1.83,1.82],
+                borderColor: "#2563eb", backgroundColor: "rgba(37,99,235,0.08)", fill: true, tension: 0.4,
+                pointRadius: 3, pointBackgroundColor: "#2563eb", borderWidth: 2
+            },{
+                label: "Industry Avg", data: [2.8,2.8,2.8,2.8,2.8,2.8,2.8,2.8,2.8,2.8,2.8,2.8],
+                borderColor: "rgba(148,163,184,0.5)", borderDash: [5,5], pointRadius: 0, borderWidth: 1, fill: false
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: "#475569", font: { size: 11, family: "Inter" } } } },
+            scales: {
+                x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(226,232,240,0.5)" } },
+                y: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(226,232,240,0.5)" }, min: 0, max: 4 }
+            }
+        }
+    });
+
+    // Severity chart
+    const sc = document.getElementById("severityChart");
+    if (sc) new Chart(sc, {
+        type: "doughnut",
+        data: {
+            labels: ["Low","Medium","High","Critical"],
+            datasets: [{ data: [18,12,5,2], backgroundColor: ["#10b981","#f59e0b","#f97316","#ef4444"], borderColor: "#fff", borderWidth: 3 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: "60%",
+            plugins: { legend: { position: "bottom", labels: { color: "#475569", font: { size: 10, family: "Inter" }, padding: 12 } } }
+        }
+    });
+
+    // Nav active state
+    const sections = document.querySelectorAll(".section[id]");
+    const navLinks = document.querySelectorAll(".topnav a");
+    const navObs = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+            if (e.isIntersecting) {
+                navLinks.forEach((l) => l.classList.remove("active"));
+                const a = document.querySelector(`.topnav a[href="#${e.target.id}"]`);
+                if (a) a.classList.add("active");
+            }
+        });
+    }, { threshold: 0.2 });
+    sections.forEach((s) => navObs.observe(s));
+});
+</script>
+
+</body>
+</html>

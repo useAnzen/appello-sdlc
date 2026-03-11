@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Personnel QR Codes — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #f8f7f4;
+    --bg-white: #ffffff;
+    --bg-panel: #fafaf8;
+    --text: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --text-muted: #999;
+    --border: #e5e3de;
+    --border-strong: #d0cdc7;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --danger-text: #991b1b;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --success-text: #166534;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --warning-text: #92400e;
+    --info: #2563eb;
+    --info-light: #eff6ff;
+    --font: "DM Sans", sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+
+.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a1a1a; color: white;
+    display: flex; align-items: center; gap: 0; padding: 0 1.5rem;
+    font-size: 0.78rem; font-weight: 500; height: 48px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.topnav .logo { font-weight: 800; font-size: 1rem; letter-spacing: -0.02em; margin-right: 2rem; color: white; text-decoration: none; }
+.topnav a { color: rgba(255,255,255,0.65); text-decoration: none; padding: 14px 14px; transition: color 0.15s; white-space: nowrap; }
+.topnav a:hover, .topnav a.active { color: white; }
+.topnav a.active { border-bottom: 2px solid var(--accent); }
+.topnav .tag { background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; margin-left: auto; letter-spacing: 0.04em; }
+
+.page { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+h1 .sub { font-weight: 400; color: var(--text-secondary); font-size: 1rem; display: block; margin-top: 0.25rem; letter-spacing: 0; }
+h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; margin-top: 0; }
+h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1.25rem; color: var(--text); }
+p.desc { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.25rem; max-width: 700px; line-height: 1.7; }
+
+.section { margin-bottom: 3rem; }
+.section-divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+.meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem; }
+.meta-item { font-size: 0.78rem; color: var(--text-secondary); }
+.meta-item strong { color: var(--text); font-weight: 600; }
+.meta-item .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+.meta-item .badge-blue { background: var(--accent-light); color: var(--accent); }
+.meta-item .badge-green { background: var(--success-light); color: var(--success-text); }
+
+/* WIREFRAME STYLES */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot-r { background: #ff5f57; }
+.wireframe-header .dot-y { background: #febc2e; }
+.wireframe-header .dot-g { background: #28c840; }
+.wireframe-header .wh-title { font-size: 0.72rem; color: var(--text-muted); margin-left: 8px; }
+.wireframe-body { padding: 24px; }
+
+.wf-field { margin-bottom: 1rem; }
+.wf-field label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 8px 10px; font-size: 0.82rem; color: var(--text-muted);
+    background: var(--bg); min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.filled { color: var(--text); }
+.wf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.wf-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+.wf-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 6px; font-size: 0.8rem;
+    font-weight: 600; cursor: pointer; border: none;
+}
+.wf-btn-primary { background: var(--accent); color: white; }
+.wf-btn-outline { background: white; color: var(--text); border: 1px solid var(--border-strong); }
+.wf-btn-qr { background: #1a1a1a; color: white; }
+
+.wf-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 600;
+}
+.wf-badge-green { background: var(--success-light); color: var(--success-text); }
+.wf-badge-red { background: var(--danger-light); color: var(--danger-text); }
+.wf-badge-amber { background: var(--warning-light); color: var(--warning-text); }
+.wf-badge-blue { background: var(--info-light); color: var(--accent); }
+.wf-badge-gray { background: #f3f4f6; color: #6b7280; }
+
+/* STICKER */
+.sticker-preview {
+    border: 3px solid #1a1a1a; border-radius: 16px;
+    display: flex; overflow: hidden; max-width: 600px; margin: 1rem auto;
+    background: white;
+}
+.sticker-left {
+    flex: 1; padding: 24px; text-align: center; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+}
+.sticker-left .asset-id { font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; }
+.sticker-qr {
+    width: 140px; height: 140px; background: #1a1a1a; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+}
+.sticker-qr::after {
+    content: ""; position: absolute; inset: 8px;
+    background: repeating-conic-gradient(#fff 0% 25%, #1a1a1a 0% 50%) 0 0 / 12px 12px;
+    border-radius: 4px;
+}
+.sticker-right {
+    flex: 1; padding: 24px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    border-left: 2px solid #1a1a1a;
+}
+.sticker-logo {
+    width: 120px; height: 50px; background: var(--bg-panel); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+}
+.sticker-copy { font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); max-width: 180px; line-height: 1.5; }
+.sticker-phone { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+
+/* MOBILE MOCKUP */
+.mobile-frame {
+    width: 320px; min-height: 600px; border: 2px solid #1a1a1a; border-radius: 32px;
+    background: white; overflow: hidden; box-shadow: var(--shadow-lg);
+    margin: 0 auto;
+}
+.mobile-notch {
+    width: 100px; height: 22px; background: #1a1a1a; border-radius: 0 0 14px 14px;
+    margin: 0 auto;
+}
+.mobile-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.mobile-header .mh-logo { font-weight: 800; font-size: 0.85rem; }
+.mobile-header .mh-signin { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+.mobile-body { padding: 16px; }
+
+.profile-header {
+    text-align: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+}
+.profile-avatar {
+    width: 72px; height: 72px; border-radius: 50%; background: var(--accent);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 700; margin: 0 auto 10px;
+}
+.profile-name { font-size: 1.1rem; font-weight: 700; }
+.profile-title { font-size: 0.78rem; color: var(--text-secondary); }
+.profile-empno { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+.emergency-card {
+    background: var(--danger-light); border: 1px solid #fecaca; border-radius: var(--radius);
+    padding: 12px; margin-bottom: 14px;
+}
+.emergency-card .ec-title {
+    font-size: 0.68rem; font-weight: 700; color: var(--danger); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.emergency-card .ec-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.emergency-card .ec-label { font-size: 0.72rem; color: var(--text-secondary); }
+.emergency-card .ec-value { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.emergency-card .ec-value a { color: var(--accent); text-decoration: none; }
+
+.allergy-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #fef2f2; border: 1px solid #fecaca; color: var(--danger);
+    padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+    margin-top: 6px;
+}
+
+.cert-section-title {
+    font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+}
+.cert-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 6px; background: white;
+}
+.cert-card .cc-name { font-size: 0.78rem; font-weight: 600; }
+.cert-card .cc-provider { font-size: 0.68rem; color: var(--text-muted); }
+.cert-card .cc-expiry { font-size: 0.68rem; color: var(--text-muted); text-align: right; }
+
+.contact-card {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; margin-top: 14px;
+}
+.contact-card .cc-title {
+    font-size: 0.68rem; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+}
+.contact-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.contact-row .cl { font-size: 0.72rem; color: var(--text-secondary); }
+.contact-row .cv { font-size: 0.78rem; font-weight: 500; }
+.contact-row .cv a { color: var(--accent); text-decoration: none; }
+
+.timestamp { font-size: 0.65rem; color: var(--text-muted); text-align: center; margin-top: 12px; }
+
+/* TWO COLUMN */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+/* FLOW DIAGRAM */
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 1rem 0; }
+.flow-step {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 14px; font-size: 0.78rem; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+}
+.flow-step .fs-num {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--accent);
+    color: white; font-size: 0.65rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.flow-arrow { color: var(--text-muted); font-size: 1rem; }
+
+/* DEV NOTE */
+.dev-note {
+    background: #1a1a1a; color: #e0e0e0; border-radius: var(--radius);
+    padding: 14px 18px; margin-top: 1.25rem; font-size: 0.78rem; line-height: 1.7;
+}
+.dev-note .dn-title {
+    font-size: 0.68rem; font-weight: 700; color: #6ee7b7; text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 6px;
+}
+.dev-note code { font-family: var(--mono); font-size: 0.75rem; background: #2a2a2a; padding: 1px 5px; border-radius: 3px; color: #93c5fd; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.75rem; }
+th { text-align: left; font-weight: 600; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+
+/* DESKTOP MOCKUP */
+.desktop-frame {
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden; background: white; box-shadow: var(--shadow-md);
+}
+.desktop-titlebar {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+}
+.desktop-sidebar {
+    width: 200px; background: #1e293b; color: white; padding: 16px 0;
+    min-height: 400px; flex-shrink: 0;
+}
+.desktop-sidebar .ds-item {
+    padding: 8px 16px; font-size: 0.78rem; color: rgba(255,255,255,0.6);
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.desktop-sidebar .ds-item.active { background: rgba(255,255,255,0.1); color: white; }
+.desktop-sidebar .ds-item:hover { color: white; }
+.desktop-main { flex: 1; padding: 24px; }
+.desktop-layout { display: flex; }
+
+.detail-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.detail-avatar {
+    width: 56px; height: 56px; border-radius: 50%; background: var(--accent);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
+}
+.detail-info { flex: 1; }
+.detail-info .di-name { font-size: 1.1rem; font-weight: 700; }
+.detail-info .di-meta { font-size: 0.78rem; color: var(--text-secondary); }
+
+.action-bar { display: flex; gap: 8px; }
+
+/* Tooltip annotation */
+.annotation {
+    position: relative; display: inline-block;
+}
+.annotation::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #1a1a1a; color: white; padding: 4px 10px; border-radius: 6px;
+    font-size: 0.68rem; font-weight: 500; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+}
+.annotation:hover::after { opacity: 1; }
+
+/* Comparison table */
+.compare-card {
+    display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden; margin-top: 1rem;
+}
+.compare-card .cc-half { padding: 20px; }
+.compare-card .cc-half:first-child { border-right: 1px solid var(--border); }
+.compare-card .cc-half h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; }
+.compare-card .cc-half ul { list-style: none; padding: 0; }
+.compare-card .cc-half li { font-size: 0.78rem; padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+.compare-card .cc-half li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.cc-half.existing li::before { background: var(--success); }
+.cc-half.new li::before { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+    <a class="logo" href="#">Appello</a>
+    <a href="#overview" class="active">Overview</a>
+    <a href="#sticker">QR Sticker</a>
+    <a href="#public-page">Public Page</a>
+    <a href="#desktop">Desktop View</a>
+    <a href="#flow">Data Flow</a>
+    <a href="#security">Security</a>
+    <a href="#comparison">Reuse Map</a>
+    <span class="tag">Q21030-11261</span>
+</div>
+
+<div class="page">
+
+    <!-- HEADER -->
+    <div class="section" style="margin-bottom: 2rem;">
+        <h1>Personnel QR Codes<span class="sub">Certifications, Emergency Contacts & Key Info via Scannable QR</span></h1>
+        <div class="meta">
+            <div class="meta-item"><strong>Jira:</strong> Q21030-11261</div>
+            <div class="meta-item"><strong>Release:</strong> <span class="badge badge-blue">1.33.0-RC1</span></div>
+            <div class="meta-item"><strong>Effort:</strong> <span class="badge badge-green">Small-Medium (1-2 days)</span></div>
+            <div class="meta-item"><strong>Customer:</strong> Rival Insulation (Jared Crotwell)</div>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 1: OVERVIEW -->
+    <div class="section" id="overview">
+        <h2>1. Feature Overview</h2>
+        <p class="desc">Generate printable QR code stickers for personnel. When scanned (by anyone, no login required), the QR opens a mobile-optimized public profile showing the worker's certifications, emergency contacts, allergies, and compliance status. Identical architecture to the shipped Equipment QR Code feature.</p>
+
+        <h3>Use Case</h3>
+        <p class="desc">A worker is on a job site. There's an accident. A GC, OSHA inspector, or first responder needs to immediately know: What certifications does this person hold? Who is their emergency contact? Do they have allergies? They scan the QR code on the worker's hard hat or badge and get the answer instantly — no Appello account needed.</p>
+
+        <div class="compare-card">
+            <div class="cc-half existing">
+                <h4>Already Shipped (Equipment QR)</h4>
+                <ul>
+                    <li>QR code PDF generation (react-qr-code)</li>
+                    <li>JWT-signed public link (/api/public-link/generate-link)</li>
+                    <li>Guest page without login (/guest/equipment/[id])</li>
+                    <li>Auth redirect (guest → admin if logged in)</li>
+                    <li>GuestLayout component</li>
+                    <li>ExportButton with QR icon</li>
+                    <li>PDF export handler (pdf-export.ts)</li>
+                </ul>
+            </div>
+            <div class="cc-half new">
+                <h4>New for Personnel QR</h4>
+                <ul>
+                    <li>PersonnelQRCode.tsx (PDF component)</li>
+                    <li>GraphQL query: getPersonnelQRCodeInfo</li>
+                    <li>Guest page: /guest/personnel/[id]</li>
+                    <li>PersonnelPublicProfile component</li>
+                    <li>pdf-export.ts case: "personnel-qr-code"</li>
+                    <li>Public route registration</li>
+                    <li>QR button on user detail page</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 2: QR STICKER -->
+    <div class="section" id="sticker">
+        <h2>2. QR Code Sticker (Printable PDF)</h2>
+        <p class="desc">The sticker is generated as a PDF from the user detail page. It follows the exact layout pattern of the existing equipment QR sticker. Designed to be printed on adhesive label paper and affixed to hard hats, badges, or vests.</p>
+
+        <div class="sticker-preview">
+            <div class="sticker-left">
+                <div class="asset-id">EMP-2847</div>
+                <div style="font-size: 0.85rem; font-weight: 600;">Michael Rodriguez</div>
+                <div class="sticker-qr"></div>
+            </div>
+            <div class="sticker-right">
+                <div class="sticker-logo">COMPANY LOGO</div>
+                <div class="sticker-copy">Scan this QR code with your mobile device to view personnel credentials and emergency contacts.</div>
+                <div class="sticker-phone">(248) 808-6426</div>
+            </div>
+        </div>
+
+        <div class="dev-note">
+            <div class="dn-title">Dev Notes</div>
+            <strong>File:</strong> <code>apps/frontend/src/components/DownloadablePDF/PersonnelQRCode.tsx</code><br>
+            <strong>Pattern:</strong> Clone <code>EquipmentQRCode.tsx</code> and replace equipment fields with personnel fields.<br>
+            <strong>QR URL:</strong> <code>${NEXT_PUBLIC_OSA_URL}/guest/personnel/${userId}?token=${jwt}&openInApp=true</code><br>
+            <strong>JWT expiry:</strong> <code>exp: "never"</code> (stickers are physical, permanent objects)<br>
+            <strong>Trigger:</strong> ExportButton on user detail page → <code>/api/pdf-export</code> with <code>reportType: "personnel-qr-code"</code>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 3: PUBLIC PAGE -->
+    <div class="section" id="public-page">
+        <h2>3. Public Personnel Profile (Mobile Scan View)</h2>
+        <p class="desc">This is what appears when someone scans the QR code. It's a mobile-optimized, read-only view showing only safety-relevant personnel data. No login required. Emergency information is placed at the top for immediate visibility.</p>
+
+        <div class="two-col">
+            <div>
+                <h3>Mobile View (Primary)</h3>
+                <div class="mobile-frame">
+                    <div class="mobile-notch"></div>
+                    <div class="mobile-header">
+                        <div class="mh-logo">Appello</div>
+                        <div class="mh-signin">Sign in</div>
+                    </div>
+                    <div class="mobile-body">
+                        <!-- Profile Header -->
+                        <div class="profile-header">
+                            <div class="profile-avatar">MR</div>
+                            <div class="profile-name">Michael Rodriguez</div>
+                            <div class="profile-title">Lead Insulator</div>
+                            <div class="profile-empno">EMP-2847</div>
+                        </div>
+
+                        <!-- Emergency Card -->
+                        <div class="emergency-card">
+                            <div class="ec-title">
+                                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                Emergency Contact
+                            </div>
+                            <div class="ec-row">
+                                <span class="ec-label">Name</span>
+                                <span class="ec-value">Maria Rodriguez (Spouse)</span>
+                            </div>
+                            <div class="ec-row">
+                                <span class="ec-label">Phone</span>
+                                <span class="ec-value"><a href="tel:+12485551234">(248) 555-1234</a></span>
+                            </div>
+                            <div class="allergy-badge">
+                                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                Allergy: Penicillin
+                            </div>
+                        </div>
+
+                        <!-- Certifications -->
+                        <div class="cert-section-title">Certifications (4)</div>
+
+                        <div class="cert-card">
+                            <div>
+                                <div class="cc-name">OSHA 30-Hour</div>
+                                <div class="cc-provider">OSHA Training Institute</div>
+                            </div>
+                            <div>
+                                <div><span class="wf-badge wf-badge-green">Active</span></div>
+                                <div class="cc-expiry">Never expires</div>
+                            </div>
+                        </div>
+
+                        <div class="cert-card">
+                            <div>
+                                <div class="cc-name">Confined Space Entry</div>
+                                <div class="cc-provider">Safety Council of MI</div>
+                            </div>
+                            <div>
+                                <div><span class="wf-badge wf-badge-amber">Expiring Soon</span></div>
+                                <div class="cc-expiry">Exp: Apr 15, 2026</div>
+                            </div>
+                        </div>
+
+                        <div class="cert-card">
+                            <div>
+                                <div class="cc-name">Fall Protection</div>
+                                <div class="cc-provider">ABC Safety Training</div>
+                            </div>
+                            <div>
+                                <div><span class="wf-badge wf-badge-green">Active</span></div>
+                                <div class="cc-expiry">Exp: Nov 30, 2026</div>
+                            </div>
+                        </div>
+
+                        <div class="cert-card">
+                            <div>
+                                <div class="cc-name">First Aid / CPR</div>
+                                <div class="cc-provider">Red Cross</div>
+                            </div>
+                            <div>
+                                <div><span class="wf-badge wf-badge-red">Expired</span></div>
+                                <div class="cc-expiry">Exp: Jan 10, 2026</div>
+                            </div>
+                        </div>
+
+                        <!-- Contact -->
+                        <div class="contact-card">
+                            <div class="cc-title">Contact Information</div>
+                            <div class="contact-row">
+                                <span class="cl">Worker Phone</span>
+                                <span class="cv"><a href="tel:+12485559876">(248) 555-9876</a></span>
+                            </div>
+                            <div class="contact-row">
+                                <span class="cl">Company</span>
+                                <span class="cv">Rival Insulation</span>
+                            </div>
+                            <div class="contact-row">
+                                <span class="cl">Company Phone</span>
+                                <span class="cv"><a href="tel:+12488086426">(248) 808-6426</a></span>
+                            </div>
+                        </div>
+
+                        <div class="timestamp">Data as of Mar 11, 2026 at 9:30 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3>Content Sections (Priority Order)</h3>
+                <p class="desc" style="margin-bottom: 1rem;">Content is ordered by urgency in an emergency scenario. Emergency information is always visible without scrolling.</p>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="flow-step" style="width: 100%; border-left: 3px solid var(--danger);">
+                        <div class="fs-num">1</div>
+                        <div>
+                            <strong>Emergency Contact</strong> — Name, relationship, phone (tel: link), allergies<br>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Red card, always visible without scrolling</span>
+                        </div>
+                    </div>
+                    <div class="flow-step" style="width: 100%; border-left: 3px solid var(--accent);">
+                        <div class="fs-num">2</div>
+                        <div>
+                            <strong>Identity Header</strong> — Avatar, name, position, employee number<br>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Sticky at top of page</span>
+                        </div>
+                    </div>
+                    <div class="flow-step" style="width: 100%; border-left: 3px solid var(--success);">
+                        <div class="fs-num">3</div>
+                        <div>
+                            <strong>Certifications</strong> — Name, provider, dates, status badges<br>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Active/Expiring Soon/Expired with color coding</span>
+                        </div>
+                    </div>
+                    <div class="flow-step" style="width: 100%; border-left: 3px solid var(--text-muted);">
+                        <div class="fs-num">4</div>
+                        <div>
+                            <strong>Contact Information</strong> — Worker phone, company name, company phone<br>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">All phone numbers are clickable tel: links</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dev-note" style="margin-top: 1.5rem;">
+                    <div class="dn-title">Dev Notes</div>
+                    <strong>File:</strong> <code>apps/mobile/src/components/Personnel/PersonnelPublicProfile.tsx</code><br>
+                    <strong>Route:</strong> <code>apps/mobile/src/pages/guest/personnel/[id].tsx</code><br>
+                    <strong>Layout:</strong> Uses <code>GuestLayout</code> (minimal header: logo + "Sign in" link)<br>
+                    <strong>Data source:</strong> All data from JWT payload — no API calls from guest page<br>
+                    <strong>Auth redirect:</strong> If user has valid auth cookie → redirect to <code>/admin/users/[id]</code><br>
+                    <strong>Add to public routes:</strong> <code>apps/mobile/src/context/AuthContext.tsx</code> → publicRoutes array
+                </div>
+
+                <h3 style="margin-top: 1.5rem;">What is NOT Displayed</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.5rem;">
+                    <span class="wf-badge wf-badge-gray">Pay Rates</span>
+                    <span class="wf-badge wf-badge-gray">Timesheets</span>
+                    <span class="wf-badge wf-badge-gray">HR Documents</span>
+                    <span class="wf-badge wf-badge-gray">Home Address</span>
+                    <span class="wf-badge wf-badge-gray">Date of Birth</span>
+                    <span class="wf-badge wf-badge-gray">SSN / SIN</span>
+                    <span class="wf-badge wf-badge-gray">Disciplinary Records</span>
+                    <span class="wf-badge wf-badge-gray">Leave History</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 4: DESKTOP VIEW -->
+    <div class="section" id="desktop">
+        <h2>4. Desktop — Export Button Placement</h2>
+        <p class="desc">On the user detail page, a new QR code export button is added to the action bar. When clicked, it generates and downloads the PDF sticker.</p>
+
+        <div class="desktop-frame">
+            <div class="desktop-titlebar">
+                <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 8px;">Appello — Users — Michael Rodriguez</span>
+            </div>
+            <div class="desktop-layout">
+                <div class="desktop-sidebar">
+                    <div class="ds-item">Dashboard</div>
+                    <div class="ds-item">Jobs</div>
+                    <div class="ds-item active">Users</div>
+                    <div class="ds-item">Equipment</div>
+                    <div class="ds-item">Forms</div>
+                    <div class="ds-item">Reports</div>
+                </div>
+                <div class="desktop-main">
+                    <div class="detail-header">
+                        <div class="detail-avatar">MR</div>
+                        <div class="detail-info">
+                            <div class="di-name">Michael Rodriguez</div>
+                            <div class="di-meta">Lead Insulator &middot; EMP-2847 &middot; Active</div>
+                        </div>
+                        <div class="action-bar">
+                            <button class="wf-btn wf-btn-outline">Edit</button>
+                            <button class="wf-btn wf-btn-outline" style="position: relative;">
+                                Export ▾
+                            </button>
+                            <div class="annotation" data-tip="NEW — Download QR Code Sticker">
+                                <button class="wf-btn wf-btn-qr" style="position: relative;">
+                                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm-2 7a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm8-12a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clip-rule="evenodd"/><path d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zm-1 7a1 1 0 011 1v1h1a1 1 0 110 2h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm6 0a1 1 0 100 2 1 1 0 000-2zm-4 4a1 1 0 011-1h3a1 1 0 110 2h-3a1 1 0 01-1-1zm-2-7a1 1 0 10-2 0v5a1 1 0 102 0V8z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+                        <div style="padding: 8px 16px; font-size: 0.82rem; font-weight: 600; border-bottom: 2px solid var(--accent); color: var(--accent);">Overview</div>
+                        <div style="padding: 8px 16px; font-size: 0.82rem; color: var(--text-muted);">Certifications</div>
+                        <div style="padding: 8px 16px; font-size: 0.82rem; color: var(--text-muted);">Timesheets</div>
+                        <div style="padding: 8px 16px; font-size: 0.82rem; color: var(--text-muted);">HR Documents</div>
+                        <div style="padding: 8px 16px; font-size: 0.82rem; color: var(--text-muted);">Settings</div>
+                    </div>
+
+                    <div style="color: var(--text-muted); font-size: 0.82rem; text-align: center; padding: 40px;">
+                        User detail content renders here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dev-note">
+            <div class="dn-title">Dev Notes</div>
+            <strong>File:</strong> <code>apps/frontend/src/pages/users/[id]/index.tsx</code><br>
+            <strong>Component:</strong> Add <code>ExportButton</code> to action area alongside existing Edit/Export buttons<br>
+            <strong>Props:</strong> <code>customIcon={&lt;QrcodeIcon /&gt;}</code>, <code>apiLink="/api/pdf-export"</code>, <code>filters={{ reportType: "personnel-qr-code", id: router.query.id }}</code><br>
+            <strong>Permissions:</strong> Already gated by <code>user: { view: true }</code> on this page
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 5: DATA FLOW -->
+    <div class="section" id="flow">
+        <h2>5. End-to-End Data Flow</h2>
+        <p class="desc">The complete flow from clicking the QR button to a scanned result, showing every system touched.</p>
+
+        <h3>A. Sticker Generation Flow</h3>
+        <div class="flow">
+            <div class="flow-step"><div class="fs-num">1</div>Click QR button</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">2</div>POST /api/pdf-export</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">3</div>GraphQL: getPersonnelQRCodeInfo</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">4</div>POST /api/public-link/generate-link</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">5</div>JWT signed with PUBLIC_LINK_SECRET</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">6</div>generatePersonnelQRCodePdfDoc()</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">7</div>PDF downloaded</div>
+        </div>
+
+        <h3>B. QR Scan Flow</h3>
+        <div class="flow">
+            <div class="flow-step"><div class="fs-num">1</div>Scan QR code</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">2</div>/guest/personnel/[id]?token=jwt</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="fs-num">3</div>getServerSideProps</div>
+        </div>
+        <div style="margin-left: 2rem; margin-top: 0.5rem;">
+            <div class="flow" style="margin-bottom: 4px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); width: 100px;">If authenticated →</span>
+                <div class="flow-step" style="border-left: 3px solid var(--accent);">Redirect to /admin/users/[id]</div>
+            </div>
+            <div class="flow" style="margin-bottom: 4px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); width: 100px;">If valid JWT →</span>
+                <div class="flow-step" style="border-left: 3px solid var(--success);">Render PersonnelPublicProfile with JWT data</div>
+            </div>
+            <div class="flow" style="margin-bottom: 4px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); width: 100px;">If expired JWT →</span>
+                <div class="flow-step" style="border-left: 3px solid var(--warning);">Redirect to /expired</div>
+            </div>
+            <div class="flow">
+                <span style="font-size: 0.78rem; color: var(--text-muted); width: 100px;">If no token →</span>
+                <div class="flow-step" style="border-left: 3px solid var(--danger);">404 Not Found</div>
+            </div>
+        </div>
+
+        <h3>C. JWT Payload Contents</h3>
+        <div class="wireframe" style="max-width: 500px;">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+                <span class="wh-title">IPersonnelJWTPayload</span>
+            </div>
+            <div class="wireframe-body" style="font-family: var(--mono); font-size: 0.75rem; line-height: 1.8; color: var(--text-secondary);">
+                <div>{</div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">userId</span>: <span style="color: var(--text-muted);">string</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">firstName</span>: <span style="color: var(--text-muted);">string</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">lastName</span>: <span style="color: var(--text-muted);">string</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">fullName</span>: <span style="color: var(--text-muted);">string</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">position</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">employeeNumber</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">avatarURL</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">phone</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">emergencyContactFirstName</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">emergencyContactLastName</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">emergencyContactNumber</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">relationToContact</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">allergies</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">certifications</span>: [{</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--accent);">name</span>, <span style="color: var(--accent);">status</span>, <span style="color: var(--accent);">dateIssued</span>, <span style="color: var(--accent);">dateExpires</span>,</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--accent);">neverExpires</span>, <span style="color: var(--accent);">trainingProvider</span></div>
+                <div>&nbsp;&nbsp;}]</div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">companyName</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>&nbsp;&nbsp;<span style="color: var(--accent);">companyPhone</span>: <span style="color: var(--text-muted);">string?</span></div>
+                <div>}</div>
+            </div>
+        </div>
+
+        <div class="dev-note">
+            <div class="dn-title">Dev Notes — Data Sources</div>
+            <strong>User fields</strong> (firstName, lastName, position, employeeNumber): <code>prisma.user</code><br>
+            <strong>Phone:</strong> Resolved from <code>DocumentAttributeValue</code> (slug: "user-phone" or "phone")<br>
+            <strong>Emergency contact + allergies:</strong> <code>prisma.employeeData</code> (linked via user)<br>
+            <strong>Certifications:</strong> <code>prisma.userCertification</code> with <code>include: { Certification, TrainingProvider }</code><br>
+            <strong>Company name/phone:</strong> <code>prisma.instanceSettings</code> (from activeInstance context)<br>
+            <strong>Avatar:</strong> <code>prisma.user.avatarURL</code> (Asset relation) — get signed URL
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 6: SECURITY -->
+    <div class="section" id="security">
+        <h2>6. Security & Privacy Matrix</h2>
+        <p class="desc">Strict data exposure controls ensure only safety-relevant information is visible on the public page.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data Field</th>
+                    <th>Included in JWT?</th>
+                    <th>Shown on Public Page?</th>
+                    <th>Justification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Name, Position, Employee #</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Identity verification</td>
+                </tr>
+                <tr>
+                    <td>Photo / Avatar</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Visual identification</td>
+                </tr>
+                <tr>
+                    <td>Certifications</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Compliance verification</td>
+                </tr>
+                <tr>
+                    <td>Emergency Contact</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Safety-critical info</td>
+                </tr>
+                <tr>
+                    <td>Allergies</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Medical emergency info</td>
+                </tr>
+                <tr>
+                    <td>Worker Phone</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Contact in field</td>
+                </tr>
+                <tr>
+                    <td>Company Name & Phone</td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td><span class="wf-badge wf-badge-green">Yes</span></td>
+                    <td>Employer contact</td>
+                </tr>
+                <tr style="background: var(--danger-light);">
+                    <td>Pay Rate / Salary</td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td>Confidential financial data</td>
+                </tr>
+                <tr style="background: var(--danger-light);">
+                    <td>Home Address</td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td>Privacy — PII</td>
+                </tr>
+                <tr style="background: var(--danger-light);">
+                    <td>Date of Birth</td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td>Privacy — PII</td>
+                </tr>
+                <tr style="background: var(--danger-light);">
+                    <td>SSN / SIN</td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td>Never exposed</td>
+                </tr>
+                <tr style="background: var(--danger-light);">
+                    <td>Timesheets / HR Docs</td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td><span class="wf-badge wf-badge-red">No</span></td>
+                    <td>Internal operational data</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="dev-note" style="margin-top: 1.25rem;">
+            <div class="dn-title">Security Notes</div>
+            <strong>JWT Secret:</strong> <code>PUBLIC_LINK_SECRET</code> env var (already configured for equipment QR)<br>
+            <strong>Token Expiry:</strong> <code>exp: "never"</code> for stickers — physical objects with controlled distribution. Admin can regenerate to invalidate old tokens.<br>
+            <strong>Auth Redirect:</strong> If scanned by an authenticated Appello user, they see the full admin profile, not the limited public view.<br>
+            <strong>Data Staleness:</strong> JWT embeds data at generation time. Show "Data as of [date]" on public page. Sticker can be regenerated to refresh.
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- SECTION 7: REUSE MAP -->
+    <div class="section" id="comparison">
+        <h2>7. File Change Map</h2>
+        <p class="desc">Every file that needs to be created or modified, with the existing equipment QR file as reference.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Action</th>
+                    <th>Equipment QR Reference</th>
+                    <th>Effort</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">PersonnelQRCode.tsx</td>
+                    <td><span class="wf-badge wf-badge-blue">New</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">EquipmentQRCode.tsx</td>
+                    <td>Small</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">pdf-export.ts</td>
+                    <td><span class="wf-badge wf-badge-amber">Extend</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">Case "equipment-qr-code" (lines 1296-1328)</td>
+                    <td>Small</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">pdfQueries.ts</td>
+                    <td><span class="wf-badge wf-badge-amber">Extend</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">GET_EQUIPMENT_QR_CODE_INFO</td>
+                    <td>Small</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">users/[id]/index.tsx</td>
+                    <td><span class="wf-badge wf-badge-amber">Extend</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">equipment/[id]/index.tsx (ExportButton)</td>
+                    <td>Trivial</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">User.ts (GraphQL)</td>
+                    <td><span class="wf-badge wf-badge-amber">Extend</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">—</td>
+                    <td>Small</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">guest/personnel/[id].tsx</td>
+                    <td><span class="wf-badge wf-badge-blue">New</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">guest/equipment/[id].tsx</td>
+                    <td>Small</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">PersonnelPublicProfile.tsx</td>
+                    <td><span class="wf-badge wf-badge-blue">New</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">EquipmentDetails (publicVer)</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">AuthContext.tsx (mobile)</td>
+                    <td><span class="wf-badge wf-badge-amber">Extend</span></td>
+                    <td style="font-family: var(--mono); font-size: 0.72rem;">publicRoutes array</td>
+                    <td>Trivial</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px; background: var(--success-light); border: 1px solid #bbf7d0; border-radius: var(--radius); padding: 14px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--success-text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">No New Dependencies</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">react-qr-code, jsonwebtoken, GuestLayout, ExportButton — all already installed and in use.</div>
+            </div>
+            <div style="flex: 1; min-width: 200px; background: var(--success-light); border: 1px solid #bbf7d0; border-radius: var(--radius); padding: 14px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--success-text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">No Database Migration</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">All required fields (emergency contact, phone, certifications) already exist on User + EmployeeData models.</div>
+            </div>
+            <div style="flex: 1; min-width: 200px; background: var(--info-light); border: 1px solid #bfdbfe; border-radius: var(--radius); padding: 14px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">Total Effort</div>
+                <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent);">1–2 Dev Days</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">3 new files, 5 file extensions</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.topnav a:not(.logo)').forEach(link => {
+    link.addEventListener('click', (e) => {
+        document.querySelectorAll('.topnav a').forEach(l => l.classList.remove('active'));
+        e.target.classList.add('active');
+    });
+});
+</script>
+
+</body>
+</html>
