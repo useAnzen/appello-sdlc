@@ -11,7 +11,7 @@
 
     var path = window.location.pathname;
     var page = path.split("/").pop() || "index.html";
-    if (page === "" || page === "appello-approvals") page = "index.html";
+    if (page === "" || page === "appello-sdlc") page = "index.html";
 
     var isDocPage = path.indexOf("/docs/") !== -1;
 

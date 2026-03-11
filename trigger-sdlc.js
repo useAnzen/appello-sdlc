@@ -84,7 +84,7 @@ async function main() {
         desc += `${wp.description}\n\n`;
         desc += `### Linked Artifacts\n\n`;
         desc += `- **Design Spec:** ${wp.spec_url}\n`;
-        desc += `- **Pipeline Board:** https://useanzen.github.io/appello-approvals/pipeline.html\n\n`;
+        desc += `- **Pipeline Board:** https://useanzen.github.io/appello-sdlc/pipeline.html\n\n`;
 
         if (plans.length > 0) {
             desc += `### Implementation Plans\n\n`;

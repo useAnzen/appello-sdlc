@@ -239,10 +239,10 @@ VALUES
      'Safety & Incident Management',
      'Comprehensive safety incident tracking, OSHA compliance, investigation workflows, and corrective actions',
      'pending_review',
-     'https://useanzen.github.io/appello-approvals/docs/safety-incident-management.html'),
+     'https://useanzen.github.io/appello-sdlc/docs/safety-incident-management.html'),
     ('personnel-qr-codes',
      'Personnel QR Codes',
      'Scannable QR stickers for personnel showing certifications, emergency contacts, and compliance status',
      'pending_review',
-     'https://useanzen.github.io/appello-approvals/docs/personnel-qr-codes.html')
+     'https://useanzen.github.io/appello-sdlc/docs/personnel-qr-codes.html')
 ON CONFLICT (slug) DO NOTHING;

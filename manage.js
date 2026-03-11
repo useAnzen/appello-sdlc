@@ -663,7 +663,7 @@
                 var payload = {
                     title: ticket.jira_key + " - " + (ticket.jira_summary || wp.title),
                     description: desc,
-                    repository: "useAnzen/appello-approvals",
+                    repository: "useAnzen/appello-sdlc",
                     sourceTicketId: ticket.jira_key,
                     labels: ["work-package", wp.slug]
                 };
