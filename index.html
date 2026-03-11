@@ -9,38 +9,146 @@
     <link rel="stylesheet" href="./shared.css">
     <style>
         .doc-grid {
-            display: grid;
-            gap: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .doc-card {
+        .wp-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
-            padding: 24px;
+            padding: 20px 24px;
             text-decoration: none;
             color: inherit;
-            display: flex;
-            gap: 20px;
+            display: block;
             transition: border-color 0.15s, box-shadow 0.15s;
         }
 
-        .doc-card:hover {
+        .wp-card:hover {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-light);
         }
 
-        .doc-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--accent-light);
-            border-radius: 10px;
+        .wp-row-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .wp-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .wp-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        .wp-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .wp-right {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+        }
+
+        .wp-date {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .wp-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .wp-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .wp-tag svg {
+            width: 11px;
+            height: 11px;
             flex-shrink: 0;
-            font-size: 20px;
-            align-self: flex-start;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .tag-jira { background: #ede9fe; color: #5b21b6; }
+        .tag-pr-open { background: #dbeafe; color: #1e40af; }
+        .tag-pr-merged { background: #d1fae5; color: #065f46; }
+        .tag-customer { background: #fef3c7; color: #92400e; }
+        .tag-rice-high { background: #dcfce7; color: #166534; }
+        .tag-rice-med { background: #fef3c7; color: #92400e; }
+        .tag-rice-low { background: #fee2e2; color: #991b1b; }
+        .tag-fb { background: #fce7f3; color: #9d174d; }
+
+        .wp-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .wp-links a {
+            font-size: 11px;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 1px 6px;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+
+        .wp-links .jira-link {
+            color: #5b21b6;
+            background: #f5f3ff;
+        }
+        .wp-links .jira-link:hover { background: #ede9fe; }
+
+        .wp-links .pr-link {
+            color: #1e40af;
+            background: #eff6ff;
+        }
+        .wp-links .pr-link:hover { background: #dbeafe; }
+
+        .wp-links .pr-link.merged { color: #065f46; background: #f0fdf4; }
+        .wp-links .pr-link.merged:hover { background: #dcfce7; }
+
+        .wp-links .link-sep {
+            width: 1px;
+            height: 12px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .wp-rice-detail {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: flex;
+            gap: 12px;
         }
 
         .filter-bar {
@@ -74,30 +182,6 @@
             box-shadow: 0 0 0 3px var(--accent-light);
         }
 
-        .filter-bar .sort-btn {
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 7px 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--surface);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .filter-bar .sort-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .filter-bar .sort-btn.active {
-            background: var(--accent-light);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
         .stats-row {
             display: flex;
             gap: 12px;
@@ -111,18 +195,18 @@
             border-radius: var(--radius);
             padding: 14px 20px;
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
         }
 
         .stat-card .stat-value {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1.2;
         }
 
         .stat-card .stat-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             color: var(--text-muted);
             margin-top: 2px;
@@ -180,7 +264,7 @@
         if (!cfg) return;
 
         var API = cfg.supabaseUrl + "/rest/v1";
-        var headers = {
+        var hdrs = {
             apikey: cfg.supabaseKey,
             Authorization: "Bearer " + cfg.supabaseKey
         };
@@ -195,26 +279,13 @@
             deployed: "Deployed"
         };
 
-        var DOC_ICON = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:24px;height:24px;color:#2563eb"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>';
-
-        var ICON_TICKET = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" /></svg>';
-
-        var ICON_PR = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>';
-
-        var ICON_CUSTOMER = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>';
-
-        var ICON_RICE = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>';
-
-        var ICON_FEEDBACK = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>';
-
         var allPackages = [];
         var allTickets = [];
         var allPrs = [];
         var allFeedback = [];
 
         function formatDate(iso) {
-            var d = new Date(iso);
-            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         }
 
         function esc(s) {
@@ -224,16 +295,9 @@
         }
 
         function calcRice(wp) {
-            if (wp.rice_reach == null || wp.rice_impact == null || wp.rice_confidence == null || wp.rice_effort == null) return null;
-            if (wp.rice_effort === 0) return null;
-            return (wp.rice_reach * wp.rice_impact * (wp.rice_confidence / 100)) / wp.rice_effort;
-        }
-
-        function riceClass(score) {
-            if (score == null) return "";
-            if (score >= 5) return "rice-high";
-            if (score >= 2) return "rice-med";
-            return "rice-low";
+            var r = wp.rice_reach, i = wp.rice_impact, c = wp.rice_confidence, e = wp.rice_effort;
+            if (r == null || i == null || c == null || e == null || +e === 0) return null;
+            return (+r * +i * (+c / 100)) / +e;
         }
 
         function groupBy(arr, key) {
@@ -244,6 +308,17 @@
                 map[k].push(item);
             });
             return map;
+        }
+
+        function svg(name) {
+            var icons = {
+                ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/></svg>',
+                pr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>',
+                customer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>',
+                rice: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>',
+                feedback: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>'
+            };
+            return icons[name] || "";
         }
 
         function renderStats(packages) {
@@ -272,14 +347,12 @@
             var feedbackBySlug = groupBy(allFeedback, "document_slug");
 
             var filtered = allPackages.filter(function (wp) {
-                if (statusFilter && wp.status !== statusFilter) return false;
-                return true;
+                return !statusFilter || wp.status === statusFilter;
             });
 
             if (sortBy === "rice") {
                 filtered.sort(function (a, b) {
-                    var ra = calcRice(a);
-                    var rb = calcRice(b);
+                    var ra = calcRice(a), rb = calcRice(b);
                     if (ra == null && rb == null) return 0;
                     if (ra == null) return 1;
                     if (rb == null) return -1;
@@ -299,7 +372,6 @@
 
             grid.innerHTML = filtered.map(function (wp) {
                 var statusLabel = STATUS_LABELS[wp.status] || wp.status;
-                var badgeClass = "badge badge-" + wp.status;
                 var href = wp.spec_url || ("./docs/" + wp.slug + ".html");
                 var wpTickets = ticketsByWp[wp.id] || [];
                 var wpPrs = prsByWp[wp.id] || [];
@@ -309,121 +381,90 @@
                 var prMerged = wpPrs.filter(function (p) { return p.pr_status === "merged"; }).length;
                 var rice = calcRice(wp);
 
-                var chips = "";
-
-                if (wpTickets.length > 0) {
-                    chips += '<span class="chip chip-ticket">' + ICON_TICKET + wpTickets.length + ' ticket' + (wpTickets.length > 1 ? 's' : '') + '</span>';
-                }
-
-                if (prOpen > 0) {
-                    chips += '<span class="chip chip-pr-open">' + ICON_PR + prOpen + ' PR open</span>';
-                }
-                if (prMerged > 0) {
-                    chips += '<span class="chip chip-pr-merged">' + ICON_PR + prMerged + ' merged</span>';
-                }
-
-                if (wp.customer_affected) {
-                    chips += '<span class="chip chip-customer">' + ICON_CUSTOMER + esc(wp.customer_affected) + '</span>';
-                }
-
+                var tags = "";
+                if (wpTickets.length) tags += '<span class="wp-tag tag-jira">' + svg("ticket") + ' ' + wpTickets.length + " ticket" + (wpTickets.length > 1 ? "s" : "") + '</span>';
+                if (prOpen) tags += '<span class="wp-tag tag-pr-open">' + svg("pr") + ' ' + prOpen + " PR open</span>";
+                if (prMerged) tags += '<span class="wp-tag tag-pr-merged">' + svg("pr") + ' ' + prMerged + " merged</span>";
+                if (wp.customer_affected) tags += '<span class="wp-tag tag-customer">' + svg("customer") + ' ' + esc(wp.customer_affected) + "</span>";
                 if (rice != null) {
-                    chips += '<span class="chip chip-rice ' + riceClass(rice) + '">' + ICON_RICE + 'RICE ' + rice.toFixed(1) + '</span>';
+                    var rcls = rice >= 5 ? "tag-rice-high" : rice >= 2 ? "tag-rice-med" : "tag-rice-low";
+                    tags += '<span class="wp-tag ' + rcls + '">' + svg("rice") + ' RICE ' + rice.toFixed(1) + "</span>";
                 }
+                if (pendingFb.length) tags += '<span class="wp-tag tag-fb">' + svg("feedback") + ' ' + pendingFb.length + " feedback</span>";
 
-                if (pendingFb.length > 0) {
-                    chips += '<span class="chip chip-feedback">' + ICON_FEEDBACK + pendingFb.length + ' feedback</span>';
-                }
-
-                var footer = "";
-                if (wpTickets.length > 0 || wpPrs.length > 0) {
-                    var footerItems = "";
+                var links = "";
+                if (wpTickets.length || wpPrs.length) {
+                    var items = "";
                     wpTickets.forEach(function (t) {
-                        footerItems += '<a class="ticket-link" href="' + esc(t.jira_url) + '" target="_blank" onclick="event.stopPropagation();event.preventDefault();window.open(this.href)">' + esc(t.jira_key) + '</a>';
+                        items += '<a class="jira-link" href="' + esc(t.jira_url) + '" target="_blank" onclick="event.stopPropagation();event.preventDefault();window.open(this.href)">' + esc(t.jira_key) + "</a>";
                     });
-                    if (wpTickets.length > 0 && wpPrs.length > 0) {
-                        footerItems += '<span class="footer-sep"></span>';
-                    }
+                    if (wpTickets.length && wpPrs.length) items += '<span class="link-sep"></span>';
                     wpPrs.forEach(function (p) {
-                        var cls = p.pr_status === "merged" ? "pr-merged" : (p.pr_status === "closed" ? "pr-closed" : "pr-open");
-                        footerItems += '<a class="pr-link ' + cls + '" href="' + esc(p.pr_url) + '" target="_blank" onclick="event.stopPropagation();event.preventDefault();window.open(this.href)">#' + p.pr_number + '</a>';
+                        var cls = p.pr_status === "merged" ? " merged" : "";
+                        items += '<a class="pr-link' + cls + '" href="' + esc(p.pr_url) + '" target="_blank" onclick="event.stopPropagation();event.preventDefault();window.open(this.href)">#' + p.pr_number + "</a>";
                     });
-                    footer = '<div class="doc-card-footer">' + footerItems + '</div>';
+                    links = '<div class="wp-links">' + items + "</div>";
                 }
 
                 var riceDetail = "";
-                if (wp.rice_reach != null && wp.rice_impact != null && wp.rice_confidence != null && wp.rice_effort != null) {
-                    riceDetail = '<div class="doc-card-footer" style="font-size:11px;color:var(--text-muted);gap:12px">' +
-                        '<span>R:' + wp.rice_reach + '</span>' +
-                        '<span>I:' + Number(wp.rice_impact).toFixed(1) + '</span>' +
-                        '<span>C:' + wp.rice_confidence + '%</span>' +
-                        '<span>E:' + Number(wp.rice_effort).toFixed(1) + '</span>' +
-                    '</div>';
+                if (rice != null) {
+                    riceDetail = '<div class="wp-rice-detail">' +
+                        "<span>Reach: " + wp.rice_reach + "</span>" +
+                        "<span>Impact: " + Number(wp.rice_impact).toFixed(1) + "</span>" +
+                        "<span>Confidence: " + wp.rice_confidence + "%</span>" +
+                        "<span>Effort: " + Number(wp.rice_effort).toFixed(1) + "</span>" +
+                    "</div>";
                 }
 
-                return '<a href="' + esc(href) + '" class="doc-card">' +
-                    '<div class="doc-icon">' + DOC_ICON + '</div>' +
-                    '<div class="doc-card-body">' +
-                        '<div class="doc-card-header">' +
-                            '<div>' +
-                                '<h3>' + esc(wp.title) + '</h3>' +
-                                '<p>' + esc(wp.description) + '</p>' +
-                            '</div>' +
-                            '<div class="doc-card-right">' +
-                                '<div class="date">' + formatDate(wp.created_at) + '</div>' +
-                                '<div class="' + badgeClass + '">' + esc(statusLabel) + '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        (chips ? '<div class="doc-card-chips">' + chips + '</div>' : '') +
-                        footer +
-                        riceDetail +
-                    '</div>' +
-                '</a>';
+                return '<a href="' + esc(href) + '" class="wp-card">' +
+                    '<div class="wp-row-top">' +
+                        '<div class="wp-left">' +
+                            '<div class="wp-title">' + esc(wp.title) + "</div>" +
+                            '<div class="wp-desc">' + esc(wp.description) + "</div>" +
+                        "</div>" +
+                        '<div class="wp-right">' +
+                            '<span class="wp-date">' + formatDate(wp.created_at) + "</span>" +
+                            '<span class="badge badge-' + wp.status + '">' + esc(statusLabel) + "</span>" +
+                        "</div>" +
+                    "</div>" +
+                    (tags ? '<div class="wp-tags">' + tags + "</div>" : "") +
+                    links +
+                    riceDetail +
+                "</a>";
             }).join("");
         }
 
         function loadAll() {
             return Promise.all([
-                fetch(API + "/work_packages?select=*&order=created_at.desc", { headers: headers }).then(function (r) { return r.json(); }),
-                fetch(API + "/work_package_tickets?select=*&order=created_at.asc", { headers: headers }).then(function (r) { return r.json(); }),
-                fetch(API + "/work_package_prs?select=*&order=created_at.asc", { headers: headers }).then(function (r) { return r.json(); }),
-                fetch(API + "/feedback?select=*&order=created_at.desc", { headers: headers }).then(function (r) { return r.json(); })
+                fetch(API + "/work_packages?select=*&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }),
+                fetch(API + "/work_package_tickets?select=*&order=created_at.asc", { headers: hdrs }).then(function (r) { return r.json(); }),
+                fetch(API + "/work_package_prs?select=*&order=created_at.asc", { headers: hdrs }).then(function (r) { return r.json(); }),
+                fetch(API + "/feedback?select=*&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); })
             ]);
         }
 
-        function init(results) {
-            allPackages = Array.isArray(results[0]) ? results[0] : [];
-            allTickets = Array.isArray(results[1]) ? results[1] : [];
-            allPrs = Array.isArray(results[2]) ? results[2] : [];
-            allFeedback = Array.isArray(results[3]) ? results[3] : [];
-
-            if (allPackages.length === 0) {
-                renderFallback();
-                return;
-            }
-
-            document.getElementById("filter-bar").style.display = "";
-            renderStats(allPackages);
-            renderCards();
-
-            document.getElementById("filter-status").addEventListener("change", renderCards);
-            document.getElementById("sort-by").addEventListener("change", renderCards);
-        }
-
         loadAll()
-            .then(init)
+            .then(function (results) {
+                allPackages = Array.isArray(results[0]) ? results[0] : [];
+                allTickets = Array.isArray(results[1]) ? results[1] : [];
+                allPrs = Array.isArray(results[2]) ? results[2] : [];
+                allFeedback = Array.isArray(results[3]) ? results[3] : [];
+
+                if (!allPackages.length) { renderFallback(); return; }
+
+                document.getElementById("filter-bar").style.display = "";
+                renderStats(allPackages);
+                renderCards();
+
+                document.getElementById("filter-status").addEventListener("change", renderCards);
+                document.getElementById("sort-by").addEventListener("change", renderCards);
+            })
             .catch(function () { renderFallback(); });
 
         function renderFallback() {
-            var grid = document.getElementById("doc-list");
-            grid.innerHTML =
-                '<a href="./docs/safety-incident-management.html" class="doc-card">' +
-                    '<div class="doc-icon">' + DOC_ICON + '</div>' +
-                    '<div class="doc-card-body"><div class="doc-card-header"><div><h3>Safety & Incident Management</h3><p>Comprehensive safety incident tracking, OSHA compliance, investigation workflows</p></div><div class="doc-card-right"><div class="date">Mar 11, 2026</div><div class="badge badge-pending_review">Pending Review</div></div></div></div>' +
-                '</a>' +
-                '<a href="./docs/personnel-qr-codes.html" class="doc-card">' +
-                    '<div class="doc-icon">' + DOC_ICON + '</div>' +
-                    '<div class="doc-card-body"><div class="doc-card-header"><div><h3>Personnel QR Codes</h3><p>Scannable QR stickers for personnel showing certifications, emergency contacts</p></div><div class="doc-card-right"><div class="date">Mar 11, 2026</div><div class="badge badge-pending_review">Pending Review</div></div></div></div>' +
-                '</a>';
+            document.getElementById("doc-list").innerHTML =
+                '<a href="./docs/safety-incident-management.html" class="wp-card"><div class="wp-row-top"><div class="wp-left"><div class="wp-title">Safety & Incident Management</div><div class="wp-desc">Comprehensive safety incident tracking, OSHA compliance, investigation workflows</div></div><div class="wp-right"><span class="wp-date">Mar 11, 2026</span><span class="badge badge-pending_review">Pending Review</span></div></div></a>' +
+                '<a href="./docs/personnel-qr-codes.html" class="wp-card"><div class="wp-row-top"><div class="wp-left"><div class="wp-title">Personnel QR Codes</div><div class="wp-desc">Scannable QR stickers for personnel showing certifications, emergency contacts</div></div><div class="wp-right"><span class="wp-date">Mar 11, 2026</span><span class="badge badge-pending_review">Pending Review</span></div></div></a>';
         }
     })();
     </script>
