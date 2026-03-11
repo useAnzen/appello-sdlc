@@ -295,9 +295,10 @@
         }
 
         function calcRice(wp) {
-            var r = wp.rice_reach, i = wp.rice_impact, c = wp.rice_confidence, e = wp.rice_effort;
-            if (r == null || i == null || c == null || e == null || +e === 0) return null;
-            return (+r * +i * (+c / 100)) / +e;
+            var r = +wp.rice_reach, i = +wp.rice_impact, c = +wp.rice_confidence, e = +wp.rice_effort;
+            if (!r && !i && !c) return null;
+            if (!e) return null;
+            return (r * i * (c / 100)) / e;
         }
 
         function groupBy(arr, key) {
@@ -385,7 +386,8 @@
                 if (wpTickets.length) tags += '<span class="wp-tag tag-jira">' + svg("ticket") + ' ' + wpTickets.length + " ticket" + (wpTickets.length > 1 ? "s" : "") + '</span>';
                 if (prOpen) tags += '<span class="wp-tag tag-pr-open">' + svg("pr") + ' ' + prOpen + " PR open</span>";
                 if (prMerged) tags += '<span class="wp-tag tag-pr-merged">' + svg("pr") + ' ' + prMerged + " merged</span>";
-                if (wp.customer_affected) tags += '<span class="wp-tag tag-customer">' + svg("customer") + ' ' + esc(wp.customer_affected) + "</span>";
+                var customers = wp.customer_sources || [];
+                if (customers.length) tags += '<span class="wp-tag tag-customer">' + svg("customer") + ' ' + esc(customers.join(", ")) + "</span>";
                 if (rice != null) {
                     var rcls = rice >= 5 ? "tag-rice-high" : rice >= 2 ? "tag-rice-med" : "tag-rice-low";
                     tags += '<span class="wp-tag ' + rcls + '">' + svg("rice") + ' RICE ' + rice.toFixed(1) + "</span>";
@@ -409,10 +411,10 @@
                 var riceDetail = "";
                 if (rice != null) {
                     riceDetail = '<div class="wp-rice-detail">' +
-                        "<span>Reach: " + wp.rice_reach + "</span>" +
-                        "<span>Impact: " + Number(wp.rice_impact).toFixed(1) + "</span>" +
-                        "<span>Confidence: " + wp.rice_confidence + "%</span>" +
-                        "<span>Effort: " + Number(wp.rice_effort).toFixed(1) + "</span>" +
+                        "<span>R: " + wp.rice_reach + "</span>" +
+                        "<span>I: " + Number(wp.rice_impact).toFixed(1) + "</span>" +
+                        "<span>C: " + wp.rice_confidence + "%</span>" +
+                        "<span>E: " + Number(wp.rice_effort).toFixed(1) + "</span>" +
                     "</div>";
                 }
 

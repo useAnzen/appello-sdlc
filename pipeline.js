@@ -81,9 +81,10 @@
     }
 
     function calcRice(wp) {
-        if (wp.rice_reach == null || wp.rice_impact == null || wp.rice_confidence == null || wp.rice_effort == null) return null;
-        if (wp.rice_effort === 0) return null;
-        return (wp.rice_reach * wp.rice_impact * (wp.rice_confidence / 100)) / wp.rice_effort;
+        var r = +wp.rice_reach, i = +wp.rice_impact, c = +wp.rice_confidence, e = +wp.rice_effort;
+        if (!r && !i && !c) return null;
+        if (!e) return null;
+        return (r * i * (c / 100)) / e;
     }
 
     function renderCard(wp, tickets, prs, fb) {
@@ -102,8 +103,9 @@
         if (prMerged > 0) {
             tags += '<span class="card-tag tag-pr-merged">' + prMerged + ' merged</span>';
         }
-        if (wp.customer_affected) {
-            tags += '<span class="card-tag" style="background:#fef3c7;color:#92400e">' + esc(wp.customer_affected) + '</span>';
+        var customers = wp.customer_sources || [];
+        if (customers.length) {
+            tags += '<span class="card-tag" style="background:#fef3c7;color:#92400e">' + esc(customers.join(", ")) + '</span>';
         }
         if (rice != null) {
             var riceColor = rice >= 5 ? "background:#d1fae5;color:#065f46" : rice >= 2 ? "background:#fef3c7;color:#92400e" : "background:#fee2e2;color:#991b1b";

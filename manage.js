@@ -90,7 +90,7 @@
             '<button class="btn-secondary" id="mg-add-dep">Add Dep</button>' +
             '<div class="mg-tickets" id="mg-dep-list"></div>' +
             '<div class="mg-sep"></div>' +
-            '<div class="mg-group"><label>Customer</label><input id="mg-customer" placeholder="Customer name" style="width:140px"></div>' +
+            '<div class="mg-group"><label>Customers</label><input id="mg-customer" placeholder="Comma-separated" style="width:180px"></div>' +
             '<div class="mg-sep"></div>' +
             '<div class="mg-group"><label>RICE — Reach</label><input id="mg-rice-reach" type="number" min="0" placeholder="# users" style="width:70px"></div>' +
             '<div class="mg-group"><label>Impact</label><select id="mg-rice-impact" style="width:90px"><option value="">—</option><option value="3">Massive (3)</option><option value="2">High (2)</option><option value="1">Medium (1)</option><option value="0.5">Low (0.5)</option><option value="0.25">Minimal (0.25)</option></select></div>' +
@@ -189,7 +189,8 @@
                 document.getElementById("mg-planned-start").value = wp.planned_start || "";
                 document.getElementById("mg-planned-end").value = wp.planned_end || "";
                 document.getElementById("mg-priority").value = wp.priority || 0;
-                document.getElementById("mg-customer").value = wp.customer_affected || "";
+                var cs = wp.customer_sources || [];
+                document.getElementById("mg-customer").value = cs.join(", ");
                 document.getElementById("mg-rice-reach").value = wp.rice_reach != null ? wp.rice_reach : "";
                 document.getElementById("mg-rice-impact").value = wp.rice_impact != null ? wp.rice_impact : "";
                 document.getElementById("mg-rice-confidence").value = wp.rice_confidence != null ? wp.rice_confidence : "";
@@ -588,14 +589,15 @@
         var impact = document.getElementById("mg-rice-impact").value;
         var confidence = document.getElementById("mg-rice-confidence").value;
         var effort = document.getElementById("mg-rice-effort").value;
-        var customer = document.getElementById("mg-customer").value.trim();
+        var customerRaw = document.getElementById("mg-customer").value.trim();
+        var customerArr = customerRaw ? customerRaw.split(",").map(function (s) { return s.trim(); }).filter(Boolean) : [];
 
         var body = {
-            rice_reach: reach ? parseInt(reach) : null,
-            rice_impact: impact ? parseFloat(impact) : null,
-            rice_confidence: confidence ? parseInt(confidence) : null,
-            rice_effort: effort ? parseFloat(effort) : null,
-            customer_affected: customer || null,
+            rice_reach: reach ? parseInt(reach) : 0,
+            rice_impact: impact ? parseFloat(impact) : 0,
+            rice_confidence: confidence ? parseInt(confidence) : 0,
+            rice_effort: effort ? parseFloat(effort) : 1,
+            customer_sources: customerArr,
             updated_at: new Date().toISOString()
         };
 
@@ -610,7 +612,7 @@
             wp.rice_impact = body.rice_impact;
             wp.rice_confidence = body.rice_confidence;
             wp.rice_effort = body.rice_effort;
-            wp.customer_affected = body.customer_affected;
+            wp.customer_sources = customerArr;
             toast("RICE & customer saved", true);
         })
         .catch(function () { toast("Failed to save RICE data", false); });
