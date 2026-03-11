@@ -7,14 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
 <style>
 :root {
-    --bg: #f8f9fb;
     --bg-white: #ffffff;
     --bg-panel: #f1f3f7;
     --bg-dark: #1e293b;
-    --accent: #2563eb;
-    --accent-light: #dbeafe;
     --accent-dark: #1d4ed8;
     --orange: #f59e0b;
     --orange-light: #fef3c7;
@@ -28,36 +27,16 @@
     --info-light: #dbeafe;
     --purple: #8b5cf6;
     --purple-light: #ede9fe;
-    --text: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
-    --border: #e2e8f0;
+    --text: var(--text-primary);
     --border-strong: #cbd5e1;
     --font: "Inter", -apple-system, sans-serif;
     --mono: "JetBrains Mono", monospace;
-    --radius: 8px;
-    --radius-lg: 12px;
     --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; }
 
-/* NAV */
-.topnav {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--bg-white); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; height: 52px; padding: 0 1.5rem; gap: 1.5rem;
-    box-shadow: var(--shadow);
-}
-.topnav .logo { font-weight: 800; font-size: 0.85rem; color: var(--accent); letter-spacing: 0.04em; white-space: nowrap; }
-.topnav .logo span { color: var(--text-muted); font-weight: 500; }
-.topnav .nav-links { display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; }
-.topnav .nav-links::-webkit-scrollbar { display: none; }
-.topnav a { color: var(--text-muted); text-decoration: none; font-size: 0.72rem; font-weight: 500; padding: 6px 10px; border-radius: 6px; white-space: nowrap; transition: all 0.15s; }
-.topnav a:hover, .topnav a.active { color: var(--accent); background: var(--accent-light); }
+.topnav { display: none; }
 
 /* LAYOUT */
 .page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
@@ -254,22 +233,12 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
 </head>
 <body>
 
-<div class="topnav">
-    <div class="logo">APPELLO <span>/ Design Spec</span></div>
-    <div class="nav-links">
-        <a href="#report-form">Report Form</a>
-        <a href="#incident-list">List View</a>
-        <a href="#incident-detail">Detail Page</a>
-        <a href="#lifecycle">Lifecycle</a>
-        <a href="#investigation">Investigation</a>
-        <a href="#capa">Actions</a>
-        <a href="#dashboard">Dashboard</a>
-        <a href="#osha">OSHA</a>
-        <a href="#notifications">Notifications</a>
-        <a href="#permissions">Permissions</a>
-    </div>
-</div>
+<div id="app-header"></div>
 
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
 <div class="page">
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -1206,11 +1175,17 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
 </div>
 
 </div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
 <script src="../feedback.js"></script>
 <script src="../manage.js"></script>
-<script src="../context-panel.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

@@ -6,103 +6,14 @@
     <title>Appello — Pipeline</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./shared.css">
     <style>
-        :root {
-            --bg: #f1f5f9;
-            --surface: #ffffff;
-            --border: #e2e6ea;
-            --text-primary: #1a2332;
-            --text-secondary: #5a6577;
-            --text-muted: #94a3b8;
-            --accent: #2563eb;
-            --accent-light: #eff4ff;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-
-        .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 24px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .brand-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--accent);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .brand h1 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-        }
-
-        .brand h1 span {
-            color: var(--text-secondary);
-            font-weight: 400;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-link {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            transition: all 0.15s;
-        }
-
-        .nav-link:hover { background: var(--accent-light); color: var(--accent); }
-        .nav-link.active { background: var(--accent-light); color: var(--accent); }
-
         .board {
             display: flex;
             gap: 16px;
             padding: 24px;
             overflow-x: auto;
-            min-height: calc(100vh - 90px);
+            min-height: calc(100vh - 76px);
             align-items: flex-start;
         }
 
@@ -147,7 +58,7 @@
             margin-left: auto;
         }
 
-        .card {
+        .pipe-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -156,9 +67,9 @@
             transition: border-color 0.15s, box-shadow 0.15s;
         }
 
-        .card:hover {
+        .pipe-card:hover {
             border-color: var(--accent);
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+            box-shadow: 0 2px 8px rgba(37,99,235,0.08);
         }
 
         .card-title {
@@ -196,9 +107,9 @@
         }
 
         .tag-ticket { background: #dbeafe; color: #1e40af; }
-        .tag-pr-open { background: #fef3c7; color: #92400e; }
-        .tag-pr-merged { background: #d1fae5; color: #065f46; }
-        .tag-pr-closed { background: #fee2e2; color: #991b1b; }
+        .tag-pr-open { background: var(--warning-light); color: var(--warning-text); }
+        .tag-pr-merged { background: var(--success-light); color: var(--success-text); }
+        .tag-pr-closed { background: var(--danger-light); color: var(--danger-text); }
         .tag-feedback { background: #f3e8ff; color: #6b21a8; }
 
         .card-links {
@@ -225,11 +136,9 @@
             display: none;
         }
 
-        .card.open .card-expanded { display: block; }
+        .pipe-card.open .card-expanded { display: block; }
 
-        .detail-section {
-            margin-bottom: 10px;
-        }
+        .detail-section { margin-bottom: 10px; }
 
         .detail-label {
             font-size: 10px;
@@ -263,43 +172,17 @@
             padding: 1px 6px;
             border-radius: 4px;
         }
-
-        .loading {
-            text-align: center;
-            padding: 80px 24px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .dot-draft { background: #94a3b8; }
-        .dot-pending { background: #f59e0b; }
-        .dot-changes { background: #ef4444; }
-        .dot-approved { background: #10b981; }
-        .dot-dev { background: #3b82f6; }
-        .dot-review { background: #8b5cf6; }
-        .dot-deployed { background: #059669; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-inner">
-            <a href="./" class="brand">
-                <div class="brand-icon">A</div>
-                <h1>Appello <span>Pipeline</span></h1>
-            </a>
-            <nav class="nav-links">
-                <a href="./" class="nav-link">Work Packages</a>
-                <a href="./pipeline.html" class="nav-link active">Pipeline</a>
-                <a href="./roadmap.html" class="nav-link">Roadmap</a>
-            </nav>
-        </div>
-    </header>
+    <div id="app-header" data-full-width></div>
 
     <div class="board" id="board">
         <div class="loading">Loading pipeline...</div>
     </div>
 
     <script src="./feedback-config.js"></script>
+    <script src="./shared.js"></script>
     <script src="./pipeline.js"></script>
 </body>
 </html>

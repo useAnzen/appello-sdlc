@@ -68,19 +68,43 @@ async function main() {
     }
     console.log(`Found ${tickets.length} linked ticket(s).`);
 
-    // 3. Build rich description with all linked context
-    const allTicketKeys = tickets.map(t => t.jira_key).join(", ");
+    // 3. Load wp_documents for plans and canvases
+    const docsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/wp_documents?work_package_id=eq.${wp.id}&order=doc_type.asc,sort_order.asc`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    const wpDocs = await docsRes.json();
+    const plans = Array.isArray(wpDocs) ? wpDocs.filter(d => d.doc_type === "plan") : [];
+    const canvases = Array.isArray(wpDocs) ? wpDocs.filter(d => d.doc_type === "canvas") : [];
+    console.log(`Found ${plans.length} plan(s) and ${canvases.length} canvas(es).`);
+
+    // 4. Build rich description with all linked context
     function buildDescription(ticket) {
         let desc = `## Work Package: ${wp.title}\n\n`;
         desc += `${wp.description}\n\n`;
         desc += `### Linked Artifacts\n\n`;
         desc += `- **Design Spec:** ${wp.spec_url}\n`;
-        if (wp.implementation_plan_url) desc += `- **Implementation Plan:** ${wp.implementation_plan_url}\n`;
-        if (wp.canvas_url) desc += `- **Canvas / Visualization:** ${wp.canvas_url}\n`;
         desc += `- **Pipeline Board:** https://useanzen.github.io/appello-approvals/pipeline.html\n\n`;
+
+        if (plans.length > 0) {
+            desc += `### Implementation Plans\n\n`;
+            plans.forEach(p => {
+                const preview = p.content.length > 500 ? p.content.substring(0, 500) + "..." : p.content;
+                desc += `#### ${p.title}\n\n${preview}\n\n`;
+            });
+        }
+
+        if (canvases.length > 0) {
+            desc += `### Canvases\n\n`;
+            canvases.forEach(c => {
+                desc += `- **${c.title}** (HTML canvas, ${c.content.length} chars)\n`;
+            });
+            desc += `\n`;
+        }
+
         desc += `### Jira Tickets in this Work Package\n\n`;
         tickets.forEach(t => {
-            const current = t.jira_key === ticket.jira_key ? " ← (this ticket)" : "";
+            const current = t.jira_key === ticket.jira_key ? " \u2190 (this ticket)" : "";
             desc += `- [${t.jira_key}](${t.jira_url}) ${t.jira_summary || ""}${current}\n`;
         });
         if (wp.approved_at) desc += `\n### Approved: ${new Date(wp.approved_at).toLocaleDateString()}\n`;
@@ -88,7 +112,7 @@ async function main() {
         return desc;
     }
 
-    // 4. For each ticket, trigger the AgentC2 SDLC Triage workflow
+    // 5. For each ticket, trigger the AgentC2 SDLC Triage workflow
     for (const ticket of tickets) {
         console.log(`\nDispatching ${ticket.jira_key}...`);
         try {
@@ -139,7 +163,7 @@ async function main() {
         }
     }
 
-    // 5. Update work package status
+    // 6. Update work package status
     await fetch(`${SUPABASE_URL}/rest/v1/work_packages?id=eq.${wp.id}`, {
         method: "PATCH",
         headers: supaHeaders,

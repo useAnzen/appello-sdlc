@@ -32,6 +32,7 @@
     var releases = [];
     var allWorkPackages = [];
     var wpDependencies = [];
+    var wpDocuments = [];
 
     function esc(s) {
         var d = document.createElement("div");
@@ -89,8 +90,42 @@
             '<button class="btn-secondary" id="mg-add-dep">Add Dep</button>' +
             '<div class="mg-tickets" id="mg-dep-list"></div>' +
             '<div class="mg-sep"></div>' +
+            '<button class="btn-secondary" id="mg-add-plan">+ Plan</button>' +
+            '<button class="btn-secondary" id="mg-add-canvas">+ Canvas</button>' +
+            '<div class="mg-tickets" id="mg-doc-list"></div>' +
+            '<div class="mg-sep"></div>' +
             '<button class="btn-success" id="mg-trigger-sdlc">Trigger SDLC</button>' +
             '<span class="mg-toast" id="mg-toast"></span>';
+
+        var docModal = document.createElement("div");
+        docModal.id = "mg-doc-modal";
+        docModal.innerHTML = '<style>' +
+            '#mg-doc-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:20000;align-items:center;justify-content:center;font-family:"Inter",-apple-system,sans-serif}' +
+            '#mg-doc-modal.visible{display:flex}' +
+            '#mg-doc-modal .dm-inner{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}' +
+            '#mg-doc-modal h3{font-size:18px;font-weight:700;margin-bottom:20px;color:#1a2332}' +
+            '#mg-doc-modal .dm-group{margin-bottom:14px}' +
+            '#mg-doc-modal .dm-group label{display:block;font-size:13px;font-weight:600;color:#5a6577;margin-bottom:4px}' +
+            '#mg-doc-modal .dm-group input,#mg-doc-modal .dm-group textarea{width:100%;font-family:inherit;font-size:13px;padding:10px 12px;border:1px solid #e2e6ea;border-radius:8px;outline:none;color:#1a2332}' +
+            '#mg-doc-modal .dm-group textarea{min-height:300px;font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.5;resize:vertical}' +
+            '#mg-doc-modal .dm-group input:focus,#mg-doc-modal .dm-group textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}' +
+            '#mg-doc-modal .dm-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}' +
+            '#mg-doc-modal .dm-actions button{border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}' +
+            '#mg-doc-modal .dm-btn-cancel{background:#e2e8f0;color:#1a2332}' +
+            '#mg-doc-modal .dm-btn-save{background:#2563eb;color:#fff}' +
+            '#mg-doc-modal .dm-btn-delete{background:#ef4444;color:#fff;margin-right:auto}' +
+            '</style>' +
+            '<div class="dm-inner">' +
+                '<h3 id="dm-title">Add Plan</h3>' +
+                '<div class="dm-group"><label for="dm-doc-title">Title</label><input id="dm-doc-title" type="text" placeholder="Document title"></div>' +
+                '<div class="dm-group"><label for="dm-doc-content">Content</label><textarea id="dm-doc-content" placeholder="Paste markdown or HTML content here..."></textarea></div>' +
+                '<div class="dm-actions">' +
+                    '<button class="dm-btn-delete" id="dm-delete" style="display:none">Delete</button>' +
+                    '<button class="dm-btn-cancel" id="dm-cancel">Cancel</button>' +
+                    '<button class="dm-btn-save" id="dm-save">Save</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(docModal);
 
         document.body.prepend(bar);
 
@@ -108,6 +143,14 @@
         document.getElementById("mg-save-planning").addEventListener("click", savePlanning);
         document.getElementById("mg-add-dep").addEventListener("click", addDependency);
         document.getElementById("mg-trigger-sdlc").addEventListener("click", triggerSdlc);
+        document.getElementById("mg-add-plan").addEventListener("click", function () { openDocModal("plan"); });
+        document.getElementById("mg-add-canvas").addEventListener("click", function () { openDocModal("canvas"); });
+        document.getElementById("dm-cancel").addEventListener("click", closeDocModal);
+        document.getElementById("dm-save").addEventListener("click", saveDocument);
+        document.getElementById("dm-delete").addEventListener("click", deleteDocument);
+        document.getElementById("mg-doc-modal").addEventListener("click", function (e) {
+            if (e.target === this) closeDocModal();
+        });
 
         loadData();
     }
@@ -138,6 +181,7 @@
                 loadReleases();
                 loadAllWorkPackages();
                 loadDependencies();
+                loadDocuments();
             })
             .catch(function () { toast("Failed to load work package", false); });
     }
@@ -377,6 +421,132 @@
             toast("URLs saved", true);
         })
         .catch(function () { toast("Failed to save URLs", false); });
+    }
+
+    var editingDocId = null;
+    var editingDocType = null;
+
+    function loadDocuments() {
+        if (!wp) return;
+        fetch(API + "/wp_documents?work_package_id=eq." + wp.id + "&order=doc_type.asc,sort_order.asc", { headers: headersRead })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                wpDocuments = Array.isArray(data) ? data : [];
+                renderDocuments();
+            });
+    }
+
+    function renderDocuments() {
+        var list = document.getElementById("mg-doc-list");
+        if (!list) return;
+        if (wpDocuments.length === 0) {
+            list.innerHTML = "";
+            return;
+        }
+        list.innerHTML = wpDocuments.map(function (doc) {
+            var icon = doc.doc_type === "plan" ? "\uD83D\uDCDD" : "\uD83C\uDFA8";
+            return '<span class="mg-ticket-pill" style="cursor:pointer" data-doc-id="' + doc.id + '">' +
+                icon + ' ' + esc(doc.title) +
+                '<span class="mg-ticket-x" data-doc-del="' + doc.id + '">&times;</span>' +
+            '</span>';
+        }).join("");
+
+        list.querySelectorAll("[data-doc-id]").forEach(function (pill) {
+            pill.addEventListener("click", function (e) {
+                if (e.target.classList.contains("mg-ticket-x")) return;
+                editDocument(pill.dataset.docId);
+            });
+        });
+
+        list.querySelectorAll("[data-doc-del]").forEach(function (x) {
+            x.addEventListener("click", function (e) {
+                e.stopPropagation();
+                var docId = x.dataset.docDel;
+                if (!confirm("Delete this document?")) return;
+                fetch(API + "/wp_documents?id=eq." + docId, { method: "DELETE", headers: headers })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error();
+                        toast("Document deleted", true);
+                        loadDocuments();
+                    })
+                    .catch(function () { toast("Failed to delete document", false); });
+            });
+        });
+    }
+
+    function openDocModal(docType, doc) {
+        editingDocType = docType;
+        editingDocId = doc ? doc.id : null;
+        var title = (doc ? "Edit " : "Add ") + (docType === "plan" ? "Plan" : "Canvas");
+        document.getElementById("dm-title").textContent = title;
+        document.getElementById("dm-doc-title").value = doc ? doc.title : "";
+        document.getElementById("dm-doc-content").value = doc ? doc.content : "";
+        document.getElementById("dm-doc-content").placeholder = docType === "plan" ? "Paste markdown content..." : "Paste full HTML content...";
+        document.getElementById("dm-delete").style.display = doc ? "" : "none";
+        document.getElementById("mg-doc-modal").classList.add("visible");
+    }
+
+    function closeDocModal() {
+        document.getElementById("mg-doc-modal").classList.remove("visible");
+        editingDocId = null;
+        editingDocType = null;
+    }
+
+    function editDocument(docId) {
+        var doc = wpDocuments.find(function (d) { return d.id === docId; });
+        if (!doc) return;
+        openDocModal(doc.doc_type, doc);
+    }
+
+    function saveDocument() {
+        if (!wp) return;
+        var title = document.getElementById("dm-doc-title").value.trim();
+        var content = document.getElementById("dm-doc-content").value;
+        if (!title) { toast("Title is required", false); return; }
+
+        var body = {
+            title: title,
+            content: content,
+            updated_at: new Date().toISOString()
+        };
+
+        var url, method;
+        if (editingDocId) {
+            url = API + "/wp_documents?id=eq." + editingDocId;
+            method = "PATCH";
+        } else {
+            url = API + "/wp_documents";
+            method = "POST";
+            body.work_package_id = wp.id;
+            body.doc_type = editingDocType;
+            body.sort_order = wpDocuments.filter(function (d) { return d.doc_type === editingDocType; }).length;
+        }
+
+        fetch(url, {
+            method: method,
+            headers: headers,
+            body: JSON.stringify(body)
+        })
+        .then(function (r) {
+            if (!r.ok) throw new Error();
+            toast(editingDocId ? "Document updated" : "Document created", true);
+            closeDocModal();
+            loadDocuments();
+        })
+        .catch(function () { toast("Failed to save document", false); });
+    }
+
+    function deleteDocument() {
+        if (!editingDocId) return;
+        if (!confirm("Delete this document?")) return;
+        fetch(API + "/wp_documents?id=eq." + editingDocId, { method: "DELETE", headers: headers })
+            .then(function (r) {
+                if (!r.ok) throw new Error();
+                toast("Document deleted", true);
+                closeDocModal();
+                loadDocuments();
+            })
+            .catch(function () { toast("Failed to delete document", false); });
     }
 
     function triggerSdlc() {

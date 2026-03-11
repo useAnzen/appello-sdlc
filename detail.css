@@ -1,0 +1,236 @@
+/* ── Detail Page Layout ────────────────────────────────────────────── */
+.detail-layout {
+    display: flex;
+    min-height: calc(100vh - 60px);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+#detail-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+}
+
+.sb-back {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sb-back a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.sb-back a:hover {
+    text-decoration: underline;
+}
+
+.sb-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sb-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.sb-section {
+    padding: 12px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.sb-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.sb-link {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.12s;
+}
+
+.sb-link:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.sb-link.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.sb-ext-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 4px 0;
+}
+
+.sb-ext-link:hover {
+    text-decoration: underline;
+}
+
+.sb-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.sb-badge-success { background: var(--success-light); color: var(--success-text); }
+.sb-badge-warning { background: var(--warning-light); color: var(--warning-text); }
+.sb-badge-danger { background: var(--danger-light); color: var(--danger-text); }
+
+.sb-fb-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+.sb-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.sb-manage {
+    padding: 16px 20px;
+}
+
+.sb-manage-link {
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+}
+
+/* ── Main Content Area ────────────────────────────────────────────── */
+.detail-main {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+}
+
+#dynamic-content {
+    padding: 0;
+}
+
+.plan-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.plan-content h1, .plan-content h2, .plan-content h3, .plan-content h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.plan-content h1 { font-size: 1.8rem; }
+.plan-content h2 { font-size: 1.4rem; }
+.plan-content h3 { font-size: 1.15rem; }
+
+.plan-content code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.plan-content pre {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+.plan-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.plan-content ul, .plan-content ol {
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.plan-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+.plan-content th, .plan-content td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.plan-content th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.canvas-frame {
+    width: 100%;
+    height: calc(100vh - 60px);
+    border: none;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .detail-layout {
+        flex-direction: column;
+    }
+
+    #detail-sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .canvas-frame {
+        height: 70vh;
+    }
+}

@@ -178,6 +178,40 @@ CREATE TRIGGER trg_status_history
     AFTER UPDATE ON work_packages
     FOR EACH ROW EXECUTE FUNCTION log_status_change();
 
+-- 8. wp_documents: plans (markdown) and canvases (HTML) per work package
+CREATE TABLE IF NOT EXISTS wp_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    work_package_id UUID NOT NULL REFERENCES work_packages(id) ON DELETE CASCADE,
+    doc_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wpd_work_package ON wp_documents(work_package_id);
+
+ALTER TABLE wp_documents ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wp_documents' AND policyname = 'anon_select_wp_documents') THEN
+        CREATE POLICY "anon_select_wp_documents" ON wp_documents FOR SELECT TO anon USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wp_documents' AND policyname = 'anon_insert_wp_documents') THEN
+        CREATE POLICY "anon_insert_wp_documents" ON wp_documents FOR INSERT TO anon WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wp_documents' AND policyname = 'anon_update_wp_documents') THEN
+        CREATE POLICY "anon_update_wp_documents" ON wp_documents FOR UPDATE TO anon USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'wp_documents' AND policyname = 'anon_delete_wp_documents') THEN
+        CREATE POLICY "anon_delete_wp_documents" ON wp_documents FOR DELETE TO anon USING (true);
+    END IF;
+END $$;
+
+-- 9. Add work_package_id to feedback table for work-package-scoped feedback
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS work_package_id UUID REFERENCES work_packages(id) ON DELETE SET NULL;
+
 -- Seed the 2 existing work packages
 INSERT INTO work_packages (slug, title, description, status, spec_url)
 VALUES

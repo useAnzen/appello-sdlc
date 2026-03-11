@@ -6,122 +6,8 @@
     <title>Appello — Work Packages</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./shared.css">
     <style>
-        :root {
-            --bg: #fafbfc;
-            --surface: #ffffff;
-            --border: #e2e6ea;
-            --text-primary: #1a2332;
-            --text-secondary: #5a6577;
-            --accent: #2563eb;
-            --accent-light: #eff4ff;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-
-        .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 24px 0;
-        }
-
-        .header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--accent);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .brand h1 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.3px;
-        }
-
-        .brand span {
-            color: var(--text-secondary);
-            font-weight: 400;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-link {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            transition: all 0.15s;
-        }
-
-        .nav-link:hover {
-            background: var(--accent-light);
-            color: var(--accent);
-        }
-
-        .nav-link.active {
-            background: var(--accent-light);
-            color: var(--accent);
-        }
-
-        .content {
-            padding: 48px 0;
-        }
-
-        .intro {
-            margin-bottom: 40px;
-        }
-
-        .intro h2 {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-        }
-
-        .intro p {
-            color: var(--text-secondary);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
         .doc-grid {
             display: grid;
             gap: 16px;
@@ -130,7 +16,7 @@
         .doc-card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             padding: 24px;
             text-decoration: none;
             color: inherit;
@@ -157,10 +43,7 @@
             font-size: 20px;
         }
 
-        .doc-info {
-            flex: 1;
-            min-width: 0;
-        }
+        .doc-info { flex: 1; min-width: 0; }
 
         .doc-info h3 {
             font-size: 16px;
@@ -184,89 +67,31 @@
             color: var(--text-secondary);
         }
 
-        .doc-meta .badge {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
-            margin-top: 4px;
-        }
-
-        .badge-draft { background: #f1f5f9; color: #475569; }
-        .badge-pending_review { background: #fef3c7; color: #92400e; }
-        .badge-needs_changes { background: #fee2e2; color: #991b1b; }
-        .badge-approved { background: #d1fae5; color: #065f46; }
-        .badge-in_development { background: #dbeafe; color: #1e40af; }
-        .badge-in_review { background: #ede9fe; color: #5b21b6; }
-        .badge-deployed { background: #d1fae5; color: #065f46; }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 60px 24px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 80px 24px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .footer {
-            border-top: 1px solid var(--border);
-            padding: 24px 0;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
+        .doc-meta .badge { margin-top: 4px; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="header-inner">
-                <div class="brand">
-                    <div class="brand-icon">A</div>
-                    <h1>Appello <span>Work Packages</span></h1>
-                </div>
-                <nav class="nav-links">
-                    <a href="./" class="nav-link active">Work Packages</a>
-                    <a href="./pipeline.html" class="nav-link">Pipeline</a>
-                    <a href="./roadmap.html" class="nav-link">Roadmap</a>
-                </nav>
-            </div>
-        </div>
-    </header>
+    <div id="app-header"></div>
 
-    <main class="content">
-        <div class="container">
-            <div class="intro">
+    <main class="app-content">
+        <div class="app-container">
+            <div class="page-header">
                 <h2>Work Packages</h2>
                 <p>Review and approve work packages shared by your Appello team.</p>
             </div>
 
             <div class="doc-grid" id="doc-list">
-                <div class="loading-spinner">Loading work packages...</div>
+                <div class="loading">Loading work packages...</div>
             </div>
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            &copy; 2026 Appello. All rights reserved.
-        </div>
+    <footer class="app-footer">
+        <div class="app-container">&copy; 2026 Appello. All rights reserved.</div>
     </footer>
 
     <script src="./feedback-config.js"></script>
+    <script src="./shared.js"></script>
     <script>
     (function () {
         var cfg = window.FEEDBACK_CONFIG;
@@ -310,7 +135,8 @@
             grid.innerHTML = packages.map(function (wp) {
                 var statusLabel = STATUS_LABELS[wp.status] || wp.status;
                 var badgeClass = "badge badge-" + wp.status;
-                return '<a href="' + esc(wp.spec_url) + '" class="doc-card">' +
+                var href = wp.spec_url || ("./docs/" + wp.slug + ".html");
+                return '<a href="' + esc(href) + '" class="doc-card">' +
                     '<div class="doc-icon">' + DOC_ICON + '</div>' +
                     '<div class="doc-info">' +
                         '<h3>' + esc(wp.title) + '</h3>' +
@@ -333,21 +159,19 @@
                     renderFallback();
                 }
             })
-            .catch(function () {
-                renderFallback();
-            });
+            .catch(function () { renderFallback(); });
 
         function renderFallback() {
             var grid = document.getElementById("doc-list");
             grid.innerHTML =
                 '<a href="./docs/safety-incident-management.html" class="doc-card">' +
                     '<div class="doc-icon">' + DOC_ICON + '</div>' +
-                    '<div class="doc-info"><h3>Safety & Incident Management — Design Specification</h3><p>Comprehensive safety incident tracking, OSHA compliance, investigation workflows, and corrective actions</p></div>' +
+                    '<div class="doc-info"><h3>Safety & Incident Management</h3><p>Comprehensive safety incident tracking, OSHA compliance, investigation workflows</p></div>' +
                     '<div class="doc-meta"><div class="date">Mar 11, 2026</div><div class="badge badge-pending_review">Pending Review</div></div>' +
                 '</a>' +
                 '<a href="./docs/personnel-qr-codes.html" class="doc-card">' +
                     '<div class="doc-icon">' + DOC_ICON + '</div>' +
-                    '<div class="doc-info"><h3>Personnel QR Codes — Design Specification</h3><p>Scannable QR stickers for personnel showing certifications, emergency contacts, and compliance status</p></div>' +
+                    '<div class="doc-info"><h3>Personnel QR Codes</h3><p>Scannable QR stickers for personnel showing certifications, emergency contacts</p></div>' +
                     '<div class="doc-meta"><div class="date">Mar 11, 2026</div><div class="badge badge-pending_review">Pending Review</div></div>' +
                 '</a>';
         }

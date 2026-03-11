@@ -17,6 +17,10 @@
         rejected: { label: "Rejected", bg: "#fee2e2", color: "#991b1b", icon: "\u2717" }
     };
 
+    function getWorkPackageId() {
+        return window.DETAIL_WP ? window.DETAIL_WP.id : null;
+    }
+
     function timeAgo(d) {
         var m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
         if (m < 1) return "just now";
@@ -98,7 +102,7 @@
 
             '<button id="fbp-toggle"><span>FEEDBACK</span><span class="fbp-badge" id="fbp-badge-count">0</span></button>' +
             '<div id="fbp-panel">' +
-                '<div class="fbp-header"><h3>Document Feedback</h3><button class="fbp-close" id="fbp-close">\u2715</button></div>' +
+                '<div class="fbp-header"><h3>Work Package Feedback</h3><button class="fbp-close" id="fbp-close">\u2715</button></div>' +
                 '<div class="fbp-tabs">' +
                     '<button class="fbp-tab active" data-tab="compose">Leave Feedback</button>' +
                     '<button class="fbp-tab" data-tab="history">History <span id="fbp-hist-count"></span></button>' +
@@ -190,16 +194,20 @@
             btn.disabled = true;
             btn.textContent = "Sending\u2026";
 
+            var wpId = getWorkPackageId();
+            var payload = {
+                document_slug: slug,
+                reviewer_name: name,
+                reviewer_company: company || null,
+                status: selectedStatus,
+                comment: comment
+            };
+            if (wpId) payload.work_package_id = wpId;
+
             fetch(API, {
                 method: "POST",
                 headers: headers,
-                body: JSON.stringify({
-                    document_slug: slug,
-                    reviewer_name: name,
-                    reviewer_company: company || null,
-                    status: selectedStatus,
-                    comment: comment
-                })
+                body: JSON.stringify(payload)
             })
             .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
             .then(function () {
@@ -225,7 +233,12 @@
     }
 
     function loadFeed() {
-        fetch(API + "?document_slug=eq." + slug + "&order=created_at.desc", {
+        var wpId = getWorkPackageId();
+        var queryParam = wpId
+            ? "?work_package_id=eq." + wpId + "&order=created_at.desc"
+            : "?document_slug=eq." + slug + "&order=created_at.desc";
+
+        fetch(API + queryParam, {
             headers: { apikey: cfg.supabaseKey, Authorization: "Bearer " + cfg.supabaseKey }
         })
         .then(function (r) { return r.json(); })
@@ -246,6 +259,7 @@
 
             feed.innerHTML = data.map(function (item) {
                 var m = STATUS_META[item.status];
+                if (!m) return "";
                 var isResolved = item.is_addressed;
                 var resolvedBar = "";
                 if (isResolved) {
@@ -272,9 +286,24 @@
         .catch(function () {});
     }
 
+    function waitForWpAndBuild() {
+        if (window.DETAIL_WP || !document.getElementById("detail-sidebar")) {
+            build();
+        } else {
+            var attempts = 0;
+            var interval = setInterval(function () {
+                attempts++;
+                if (window.DETAIL_WP || attempts > 20) {
+                    clearInterval(interval);
+                    build();
+                }
+            }, 250);
+        }
+    }
+
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", build);
+        document.addEventListener("DOMContentLoaded", waitForWpAndBuild);
     } else {
-        build();
+        waitForWpAndBuild();
     }
 })();

@@ -5,54 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Appello — Personnel QR Codes — Design Specification</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
 <style>
 :root {
-    --bg: #f8f7f4;
     --bg-white: #ffffff;
-    --bg-panel: #fafaf8;
-    --text: #1a1a1a;
-    --text-secondary: #5a5a5a;
-    --text-muted: #999;
-    --border: #e5e3de;
-    --border-strong: #d0cdc7;
-    --accent: #2563eb;
-    --accent-light: #eff6ff;
-    --danger: #dc2626;
-    --danger-light: #fef2f2;
-    --danger-text: #991b1b;
-    --success: #16a34a;
-    --success-light: #f0fdf4;
-    --success-text: #166534;
-    --warning: #d97706;
-    --warning-light: #fffbeb;
-    --warning-text: #92400e;
+    --bg-panel: #fafbfc;
+    --text: var(--text-primary);
+    --text-secondary: #5a6577;
+    --text-muted: #94a3b8;
+    --border-strong: #cbd5e1;
     --info: #2563eb;
     --info-light: #eff6ff;
-    --font: "DM Sans", sans-serif;
+    --font: "Inter", -apple-system, sans-serif;
     --mono: "JetBrains Mono", monospace;
-    --radius: 8px;
-    --radius-lg: 12px;
     --radius-xl: 16px;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
     --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
 
-.topnav {
-    position: sticky; top: 0; z-index: 100;
-    background: #1a1a1a; color: white;
-    display: flex; align-items: center; gap: 0; padding: 0 1.5rem;
-    font-size: 0.78rem; font-weight: 500; height: 48px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-.topnav .logo { font-weight: 800; font-size: 1rem; letter-spacing: -0.02em; margin-right: 2rem; color: white; text-decoration: none; }
-.topnav a { color: rgba(255,255,255,0.65); text-decoration: none; padding: 14px 14px; transition: color 0.15s; white-space: nowrap; }
-.topnav a:hover, .topnav a.active { color: white; }
-.topnav a.active { border-bottom: 2px solid var(--accent); }
-.topnav .tag { background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; margin-left: auto; letter-spacing: 0.04em; }
+.topnav { display: none; }
 
 .page { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
 
@@ -334,18 +306,12 @@ tr:last-child td { border-bottom: none; }
 </head>
 <body>
 
-<div class="topnav">
-    <a class="logo" href="#">Appello</a>
-    <a href="#overview" class="active">Overview</a>
-    <a href="#sticker">QR Sticker</a>
-    <a href="#public-page">Public Page</a>
-    <a href="#desktop">Desktop View</a>
-    <a href="#flow">Data Flow</a>
-    <a href="#security">Security</a>
-    <a href="#comparison">Reuse Map</a>
-    <span class="tag">Q21030-11261</span>
-</div>
+<div id="app-header"></div>
 
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
 <div class="page">
 
     <!-- HEADER -->
@@ -946,20 +912,17 @@ tr:last-child td { border-bottom: none; }
     </div>
 
 </div>
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
 <script src="../feedback.js"></script>
 <script src="../manage.js"></script>
-<script src="../context-panel.js"></script>
-
-<script>
-document.querySelectorAll('.topnav a:not(.logo)').forEach(link => {
-    link.addEventListener('click', (e) => {
-        document.querySelectorAll('.topnav a').forEach(l => l.classList.remove('active'));
-        e.target.classList.add('active');
-    });
-});
-</script>
 
 </body>
 </html>
