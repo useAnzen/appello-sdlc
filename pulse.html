@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appello — Pulse Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./shared.css">
+    <style>
+        .pulse-hero {
+            background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 50%, #fce7f3 100%);
+            border: 1px solid #c7d2fe;
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            margin-bottom: 28px;
+        }
+
+        .pulse-hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .pulse-hero-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pulse-hero-title .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+        }
+
+        .pulse-hero-title h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e1b4b;
+            margin: 0;
+        }
+
+        .pulse-hero-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #dcfce7;
+            color: #166534;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .score-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .score-card {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 18px 22px;
+            border: 1px solid #e2e6ea;
+        }
+
+        .score-card .sc-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            font-family: "JetBrains Mono", monospace;
+        }
+
+        .score-card .sc-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .score-card .sc-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title .panel-count {
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--bg);
+            color: var(--text-muted);
+            padding: 1px 7px;
+            border-radius: 10px;
+        }
+
+        .constraint-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .constraint-item:last-child { border-bottom: none; }
+
+        .constraint-rule {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .constraint-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .milestone-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .milestone-item:last-child { border-bottom: none; }
+
+        .milestone-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .milestone-dot.pending { background: #94a3b8; }
+        .milestone-dot.in_progress { background: #3b82f6; }
+        .milestone-dot.completed { background: #10b981; }
+
+        .milestone-info { flex: 1; }
+
+        .milestone-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .milestone-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .milestone-progress {
+            font-size: 12px;
+            font-weight: 600;
+            font-family: "JetBrains Mono", monospace;
+            color: var(--text-secondary);
+        }
+
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .agent-item:last-child { border-bottom: none; }
+
+        .agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .agent-info { flex: 1; }
+
+        .agent-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-role {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .agent-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .run-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 12px;
+        }
+
+        .run-item:last-child { border-bottom: none; }
+
+        .run-status {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .run-status.success { background: #dcfce7; color: #166534; }
+        .run-status.failed { background: #fee2e2; color: #991b1b; }
+        .run-status.partial { background: #fef3c7; color: #92400e; }
+        .run-status.queued { background: #f1f5f9; color: #475569; }
+        .run-status.coding { background: #dbeafe; color: #1e40af; }
+        .run-status.dispatched { background: #e0e7ff; color: #3730a3; }
+
+        .run-wp { font-weight: 600; color: var(--text-primary); flex: 1; }
+        .run-trust { font-family: "JetBrains Mono", monospace; color: var(--text-secondary); }
+        .run-date { color: var(--text-muted); white-space: nowrap; }
+
+        .empty-panel {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-header"></div>
+
+    <main class="app-content">
+        <div class="app-container">
+            <div id="pulse-content">
+                <div class="loading">Loading Pulse dashboard...</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="app-container">&copy; 2026 Appello. All rights reserved.</div>
+    </footer>
+
+    <script src="./feedback-config.js"></script>
+    <script src="./shared.js"></script>
+    <script>
+    (function () {
+        var cfg = window.FEEDBACK_CONFIG;
+        if (!cfg) return;
+        var API = cfg.supabaseUrl + "/rest/v1";
+        var hdrs = { apikey: cfg.supabaseKey, Authorization: "Bearer " + cfg.supabaseKey };
+
+        function esc(s) { var d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+        function fmtDate(iso) { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+
+        Promise.all([
+            fetch(API + "/pipeline_runs?select=*&order=dispatched_at.desc&limit=50", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; }),
+            fetch(API + "/pulse_constraints?select=*&is_active=eq.true&order=created_at.desc&limit=20", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; }),
+            fetch(API + "/work_packages?select=id,slug,title,status&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; })
+        ]).then(function (results) {
+            var runs = results[0] || [];
+            var constraints = results[1] || [];
+            var wps = results[2] || [];
+            var wpMap = {};
+            wps.forEach(function (w) { wpMap[w.id] = w; });
+
+            var now = Date.now();
+            var window14d = 14 * 24 * 60 * 60 * 1000;
+            var recent = runs.filter(function (r) { return (now - new Date(r.dispatched_at).getTime()) < window14d; });
+            var completed = recent.filter(function (r) { return r.status === "success" || r.status === "failed" || r.status === "partial"; });
+            var successful = completed.filter(function (r) { return r.status === "success" && r.trust_score >= 0.7; });
+            var rate = completed.length ? Math.round(100 * successful.length / completed.length) : 0;
+            var inFlight = recent.filter(function (r) { return r.status === "queued" || r.status === "dispatched" || r.status === "coding"; }).length;
+            var avgTrust = completed.length ? (completed.reduce(function (sum, r) { return sum + (r.trust_score || 0); }, 0) / completed.length) : 0;
+
+            var agents = [
+                { name: "SDLC God Agent", role: "Orchestrator", color: "#6366f1", letter: "G" },
+                { name: "Signal Harvester", role: "Scout", color: "#0ea5e9", letter: "H" },
+                { name: "Signal Synthesizer", role: "Analyst", color: "#8b5cf6", letter: "S" },
+                { name: "WP Decomposer", role: "Decomposer", color: "#f59e0b", letter: "D" },
+                { name: "Spec Writer", role: "Executor", color: "#10b981", letter: "W" },
+                { name: "Pipeline Dispatcher", role: "Executor", color: "#ef4444", letter: "P" },
+                { name: "Result Analyst", role: "Auditor", color: "#ec4899", letter: "R" },
+                { name: "Prioritizer", role: "Analyst", color: "#14b8a6", letter: "I" }
+            ];
+
+            var milestones = [
+                { title: "First Pipeline Success", target: 1, current: successful.length >= 1 ? 1 : 0, status: successful.length >= 1 ? "completed" : "pending" },
+                { title: "10 Pipeline Runs", target: 10, current: Math.min(runs.length, 10), status: runs.length >= 10 ? "completed" : "in_progress" },
+                { title: "50% Success Rate", target: 50, current: rate, status: rate >= 50 ? "completed" : "pending" },
+                { title: "80% Target Score", target: 80, current: rate, status: rate >= 80 ? "completed" : "pending" }
+            ];
+
+            var html = '';
+
+            html += '<div class="pulse-hero">' +
+                '<div class="pulse-hero-top">' +
+                    '<div class="pulse-hero-title"><span class="dot"></span><h2>SDLC Software Factory</h2></div>' +
+                    '<span class="pulse-hero-badge">Active</span>' +
+                '</div>' +
+                '<div class="score-row">' +
+                    '<div class="score-card"><div class="sc-value">' + rate + '%</div><div class="sc-label">Success Rate (14d)</div><div class="sc-sub">Target: 80%</div></div>' +
+                    '<div class="score-card"><div class="sc-value">' + successful.length + '</div><div class="sc-label">Merged (14d)</div><div class="sc-sub">' + completed.length + ' total completed</div></div>' +
+                    '<div class="score-card"><div class="sc-value">' + inFlight + '</div><div class="sc-label">In Flight</div><div class="sc-sub">' + runs.length + ' all-time runs</div></div>' +
+                    '<div class="score-card"><div class="sc-value">' + avgTrust.toFixed(2) + '</div><div class="sc-label">Avg Trust Score</div><div class="sc-sub">Threshold: 0.70</div></div>' +
+                    '<div class="score-card"><div class="sc-value">' + constraints.length + '</div><div class="sc-label">Active Constraints</div><div class="sc-sub">Learned from pipeline outcomes</div></div>' +
+                '</div>' +
+            '</div>';
+
+            html += '<div class="grid-2col">';
+
+            html += '<div class="panel"><div class="panel-title">Recent Pipeline Runs <span class="panel-count">' + runs.length + '</span></div>';
+            if (runs.length) {
+                html += runs.slice(0, 15).map(function (r) {
+                    var wp = wpMap[r.work_package_id];
+                    var wpTitle = wp ? wp.title : (r.work_package_id || "—").substring(0, 8);
+                    return '<div class="run-item">' +
+                        '<span class="run-status ' + r.status + '">' + r.status + '</span>' +
+                        '<span class="run-wp">' + esc(wpTitle) + '</span>' +
+                        (r.trust_score != null ? '<span class="run-trust">' + Number(r.trust_score).toFixed(2) + '</span>' : '') +
+                        '<span class="run-date">' + fmtDate(r.dispatched_at) + '</span>' +
+                    '</div>';
+                }).join("");
+            } else {
+                html += '<div class="empty-panel">No pipeline runs yet. Approve work packages to begin.</div>';
+            }
+            html += '</div>';
+
+            html += '<div class="panel"><div class="panel-title">Constraint Library <span class="panel-count">' + constraints.length + '</span></div>';
+            if (constraints.length) {
+                html += constraints.slice(0, 10).map(function (c) {
+                    return '<div class="constraint-item">' +
+                        '<div class="constraint-rule">' + esc(c.constraint_text) + '</div>' +
+                        '<div class="constraint-meta">' +
+                            '<span>' + esc(c.category) + '</span>' +
+                            '<span>Confidence: ' + (c.confidence || 0.5) + '</span>' +
+                            '<span>Validated: ' + (c.times_validated || 0) + 'x</span>' +
+                        '</div>' +
+                    '</div>';
+                }).join("");
+            } else {
+                html += '<div class="empty-panel">No constraints yet. Constraints are learned from pipeline outcomes.</div>';
+            }
+            html += '</div>';
+
+            html += '</div>';
+
+            html += '<div class="grid-2col">';
+
+            html += '<div class="panel"><div class="panel-title">Agent Collective <span class="panel-count">' + agents.length + '</span></div>';
+            html += agents.map(function (a) {
+                return '<div class="agent-item">' +
+                    '<div class="agent-avatar" style="background:' + a.color + '">' + a.letter + '</div>' +
+                    '<div class="agent-info"><div class="agent-name">' + esc(a.name) + '</div><div class="agent-role">' + esc(a.role) + '</div></div>' +
+                '</div>';
+            }).join("");
+            html += '</div>';
+
+            html += '<div class="panel"><div class="panel-title">Milestones</div>';
+            html += milestones.map(function (m) {
+                return '<div class="milestone-item">' +
+                    '<span class="milestone-dot ' + m.status + '"></span>' +
+                    '<div class="milestone-info"><div class="milestone-title">' + esc(m.title) + '</div></div>' +
+                    '<span class="milestone-progress">' + m.current + ' / ' + m.target + '</span>' +
+                '</div>';
+            }).join("");
+            html += '</div>';
+
+            html += '</div>';
+
+            document.getElementById("pulse-content").innerHTML = html;
+        });
+    })();
+    </script>
+</body>
+</html>

@@ -35,7 +35,9 @@
             fetch(API + "/work_packages?select=*&order=created_at.desc", { headers: headers }).then(function (r) { return r.json(); }),
             fetch(API + "/work_package_tickets?select=*&order=created_at.asc", { headers: headers }).then(function (r) { return r.json(); }),
             fetch(API + "/work_package_prs?select=*&order=created_at.asc", { headers: headers }).then(function (r) { return r.json(); }),
-            fetch(API + "/feedback?select=*&order=created_at.desc", { headers: headers }).then(function (r) { return r.json(); })
+            fetch(API + "/feedback?select=*&order=created_at.desc", { headers: headers }).then(function (r) { return r.json(); }),
+            fetch(API + "/pipeline_runs?select=*&order=dispatched_at.desc&limit=50", { headers: headers }).then(function (r) { return r.json(); }).catch(function () { return []; }),
+            fetch(API + "/pulse_constraints?select=*&is_active=eq.true&order=created_at.desc&limit=5", { headers: headers }).then(function (r) { return r.json(); }).catch(function () { return []; })
         ]);
     }
 
@@ -205,12 +207,42 @@
         });
     }
 
+    function renderPulseToolbar(runs, constraints) {
+        var board = document.getElementById("board");
+        var now = Date.now();
+        var window14d = 14 * 24 * 60 * 60 * 1000;
+        var recent = runs.filter(function (r) { return (now - new Date(r.dispatched_at).getTime()) < window14d; });
+        var completed = recent.filter(function (r) { return r.status === "success" || r.status === "failed" || r.status === "partial"; });
+        var successful = completed.filter(function (r) { return r.status === "success" && r.trust_score >= 0.7; });
+        var rate = completed.length ? Math.round(100 * successful.length / completed.length) : 0;
+
+        var barHtml = '<div style="padding:12px 24px 0;display:flex;align-items:center;gap:16px;font-size:13px;">' +
+            '<span style="width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse-glow 2s infinite;"></span>' +
+            '<strong style="color:#3730a3;">Pulse</strong>' +
+            '<span style="width:1px;height:20px;background:#c7d2fe;"></span>' +
+            '<span>Success Rate: <strong>' + rate + '%</strong></span>' +
+            '<span>Merged: <strong>' + successful.length + '</strong></span>' +
+            '<span>Runs: <strong>' + runs.length + '</strong></span>';
+
+        if (constraints.length) {
+            barHtml += '<span style="width:1px;height:20px;background:#c7d2fe;"></span>' +
+                '<span style="color:#5b21b6;font-weight:600;">Latest constraint:</span> ' +
+                '<span style="font-size:12px;color:#475569;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">' +
+                esc(constraints[0].constraint_text) + '</span>';
+        }
+
+        barHtml += '<a href="./pulse.html" style="margin-left:auto;font-size:12px;font-weight:600;color:#3730a3;text-decoration:none;">Dashboard &rarr;</a></div>';
+        board.insertAdjacentHTML("beforebegin", barHtml);
+    }
+
     loadAll()
         .then(function (results) {
             var packages = Array.isArray(results[0]) ? results[0] : [];
             var tickets = Array.isArray(results[1]) ? results[1] : [];
             var prs = Array.isArray(results[2]) ? results[2] : [];
             var feedback = Array.isArray(results[3]) ? results[3] : [];
+            var pipelineRuns = Array.isArray(results[4]) ? results[4] : [];
+            var constraints = Array.isArray(results[5]) ? results[5] : [];
 
             if (packages.length === 0) {
                 document.getElementById("board").innerHTML =
@@ -218,6 +250,7 @@
                 return;
             }
 
+            renderPulseToolbar(pipelineRuns, constraints);
             renderBoard(packages, tickets, prs, feedback);
             syncPrStatuses(prs);
         })

@@ -3,7 +3,8 @@
         { label: "Work Packages", href: "./" },
         { label: "Pipeline", href: "./pipeline.html" },
         { label: "Roadmap", href: "./roadmap.html" },
-        { label: "Releases", href: "./releases.html" }
+        { label: "Releases", href: "./releases.html" },
+        { label: "Pulse", href: "./pulse.html" }
     ];
 
     var placeholder = document.getElementById("app-header");

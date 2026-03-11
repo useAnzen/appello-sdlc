@@ -103,6 +103,13 @@
         .tag-rice-med { background: #fef3c7; color: #92400e; }
         .tag-rice-low { background: #fee2e2; color: #991b1b; }
         .tag-fb { background: #fce7f3; color: #9d174d; }
+        .tag-source { background: #e0e7ff; color: #3730a3; }
+        .tag-readiness-ready { background: #dcfce7; color: #166534; }
+        .tag-readiness-needs-spec { background: #fef3c7; color: #92400e; }
+        .tag-readiness-unknown { background: #f1f5f9; color: #475569; }
+        .tag-readiness-too-large { background: #fee2e2; color: #991b1b; }
+        .tag-ai-rice { background: #e0e7ff; color: #3730a3; border: 1px dashed #818cf8; }
+        .tag-sub-count { background: #f0f9ff; color: #0369a1; }
 
         .wp-links {
             display: flex;
@@ -149,6 +156,104 @@
             margin-top: 6px;
             display: flex;
             gap: 12px;
+        }
+
+        .pulse-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #eef2ff, #faf5ff);
+            border: 1px solid #c7d2fe;
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .pulse-bar .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+
+        .pulse-bar .pulse-label {
+            font-weight: 700;
+            color: #3730a3;
+        }
+
+        .pulse-bar .pulse-score {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .pulse-bar .pulse-sep {
+            width: 1px;
+            height: 20px;
+            background: #c7d2fe;
+        }
+
+        .pulse-bar .pulse-metric {
+            color: var(--text-secondary);
+        }
+
+        .pulse-bar .pulse-metric strong {
+            color: var(--text-primary);
+        }
+
+        .wp-children {
+            margin-left: 28px;
+            border-left: 2px solid #e2e6ea;
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wp-children .wp-card {
+            padding: 14px 18px;
+            border-radius: 8px;
+        }
+
+        .wp-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--accent-light);
+            border: none;
+            margin-top: 8px;
+        }
+
+        .wp-toggle:hover {
+            background: #dbeafe;
+        }
+
+        .wp-source-refs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .wp-source-ref {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background: #e0e7ff;
+            color: #3730a3;
         }
 
         .filter-bar {
@@ -223,6 +328,7 @@
                 <p>Review and approve work packages shared by your Appello team.</p>
             </div>
 
+            <div id="pulse-bar"></div>
             <div class="stats-row" id="stats-row" style="display:none"></div>
 
             <div class="filter-bar" id="filter-bar" style="display:none">
@@ -283,6 +389,7 @@
         var allTickets = [];
         var allPrs = [];
         var allFeedback = [];
+        var allPipelineRuns = [];
 
         function formatDate(iso) {
             return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -296,6 +403,13 @@
 
         function calcRice(wp) {
             var r = +wp.rice_reach, i = +wp.rice_impact, c = +wp.rice_confidence, e = +wp.rice_effort;
+            if (!r && !i && !c) return null;
+            if (!e) return null;
+            return (r * i * (c / 100)) / e;
+        }
+
+        function calcAiRice(wp) {
+            var r = +wp.ai_rice_reach, i = +wp.ai_rice_impact, c = +wp.ai_rice_confidence, e = +wp.ai_rice_effort;
             if (!r && !i && !c) return null;
             if (!e) return null;
             return (r * i * (c / 100)) / e;
@@ -340,6 +454,41 @@
                 '<div class="stat-card"><div class="stat-value">' + withRice + '/' + total + '</div><div class="stat-label">RICE Scored</div></div>';
         }
 
+        function renderPulseBar() {
+            var bar = document.getElementById("pulse-bar");
+            if (!allPipelineRuns.length) {
+                bar.innerHTML = '<div class="pulse-bar">' +
+                    '<span class="pulse-dot"></span>' +
+                    '<span class="pulse-label">SDLC Pulse</span>' +
+                    '<span class="pulse-sep"></span>' +
+                    '<span class="pulse-metric">No pipeline runs yet &mdash; <a href="./pulse.html">view dashboard</a></span>' +
+                '</div>';
+                return;
+            }
+            var now = Date.now();
+            var window14d = 14 * 24 * 60 * 60 * 1000;
+            var recent = allPipelineRuns.filter(function (r) {
+                return (now - new Date(r.dispatched_at).getTime()) < window14d;
+            });
+            var completed = recent.filter(function (r) { return r.status === "success" || r.status === "failed" || r.status === "partial"; });
+            var successful = completed.filter(function (r) { return r.status === "success" && r.trust_score >= 0.7; });
+            var rate = completed.length ? Math.round(100 * successful.length / completed.length) : 0;
+            var inFlight = recent.filter(function (r) { return r.status === "queued" || r.status === "dispatched" || r.status === "coding"; }).length;
+
+            bar.innerHTML = '<div class="pulse-bar">' +
+                '<span class="pulse-dot"></span>' +
+                '<span class="pulse-label">SDLC Pulse</span>' +
+                '<span class="pulse-sep"></span>' +
+                '<span class="pulse-score">Success Rate: ' + rate + '%</span>' +
+                '<span class="pulse-sep"></span>' +
+                '<span class="pulse-metric"><strong>' + successful.length + '</strong> merged (14d)</span>' +
+                '<span class="pulse-metric"><strong>' + completed.length + '</strong> completed</span>' +
+                (inFlight ? '<span class="pulse-metric"><strong>' + inFlight + '</strong> in flight</span>' : '') +
+                '<span class="pulse-sep"></span>' +
+                '<a href="./pulse.html" style="font-size:12px;font-weight:600;color:#3730a3;text-decoration:none;">Dashboard &rarr;</a>' +
+            '</div>';
+        }
+
         function renderCards() {
             var statusFilter = document.getElementById("filter-status").value;
             var sortBy = document.getElementById("sort-by").value;
@@ -348,7 +497,8 @@
             var feedbackBySlug = groupBy(allFeedback, "document_slug");
 
             var filtered = allPackages.filter(function (wp) {
-                return !statusFilter || wp.status === statusFilter;
+                if (statusFilter && wp.status !== statusFilter) return false;
+                return !wp.parent_work_package_id;
             });
 
             if (sortBy === "rice") {
@@ -382,15 +532,28 @@
                 var prMerged = wpPrs.filter(function (p) { return p.pr_status === "merged"; }).length;
                 var rice = calcRice(wp);
 
+                var childCount = allPackages.filter(function (c) { return c.parent_work_package_id === wp.id; }).length;
+
                 var tags = "";
+                if (childCount) tags += '<span class="wp-tag tag-sub-count">' + childCount + " sub-package" + (childCount > 1 ? "s" : "") + "</span>";
                 if (wpTickets.length) tags += '<span class="wp-tag tag-jira">' + svg("ticket") + ' ' + wpTickets.length + " ticket" + (wpTickets.length > 1 ? "s" : "") + '</span>';
                 if (prOpen) tags += '<span class="wp-tag tag-pr-open">' + svg("pr") + ' ' + prOpen + " PR open</span>";
                 if (prMerged) tags += '<span class="wp-tag tag-pr-merged">' + svg("pr") + ' ' + prMerged + " merged</span>";
                 var customers = wp.customer_sources || [];
-                if (customers.length) tags += '<span class="wp-tag tag-customer">' + svg("customer") + ' ' + esc(customers.join(", ")) + "</span>";
+                if (Array.isArray(customers) && customers.length) tags += '<span class="wp-tag tag-customer">' + svg("customer") + ' ' + esc(customers.join(", ")) + "</span>";
+                if (wp.source_type) tags += '<span class="wp-tag tag-source">' + esc(wp.source_type) + "</span>";
+                var readiness = wp.pipeline_readiness || "unknown";
+                if (readiness !== "unknown") {
+                    var rCls = readiness === "ready" ? "tag-readiness-ready" : readiness === "needs-spec" ? "tag-readiness-needs-spec" : "tag-readiness-too-large";
+                    tags += '<span class="wp-tag ' + rCls + '">' + esc(readiness) + "</span>";
+                }
                 if (rice != null) {
                     var rcls = rice >= 5 ? "tag-rice-high" : rice >= 2 ? "tag-rice-med" : "tag-rice-low";
                     tags += '<span class="wp-tag ' + rcls + '">' + svg("rice") + ' RICE ' + rice.toFixed(1) + "</span>";
+                }
+                var aiRice = calcAiRice(wp);
+                if (aiRice != null && aiRice !== rice) {
+                    tags += '<span class="wp-tag tag-ai-rice">AI: ' + aiRice.toFixed(1) + "</span>";
                 }
                 if (pendingFb.length) tags += '<span class="wp-tag tag-fb">' + svg("feedback") + ' ' + pendingFb.length + " feedback</span>";
 
@@ -418,11 +581,51 @@
                     "</div>";
                 }
 
-                return '<a href="' + esc(href) + '" class="wp-card">' +
+                var children = allPackages.filter(function (c) { return c.parent_work_package_id === wp.id; });
+                var childHtml = "";
+                if (children.length) {
+                    var childCards = children.map(function (child) {
+                        var cHref = child.spec_url || ("./docs/" + child.slug + ".html");
+                        var cStatus = STATUS_LABELS[child.status] || child.status;
+                        var cReadiness = child.pipeline_readiness || "unknown";
+                        var cRice = calcRice(child);
+                        var cTags = "";
+                        if (cReadiness !== "unknown") {
+                            var crCls = cReadiness === "ready" ? "tag-readiness-ready" : cReadiness === "needs-spec" ? "tag-readiness-needs-spec" : "tag-readiness-too-large";
+                            cTags += '<span class="wp-tag ' + crCls + '">' + esc(cReadiness) + "</span>";
+                        }
+                        if (cRice != null) {
+                            var crcls = cRice >= 5 ? "tag-rice-high" : cRice >= 2 ? "tag-rice-med" : "tag-rice-low";
+                            cTags += '<span class="wp-tag ' + crcls + '">RICE ' + cRice.toFixed(1) + "</span>";
+                        }
+                        return '<a href="' + esc(cHref) + '" class="wp-card">' +
+                            '<div class="wp-row-top">' +
+                                '<div class="wp-left"><div class="wp-title">' + esc(child.title) + '</div><div class="wp-desc">' + esc(child.description) + "</div></div>" +
+                                '<div class="wp-right"><span class="badge badge-' + child.status + '">' + esc(cStatus) + "</span></div>" +
+                            "</div>" +
+                            (cTags ? '<div class="wp-tags">' + cTags + "</div>" : "") +
+                        "</a>";
+                    }).join("");
+                    childHtml = '<div class="wp-children" id="children-' + wp.id + '" style="display:none">' + childCards + '</div>' +
+                        '<button class="wp-toggle" onclick="event.preventDefault();event.stopPropagation();var el=document.getElementById(\'children-' + wp.id + '\');var show=el.style.display===\'none\';el.style.display=show?\'\':\'none\';this.textContent=show?\'\u25BC Hide sub-packages\':\'\u25B6 Show ' + children.length + ' sub-package' + (children.length > 1 ? 's' : '') + '\';">' +
+                        '\u25B6 Show ' + children.length + ' sub-package' + (children.length > 1 ? 's' : '') + '</button>';
+                }
+
+                var sourceRefs = "";
+                if (wp.source_refs && Array.isArray(wp.source_refs) && wp.source_refs.length) {
+                    sourceRefs = '<div class="wp-source-refs">' + wp.source_refs.map(function (ref) {
+                        if (typeof ref === "string") return '<span class="wp-source-ref">' + esc(ref) + '</span>';
+                        return '<span class="wp-source-ref">' + esc(ref.key || ref.id || JSON.stringify(ref)) + '</span>';
+                    }).join("") + '</div>';
+                }
+
+                return '<div>' +
+                '<a href="' + esc(href) + '" class="wp-card">' +
                     '<div class="wp-row-top">' +
                         '<div class="wp-left">' +
                             '<div class="wp-title">' + esc(wp.title) + "</div>" +
                             '<div class="wp-desc">' + esc(wp.description) + "</div>" +
+                            sourceRefs +
                         "</div>" +
                         '<div class="wp-right">' +
                             '<span class="wp-date">' + formatDate(wp.created_at) + "</span>" +
@@ -432,7 +635,9 @@
                     (tags ? '<div class="wp-tags">' + tags + "</div>" : "") +
                     links +
                     riceDetail +
-                "</a>";
+                "</a>" +
+                childHtml +
+                "</div>";
             }).join("");
         }
 
@@ -441,7 +646,8 @@
                 fetch(API + "/work_packages?select=*&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }),
                 fetch(API + "/work_package_tickets?select=*&order=created_at.asc", { headers: hdrs }).then(function (r) { return r.json(); }),
                 fetch(API + "/work_package_prs?select=*&order=created_at.asc", { headers: hdrs }).then(function (r) { return r.json(); }),
-                fetch(API + "/feedback?select=*&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); })
+                fetch(API + "/feedback?select=*&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }),
+                fetch(API + "/pipeline_runs?select=*&order=dispatched_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; })
             ]);
         }
 
@@ -451,10 +657,12 @@
                 allTickets = Array.isArray(results[1]) ? results[1] : [];
                 allPrs = Array.isArray(results[2]) ? results[2] : [];
                 allFeedback = Array.isArray(results[3]) ? results[3] : [];
+                allPipelineRuns = Array.isArray(results[4]) ? results[4] : [];
 
                 if (!allPackages.length) { renderFallback(); return; }
 
                 document.getElementById("filter-bar").style.display = "";
+                renderPulseBar();
                 renderStats(allPackages);
                 renderCards();
 
