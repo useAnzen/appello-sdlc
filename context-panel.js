@@ -47,8 +47,8 @@
             '.ctx-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569}' +
             '.ctx-empty{font-size:11px;color:#94a3b8;font-style:italic}' +
             '.ctx-link-row{display:flex;gap:8px;flex-wrap:wrap}' +
-            '.ctx-link-btn{font-size:11px;font-weight:600;color:#2563eb;text-decoration:none;background:#eff4ff;padding:5px 12px;border-radius:6px;transition:background 0.15s}' +
-            '.ctx-link-btn:hover{background:#dbeafe}' +
+            '.ctx-link-btn{font-size:11px;font-weight:600;color:#58a6ff;text-decoration:none;background:#58a6ff11;padding:5px 12px;border-radius:6px;transition:background 0.15s;border:1px solid #58a6ff22}' +
+            '.ctx-link-btn:hover{background:#58a6ff22}' +
             '</style>' +
             '<button id="ctx-toggle"><span class="ctx-dot"></span> Work Package</button>' +
             '<div id="ctx-body"></div>';
