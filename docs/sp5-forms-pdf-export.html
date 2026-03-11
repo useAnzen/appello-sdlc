@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Forms PDF Export — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table th.right, .wf-table td.right { text-align: right; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+
+/* BUTTONS */
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.disabled { background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); opacity: 0.5; cursor: not-allowed; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* COMPARE CARD */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.compare-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.compare-card .cc-header { padding: 10px 14px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.compare-card .cc-header.exists { background: var(--success-light); color: #065f46; }
+.compare-card .cc-header.missing { background: var(--danger-light); color: #991b1b; }
+.compare-card .cc-header.new { background: var(--info-light); color: #1d4ed8; }
+.compare-card .cc-body { padding: 14px; font-size: 0.75rem; line-height: 1.8; }
+.compare-card .cc-body code { font-family: var(--mono); font-size: 0.68rem; background: var(--bg-panel); padding: 1px 6px; border-radius: 3px; }
+
+/* DEPENDENCY CALLOUT */
+.dep-callout {
+    background: var(--purple-light); border: 1px solid var(--purple); border-radius: 8px;
+    padding: 14px 16px; margin-top: 1rem; display: flex; align-items: flex-start; gap: 10px;
+}
+.dep-callout .dep-icon { font-size: 1.2rem; flex-shrink: 0; }
+.dep-callout .dep-text { font-size: 0.78rem; color: #5b21b6; line-height: 1.6; }
+.dep-callout .dep-text strong { color: #4c1d95; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-chip { font-size: 0.7rem; padding: 5px 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+.filter-chip.select::after { content: "▾"; font-size: 0.6rem; margin-left: 2px; }
+.filter-chip.highlight { border-color: var(--orange); background: var(--orange-light); color: #92400e; font-weight: 600; }
+
+/* CHECKBOX */
+.wf-check { width: 16px; height: 16px; border: 2px solid var(--border-strong); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--bg-white); }
+.wf-check.checked { background: var(--accent); border-color: var(--accent); color: white; font-size: 0.6rem; font-weight: 700; }
+
+/* TOGGLE */
+.wf-toggle { width: 32px; height: 18px; border-radius: 9px; position: relative; display: inline-block; flex-shrink: 0; }
+.wf-toggle.on { background: var(--accent); }
+.wf-toggle.off { background: var(--border-strong); }
+.wf-toggle .knob { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 2px; transition: left 0.1s; }
+.wf-toggle.on .knob { left: 16px; }
+.wf-toggle.off .knob { left: 2px; }
+
+/* PROGRESS */
+.progress-bar { height: 8px; background: var(--bg-panel); border-radius: 4px; overflow: hidden; flex: 1; }
+.progress-bar .fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
+
+/* ARCHITECTURE FLOW */
+.arch-flow { display: flex; flex-direction: column; gap: 0; margin-top: 1rem; }
+.arch-step { display: flex; align-items: stretch; gap: 0; }
+.arch-num { width: 36px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+.arch-num .circle { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.arch-num .line { flex: 1; width: 2px; background: var(--border); }
+.arch-step:last-child .arch-num .line { display: none; }
+.arch-content { flex: 1; padding: 4px 0 20px 14px; }
+.arch-content .arch-label { font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.arch-content .arch-detail { font-size: 0.7rem; color: var(--text-secondary); line-height: 1.6; }
+.arch-content code { font-family: var(--mono); font-size: 0.65rem; background: var(--bg-panel); padding: 1px 6px; border-radius: 3px; }
+
+/* SELECTED ROW */
+.wf-table tr.selected td { background: var(--accent-light); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .compare-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER                                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div style="margin-bottom:3rem;">
+    <div class="section-tag">SP5 · Release 1.32.0-RC1</div>
+    <h2 style="font-size:2rem; margin-bottom:0.25rem;">Forms PDF Export</h2>
+    <p class="desc">Add date range filtering to the Form Report page and enable multi-select batch PDF export from form submission lists. Lays the foundation for T&amp;M worksheet export in SP7.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
+        <span class="badge blue">Q21030-10542</span>
+        <span class="badge orange">3–5 Days</span>
+        <span class="badge gray">Frontend + Existing API</span>
+        <span style="font-size:0.72rem; color:var(--text-muted);">Requested by <strong>Nick Newman</strong>, Rival Insulation</span>
+    </div>
+
+    <div class="dep-callout">
+        <div class="dep-icon">🔗</div>
+        <div class="dep-text">
+            <strong>Downstream Dependency:</strong> SP7 (PCO/WIP Enhancements) depends on this work package for T&amp;M worksheet PDF export. The batch export and <code>pdf-merger-js</code> patterns established here will be reused by SP7's multi-document export flow.
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: WHAT EXISTS vs WHAT'S MISSING               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="exists-vs-missing">
+    <div class="section-tag green">Section 1</div>
+    <h2>What Exists vs. What's Missing</h2>
+    <p class="desc">The single-form PDF pipeline is fully operational. The gap is in filtering and batch operations — selecting multiple forms and combining them into one document.</p>
+
+    <div class="compare-grid">
+        <div class="compare-card">
+            <div class="cc-header exists">✓ Already Shipped</div>
+            <div class="cc-body">
+                <strong>Single Form PDF Export</strong><br>
+                <code>reportType: "safetyForm"</code> with <code>id: feedbackId</code> — generates one form as PDF via PSPDFKit/Nutrient API
+                <br><br>
+                <strong>PDF Generation Pipeline</strong><br>
+                <code>pdf-export.ts</code> → HTML render → PSPDFKit cloud API → PDF returned to client
+                <br><br>
+                <strong>Browser-Side Merge Utility</strong><br>
+                <code>pdf-merger-js</code> already imported in <code>ExportButton</code> — used for combining multiple PDFs client-side
+                <br><br>
+                <strong>Form Inbox Filtering</strong><br>
+                Date filters exist on the Form Inbox page (separate from Form Report)
+                <br><br>
+                <strong>Export Settings Panel</strong><br>
+                <code>PdfFormSubmissionSettingsPanel</code> — toggles for hide result, hide description, select photos
+            </div>
+        </div>
+        <div class="compare-card">
+            <div class="cc-header missing">✗ Missing</div>
+            <div class="cc-body">
+                <strong>Form Report Date Range Filter</strong><br>
+                The <code>/overview/form-submission-report</code> page has no date range picker despite <code>FormSubmissionTable</code> already accepting a <code>dateRange</code> prop
+                <br><br>
+                <strong>Multi-Form Batch Export</strong><br>
+                No way to select multiple form submissions and export them as a single combined PDF document
+                <br><br>
+                <strong>Row Selection in Form Lists</strong><br>
+                Form submission tables have no checkbox selection — users cannot pick specific forms for batch operations
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: FORM REPORT DATE RANGE                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="form-report-date-range">
+    <div class="section-tag">Interface 1</div>
+    <h2>Form Report with Date Range</h2>
+    <p class="desc">Add a date range picker to the existing Form Submission Report page. The underlying table component already supports this — the report page just doesn't wire it up.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/overview/form-submission-report</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h3 style="margin:0;">Form Submission Report</h3>
+                <div class="wf-btn secondary" style="font-size:0.7rem;">Export CSV</div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-chip select">Form Type: All</div>
+                <div class="filter-chip select">Project: All</div>
+                <div class="filter-chip select">Job: All</div>
+                <div class="filter-chip select">Status: All</div>
+                <div class="filter-chip select">Submitted By: All</div>
+                <div class="filter-chip highlight" style="border-width:2px;">📅 Date Range: Mar 1 – Mar 11, 2026 <span style="font-weight:700; margin-left:2px; cursor:pointer;">×</span></div>
+            </div>
+
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Form Name</th>
+                        <th>Job</th>
+                        <th>Submitted By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th class="right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Job Hazard Assessment</strong></td>
+                        <td>Sarnia Refinery — Unit 4</td>
+                        <td>Chris Tremberth</td>
+                        <td class="mono">Mar 11, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Toolbox Talk</strong></td>
+                        <td>NOVA Chemicals Coker</td>
+                        <td>Brad Viers</td>
+                        <td class="mono">Mar 10, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Aerial Boom Inspection</strong></td>
+                        <td>Dow Chemical Bay 7</td>
+                        <td>David Smith</td>
+                        <td class="mono">Mar 8, 2026</td>
+                        <td><span class="badge red">Fail</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>End of Shift Safety Sign Off</strong></td>
+                        <td>Stellantis Windsor — HVAC</td>
+                        <td>Sophia Kiafoulis</td>
+                        <td class="mono">Mar 7, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Job Hazard Assessment</strong></td>
+                        <td>Sunnybrook Hospital Wing C</td>
+                        <td>Nick Newman</td>
+                        <td class="mono">Mar 5, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Toolbox Talk</strong></td>
+                        <td>King West Towers</td>
+                        <td>Eric Krekelberg</td>
+                        <td class="mono">Mar 3, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                        <td class="right"><span style="color:var(--accent); font-size:0.72rem; font-weight:600; cursor:pointer;">View PDF</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> <code>FormSubmissionTable</code> already accepts a <code>dateRange</code> prop but the Form Report page component doesn't pass it. Add a <code>DateRangePicker</code> to the report page and wire its value to the table's <code>dateRange</code> prop. No backend or query changes required.
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: MULTI-SELECT & BATCH EXPORT                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="batch-export">
+    <div class="section-tag orange">Interface 2</div>
+    <h2>Multi-Select &amp; Batch Export</h2>
+    <p class="desc">Enable row selection in form submission lists and add a batch export button that combines selected forms into a single PDF download.</p>
+
+    <h3 style="margin-top:1.5rem;">Step 1 — Row Selection</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/overview/form-submission-report — Multi-Select Mode</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0;">Form Submission Report</h3>
+                    <span class="badge blue" style="font-size:0.68rem;">3 selected</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <div class="wf-btn primary" style="font-size:0.72rem;">📄 Export Selected (3)</div>
+                    <div class="wf-btn secondary" style="font-size:0.72rem;">Clear Selection</div>
+                </div>
+            </div>
+
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th style="width:36px;"><div class="wf-check" style="margin:0 auto;"></div></th>
+                        <th>Form Name</th>
+                        <th>Job</th>
+                        <th>Submitted By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="selected">
+                        <td><div class="wf-check checked" style="margin:0 auto;">✓</div></td>
+                        <td><strong>Job Hazard Assessment</strong></td>
+                        <td>Sarnia Refinery — Unit 4</td>
+                        <td>Chris Tremberth</td>
+                        <td class="mono">Mar 11, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                    </tr>
+                    <tr class="selected">
+                        <td><div class="wf-check checked" style="margin:0 auto;">✓</div></td>
+                        <td><strong>Toolbox Talk</strong></td>
+                        <td>NOVA Chemicals Coker</td>
+                        <td>Brad Viers</td>
+                        <td class="mono">Mar 10, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                    </tr>
+                    <tr>
+                        <td><div class="wf-check" style="margin:0 auto;"></div></td>
+                        <td><strong>Aerial Boom Inspection</strong></td>
+                        <td>Dow Chemical Bay 7</td>
+                        <td>David Smith</td>
+                        <td class="mono">Mar 8, 2026</td>
+                        <td><span class="badge red">Fail</span></td>
+                    </tr>
+                    <tr class="selected">
+                        <td><div class="wf-check checked" style="margin:0 auto;">✓</div></td>
+                        <td><strong>End of Shift Safety Sign Off</strong></td>
+                        <td>Stellantis Windsor — HVAC</td>
+                        <td>Sophia Kiafoulis</td>
+                        <td class="mono">Mar 7, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                    </tr>
+                    <tr>
+                        <td><div class="wf-check" style="margin:0 auto;"></div></td>
+                        <td><strong>Job Hazard Assessment</strong></td>
+                        <td>Sunnybrook Hospital Wing C</td>
+                        <td>Nick Newman</td>
+                        <td class="mono">Mar 5, 2026</td>
+                        <td><span class="badge green">Pass</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> Add checkbox column using existing table selection patterns from <code>ListTableViews</code>. Track selected IDs in local state with <code>useState&lt;Set&lt;string&gt;&gt;</code>. "Select All" checkbox in header toggles all visible rows. "Export Selected" button is disabled when <code>selectedIds.size === 0</code>.
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Step 2 — Export Progress Modal</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Batch Export Progress — Modal Overlay</div></div>
+        <div class="wireframe-body" style="display:flex; align-items:center; justify-content:center; min-height:280px; background:rgba(0,0,0,0.03);">
+            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:12px; padding:28px 32px; width:420px; box-shadow:0 8px 30px rgba(0,0,0,0.12);">
+                <h3 style="margin:0 0 4px; font-size:1rem;">Generating PDFs…</h3>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:16px;">2 of 3 complete</div>
+
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                    <div class="progress-bar"><div class="fill" style="width:66%;"></div></div>
+                    <span style="font-size:0.72rem; font-weight:600; color:var(--accent); font-family:var(--mono);">66%</span>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                        <span style="color:var(--success); font-weight:700;">✓</span>
+                        <span>Job Hazard Assessment — Sarnia Refinery</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                        <span style="color:var(--success); font-weight:700;">✓</span>
+                        <span>Toolbox Talk — NOVA Chemicals Coker</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem;">
+                        <span style="color:var(--accent); font-weight:700;">⟳</span>
+                        <span style="color:var(--text-muted);">End of Shift Safety Sign Off — Stellantis</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border); text-align:right;">
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Cancel</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Step 3 — Combined PDF Output</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Combined PDF Preview — forms-export-2026-03-11.pdf</div></div>
+        <div class="wireframe-body" style="text-align:center; padding:2rem;">
+            <div style="display:inline-flex; gap:16px; align-items:flex-end;">
+                <div style="width:120px; height:160px; background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; position:relative;">
+                    <div style="font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Page 1</div>
+                    <div style="font-size:0.65rem; font-weight:600; color:var(--text-secondary); padding:0 8px; text-align:center;">Job Hazard Assessment</div>
+                    <div style="font-size:0.55rem; color:var(--text-muted);">Sarnia Refinery</div>
+                    <div style="position:absolute; top:6px; right:6px;"><span class="badge green" style="font-size:0.5rem; padding:1px 4px;">Pass</span></div>
+                </div>
+                <div style="width:120px; height:160px; background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; position:relative;">
+                    <div style="font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Page 2</div>
+                    <div style="font-size:0.65rem; font-weight:600; color:var(--text-secondary); padding:0 8px; text-align:center;">Toolbox Talk</div>
+                    <div style="font-size:0.55rem; color:var(--text-muted);">NOVA Chemicals</div>
+                    <div style="position:absolute; top:6px; right:6px;"><span class="badge green" style="font-size:0.5rem; padding:1px 4px;">Pass</span></div>
+                </div>
+                <div style="width:120px; height:160px; background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; position:relative;">
+                    <div style="font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Page 3</div>
+                    <div style="font-size:0.65rem; font-weight:600; color:var(--text-secondary); padding:0 8px; text-align:center;">End of Shift Safety Sign Off</div>
+                    <div style="font-size:0.55rem; color:var(--text-muted);">Stellantis Windsor</div>
+                    <div style="position:absolute; top:6px; right:6px;"><span class="badge green" style="font-size:0.5rem; padding:1px 4px;">Pass</span></div>
+                </div>
+            </div>
+            <div style="margin-top:14px; font-size:0.72rem; color:var(--text-muted);">3 forms combined into single PDF · <strong style="color:var(--accent);">forms-export-2026-03-11.pdf</strong></div>
+        </div>
+    </div>
+
+    <div class="dev-note" style="margin-top:1rem;">
+        <strong>Dev:</strong> For each selected form, call <code>/api/pdf-export</code> with <code>reportType: "safetyForm"</code> sequentially. Collect the PDF blobs, then merge using <code>pdf-merger-js</code> (already available in <code>ExportButton</code>). Download the combined file as <code>forms-export-YYYY-MM-DD.pdf</code>. Apply settings from <code>PdfFormSubmissionSettingsPanel</code> to each individual PDF request.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: PDF GENERATION STACK                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="pdf-stack">
+    <div class="section-tag purple">Architecture</div>
+    <h2>PDF Generation Stack</h2>
+    <p class="desc">The actual PDF pipeline used in production. All form PDFs are generated via HTML → PSPDFKit/Nutrient cloud API. There is no <code>@react-pdf/renderer</code> in the production pipeline.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">PDF Pipeline — Single & Batch Flow</div></div>
+        <div class="wireframe-body">
+            <div class="arch-flow">
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">1</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">Frontend Request</div>
+                        <div class="arch-detail">Client calls <code>/api/pdf-export</code> with <code>reportType: "safetyForm"</code> and <code>id: feedbackId</code></div>
+                    </div>
+                </div>
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">2</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">Server-Side HTML Render</div>
+                        <div class="arch-detail"><code>pdf-export.ts</code> fetches form data via GraphQL, generates HTML + CSS template server-side</div>
+                    </div>
+                </div>
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">3</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">PSPDFKit / Nutrient Cloud API</div>
+                        <div class="arch-detail">HTML + CSS payload sent to <code>https://api.nutrient.io/build</code> — returns rendered PDF binary</div>
+                    </div>
+                </div>
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">4</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">PDF Response</div>
+                        <div class="arch-detail">Single PDF returned to the browser — for single export, this triggers download directly</div>
+                    </div>
+                </div>
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">5</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">Batch Merge <span class="badge orange" style="font-size:0.55rem; margin-left:4px;">Batch Only</span></div>
+                        <div class="arch-detail">For batch exports: repeat steps 1–4 for each selected form. Collect all PDF blobs client-side.</div>
+                    </div>
+                </div>
+                <div class="arch-step">
+                    <div class="arch-num"><div class="circle">6</div><div class="line"></div></div>
+                    <div class="arch-content">
+                        <div class="arch-label">Combined Download <span class="badge orange" style="font-size:0.55rem; margin-left:4px;">Batch Only</span></div>
+                        <div class="arch-detail"><code>pdf-merger-js</code> (browser-side) merges all PDF blobs into one file → triggers download of combined PDF</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> There is NO <code>@react-pdf/renderer</code> in the production pipeline. All PDF generation goes through HTML → PSPDFKit API. The <code>pdf-merger-js</code> library is already imported and used in <code>ExportButton</code> — reuse the same pattern for batch form export. No changes to <code>pdf-export.ts</code> are needed; it already supports <code>reportType: "safetyForm"</code>.
+            </div>
+        </div>
+    </div>
+
+    <div class="two-col" style="margin-top:1.5rem;">
+        <div>
+            <h3>Single Export Flow</h3>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> <code style="font-size:0.68rem;">pdf-export.ts</code> → <code style="font-size:0.68rem;">reportType: "safetyForm"</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> PSPDFKit/Nutrient API integration
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> HTML template rendering
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Batch Export Flow</h3>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> <code style="font-size:0.68rem;">pdf-merger-js</code> in <code style="font-size:0.68rem;">ExportButton</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue">New</span> Sequential PDF fetch loop for selected forms
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue">New</span> Progress modal with per-form status
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: EXPORT SETTINGS PANEL                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="export-settings">
+    <div class="section-tag green">Settings</div>
+    <h2>Export Settings Panel</h2>
+    <p class="desc">The existing <code>PdfFormSubmissionSettingsPanel</code> controls what content is included in each exported form PDF. These settings apply to both single and batch exports.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">PdfFormSubmissionSettingsPanel — Export Options</div></div>
+        <div class="wireframe-body">
+            <div style="max-width:380px;">
+                <h3 style="font-size:0.9rem; margin-bottom:16px;">PDF Export Settings</h3>
+
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                        <div>
+                            <div style="font-size:0.78rem; font-weight:600;">Hide Result</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted);">Hides pass/fail result from the PDF</div>
+                        </div>
+                        <div class="wf-toggle off"><div class="knob"></div></div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                        <div>
+                            <div style="font-size:0.78rem; font-weight:600;">Hide Description</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted);">Removes question descriptions from output</div>
+                        </div>
+                        <div class="wf-toggle off"><div class="knob"></div></div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                        <div>
+                            <div style="font-size:0.78rem; font-weight:600;">Include Photos</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted);">Embeds attached photos in the PDF</div>
+                        </div>
+                        <div class="wf-toggle on"><div class="knob"></div></div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                        <div>
+                            <div style="font-size:0.78rem; font-weight:600;">Select Specific Photos</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted);">Choose which photos to include</div>
+                        </div>
+                        <div class="wf-toggle off"><div class="knob"></div></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px;">
+                    <div class="wf-btn secondary" style="font-size:0.72rem;">Cancel</div>
+                    <div class="wf-btn primary" style="font-size:0.72rem;">Export PDF</div>
+                </div>
+            </div>
+
+            <div class="dev-note" style="margin-top:1rem;">
+                <strong>Dev:</strong> <code>PdfFormSubmissionSettingsPanel</code> already exists and is functional for single exports. For batch export, show this panel once before initiating the batch — apply the same settings to every form in the batch. Pass settings as query params to each <code>/api/pdf-export</code> call.
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: FILE CHANGE MAP                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="file-change-map">
+    <div class="section-tag red">Implementation</div>
+    <h2>File Change Map</h2>
+    <p class="desc">Breakdown of every file that needs to be created or modified, with effort sizing per file.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">File Change Map — SP5 Forms PDF Export</div></div>
+        <div class="wireframe-body">
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                        <th class="right">Effort</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">Form Report page component</code></td>
+                        <td><span class="badge blue">Modify</span></td>
+                        <td>Add <code style="font-size:0.68rem;">DateRangePicker</code> and wire <code style="font-size:0.68rem;">dateRange</code> prop to <code style="font-size:0.68rem;">FormSubmissionTable</code></td>
+                        <td class="right"><span class="badge green">Small</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">FormSubmissionTable</code></td>
+                        <td><span class="badge gray">Wire</span></td>
+                        <td>Pass <code style="font-size:0.68rem;">dateRange</code> prop through — component already accepts it</td>
+                        <td class="right"><span class="badge green" style="background:#d1fae5; color:#065f46;">Trivial</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">Form list component</code></td>
+                        <td><span class="badge blue">Modify</span></td>
+                        <td>Add checkbox column, selection state, "Select All" header, selected count badge</td>
+                        <td class="right"><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">BatchExportButton</code></td>
+                        <td><span class="badge purple">New</span></td>
+                        <td>New component: sequential PDF fetch, <code style="font-size:0.68rem;">pdf-merger-js</code> merge, progress modal, download trigger</td>
+                        <td class="right"><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">pdf-export.ts</code></td>
+                        <td><span class="badge gray">None</span></td>
+                        <td>No changes needed — already supports <code style="font-size:0.68rem;">reportType: "safetyForm"</code></td>
+                        <td class="right"><span class="badge gray">None</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-size:0.68rem;">PdfFormSubmissionSettingsPanel</code></td>
+                        <td><span class="badge gray">None</span></td>
+                        <td>No changes — reuse as-is for both single and batch export flows</td>
+                        <td class="right"><span class="badge gray">None</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top:1.25rem; padding:14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:0.72rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em;">Total Estimated Effort</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">2 new/modified files · 2 trivial wiring · 2 no-change</div>
+                    </div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--accent); font-family:var(--mono);">3–5 days</div>
+                </div>
+            </div>
+
+            <div class="dev-note" style="margin-top:0.75rem;">
+                <strong>Dev:</strong> Start with the date range picker (quick win), then add row selection, then build the batch export button. The <code>pdf-merger-js</code> pattern from <code>ExportButton</code> can be copied almost directly. Test with 5–10 forms to validate merge performance. Forms with many photos will produce larger PDFs — consider a file size warning for batches &gt; 20 forms.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Forms PDF Export — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">SP5 · Release 1.32.0-RC1 · Q21030-10542 · Confidential · March 2026</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>

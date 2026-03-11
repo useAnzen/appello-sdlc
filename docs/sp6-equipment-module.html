@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Equipment Module Phases 1-2 — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.new-field { border-color: var(--success); background: var(--success-light); color: #065f46; font-weight: 600; }
+.wf-field .input.readonly { background: var(--bg-panel); border-style: dashed; color: var(--text-muted); }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* BUTTONS */
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table th.right, .wf-table td.right { text-align: right; }
+.wf-table th.center, .wf-table td.center { text-align: center; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+.wf-table tr.total-row td { font-weight: 700; border-top: 2px solid var(--border); background: var(--bg-panel); }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* DETAIL TAB BAR */
+.wf-detail-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1rem; overflow-x: auto; }
+.wf-detail-tab { padding: 8px 16px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; white-space: nowrap; }
+.wf-detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.wf-detail-tab.new { color: var(--success); border-bottom-color: var(--success); position: relative; }
+.wf-detail-tab.new::after { content: "NEW"; position: absolute; top: -2px; right: -4px; font-size: 0.45rem; background: var(--success); color: white; padding: 1px 4px; border-radius: 3px; font-weight: 700; letter-spacing: 0.06em; }
+.wf-detail-tab.missing { color: var(--danger); font-style: italic; }
+
+/* HORIZONTAL FLOW / ROADMAP */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.hflow-node.active h4 { color: var(--accent); }
+.hflow-node.future { border-style: dashed; opacity: 0.6; }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* COMPARE CARD */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.compare-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.compare-card .cc-header { padding: 10px 14px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.compare-card .cc-header.exists { background: var(--bg-panel); color: var(--text-muted); }
+.compare-card .cc-header.new { background: var(--success-light); color: #065f46; }
+.compare-card .cc-body { padding: 14px; font-size: 0.75rem; line-height: 1.8; }
+.compare-card .cc-body code { font-family: var(--mono); font-size: 0.68rem; background: var(--bg-panel); padding: 1px 6px; border-radius: 3px; }
+
+/* QUOTE CARD */
+.quote-card {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px; margin-bottom: 1.5rem;
+}
+.quote-card blockquote {
+    font-size: 0.92rem; font-style: italic; color: var(--text-primary);
+    line-height: 1.6; margin-bottom: 8px;
+}
+.quote-card .attribution {
+    font-size: 0.72rem; font-weight: 600; color: var(--accent);
+    font-family: var(--mono);
+}
+
+/* SIDEBAR INFO CARD */
+.sidebar-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.sidebar-card h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+.sidebar-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.sidebar-field:last-child { border-bottom: none; }
+.sidebar-field .fk { color: var(--text-muted); }
+.sidebar-field .fv { font-weight: 600; }
+
+/* DATA MODEL CARD */
+.model-card {
+    background: var(--bg-white); border: 2px solid var(--accent);
+    border-radius: var(--radius-lg); overflow: hidden; margin-top: 1rem;
+}
+.model-card .mc-header {
+    background: var(--accent); color: white; padding: 10px 16px;
+    font-family: var(--mono); font-size: 0.82rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.model-card .mc-header .mc-badge { font-size: 0.6rem; background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 4px; }
+.model-card .mc-body { padding: 0; }
+.model-card .mc-field {
+    display: flex; align-items: center; padding: 6px 16px;
+    border-bottom: 1px solid var(--border); font-size: 0.75rem;
+}
+.model-card .mc-field:last-child { border-bottom: none; }
+.model-card .mc-field .mc-name { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; width: 200px; flex-shrink: 0; }
+.model-card .mc-field .mc-type { font-family: var(--mono); font-size: 0.68rem; color: var(--accent); width: 200px; flex-shrink: 0; }
+.model-card .mc-field .mc-desc { font-size: 0.7rem; color: var(--text-muted); }
+.model-card .mc-field.pk { background: var(--accent-light); }
+.model-card .mc-field.fk { background: #fefce8; }
+.model-card .mc-field.new-field { background: var(--success-light); }
+.model-card .mc-section {
+    background: var(--bg-panel); padding: 4px 16px;
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border);
+}
+
+/* MOBILE WIREFRAME */
+.mobile-frame {
+    width: 375px; background: var(--bg-white); border: 2px solid var(--border-strong);
+    border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-md);
+    margin: 0 auto;
+}
+.mobile-frame .mf-status {
+    background: var(--bg-dark); color: white; padding: 6px 16px;
+    font-size: 0.6rem; display: flex; justify-content: space-between;
+}
+.mobile-frame .mf-header {
+    background: var(--accent); color: white; padding: 12px 16px;
+    font-size: 0.85rem; font-weight: 700;
+}
+.mobile-frame .mf-body { padding: 16px; }
+
+/* SNAPSHOT CALLOUT */
+.snapshot-callout {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--info-light); border: 1px solid var(--info);
+    border-radius: var(--radius); padding: 14px 16px; margin: 1rem 0;
+}
+.snapshot-callout .sc-icon { font-size: 1.2rem; flex-shrink: 0; }
+.snapshot-callout .sc-text { font-size: 0.78rem; color: #1d4ed8; line-height: 1.6; }
+.snapshot-callout .sc-text strong { color: #1e3a5f; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-chip { font-size: 0.7rem; padding: 5px 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+.filter-chip.select::after { content: "▾"; font-size: 0.6rem; margin-left: 2px; }
+
+/* KPI ROW */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.4rem; font-weight: 800; font-family: var(--mono); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .compare-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .mobile-frame { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div style="margin-bottom: 2.5rem;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+        <span class="badge blue">Q21030-11112</span>
+        <span class="badge blue">Q21030-11107</span>
+        <span class="badge blue">Q21030-11108</span>
+        <span class="badge blue">Q21030-11106</span>
+        <span class="badge purple">Release 1.32.0-RC1</span>
+        <span class="badge orange">SP6 — Workstream E</span>
+        <span class="badge gray">4-6 weeks</span>
+    </div>
+    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">Equipment Module — Phases 1 &amp; 2</h2>
+    <p class="desc" style="max-width: 800px;">Transform the Equipment module from a static asset tracker into a financial management system. Phase 1 establishes the rate configuration data model. Phase 2 enables equipment hours logging through the existing timesheet workflow. Phases 3-7 deferred to future releases.</p>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1rem;">
+        <div class="sidebar-card" style="flex: 1; min-width: 200px;">
+            <h4>Customers</h4>
+            <div class="sidebar-field"><span class="fk">Primary</span><span class="fv">Mkwa Engineering</span></div>
+            <div class="sidebar-field"><span class="fk">Secondary</span><span class="fv">Rival Insulation</span></div>
+            <div class="sidebar-field"><span class="fk">Source</span><span class="fv">Mkwa Onboarding (Atlas)</span></div>
+        </div>
+        <div class="sidebar-card" style="flex: 1; min-width: 200px;">
+            <h4>Scope</h4>
+            <div class="sidebar-field"><span class="fk">Phases</span><span class="fv">2 of 7 (RC1 scope)</span></div>
+            <div class="sidebar-field"><span class="fk">Backend</span><span class="fv">Migration + Model + GraphQL</span></div>
+            <div class="sidebar-field"><span class="fk">Frontend</span><span class="fv">4 interfaces</span></div>
+            <div class="sidebar-field"><span class="fk">Mobile</span><span class="fv">Timesheet equipment entry</span></div>
+        </div>
+        <div class="sidebar-card" style="flex: 1; min-width: 200px;">
+            <h4>Tickets</h4>
+            <div class="sidebar-field"><span class="fk">Q21030-11112</span><span class="fv">Master / Module</span></div>
+            <div class="sidebar-field"><span class="fk">Q21030-11107</span><span class="fv">Rate Configuration</span></div>
+            <div class="sidebar-field"><span class="fk">Q21030-11108</span><span class="fv">Billable Toggle</span></div>
+            <div class="sidebar-field"><span class="fk">Q21030-11106</span><span class="fv">Hours Logging</span></div>
+        </div>
+    </div>
+
+    <div class="quote-card" style="margin-top: 1.5rem;">
+        <blockquote>"Phase one, update data model for equipment rate configuration. Phase two, equipment hour logging in timesheets. Phase three, job P&amp;L integration..."</blockquote>
+        <div class="attribution">— Mkwa Engineering Onboarding Session (Atlas)</div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: FEATURE OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="feature-overview">
+    <div class="section-tag">Section 1</div>
+    <h2>Feature Overview</h2>
+    <p class="desc">The Equipment module transforms from a static <strong>asset tracker</strong> (name, category, status, inspections) into a full <strong>financial management system</strong> that tracks rates, hours, costs, and revenue per piece of equipment across jobs.</p>
+
+    <div class="compare-grid">
+        <div class="compare-card">
+            <div class="cc-header exists">Current State — Asset Tracker</div>
+            <div class="cc-body">
+                <strong>What it does today:</strong><br>
+                <code>name</code>, <code>year</code>, <code>description</code>, <code>datePurchased</code>, <code>priceOfEquipment</code>, <code>equipmentCategoryId</code>, inspection dates, <code>statusId</code>
+                <br><br>
+                <strong>Tabs:</strong> Overview, Form Submissions, Assigned To, Location, Expenses, Account Payable
+                <br><br>
+                <strong>Limitations:</strong><br>
+                No cost/billable rates. No hour tracking. No running hours. No timesheet integration. No job-level equipment P&amp;L.
+            </div>
+        </div>
+        <div class="compare-card">
+            <div class="cc-header new">Target State — Financial System</div>
+            <div class="cc-body">
+                <strong>What it will do (Phases 1-2):</strong><br>
+                <code>costRatePerHour</code>, <code>billableRatePerHour</code>, <code>runningHours</code> (auto-calculated), rate snapshots
+                <br><br>
+                <strong>New Tab:</strong> Hours Log (with cost/revenue calculations)
+                <br><br>
+                <strong>Timesheet Integration:</strong><br>
+                Equipment selector on desktop + mobile timesheets. Meter readings. Billable toggle. Approval flow updates running hours.
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Phased Roadmap</h3>
+    <div class="hflow">
+        <div class="hflow-node active">
+            <h4>Phase 1</h4>
+            <p>Rate Configuration</p>
+            <p style="font-size:0.55rem; color:var(--accent); font-weight:700; margin-top:4px;">RC1</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node active">
+            <h4>Phase 2</h4>
+            <p>Hours Logging</p>
+            <p style="font-size:0.55rem; color:var(--accent); font-weight:700; margin-top:4px;">RC1</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node future">
+            <h4>Phase 3</h4>
+            <p>Job P&amp;L Integration</p>
+            <p style="font-size:0.55rem; color:var(--text-muted); font-weight:600; margin-top:4px;">1.33</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node future">
+            <h4>Phase 4</h4>
+            <p>Equipment Invoicing</p>
+            <p style="font-size:0.55rem; color:var(--text-muted); font-weight:600; margin-top:4px;">1.33</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node future">
+            <h4>Phase 5</h4>
+            <p>Variable Rates</p>
+            <p style="font-size:0.55rem; color:var(--text-muted); font-weight:600; margin-top:4px;">1.34</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node future">
+            <h4>Phase 6</h4>
+            <p>Maintenance Triggers</p>
+            <p style="font-size:0.55rem; color:var(--text-muted); font-weight:600; margin-top:4px;">1.35</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node future">
+            <h4>Phase 7</h4>
+            <p>Search &amp; Mobile QoL</p>
+            <p style="font-size:0.55rem; color:var(--text-muted); font-weight:600; margin-top:4px;">future</p>
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Scope Boundary:</strong> This spec covers <strong>Phases 1 &amp; 2 only</strong>. Phases 3-7 are deferred and will be specified in future releases. Phase 1 lays the data foundation that all subsequent phases build upon.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: CURRENT EQUIPMENT DETAIL PAGE (BEFORE) -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="current-state">
+    <div class="section-tag orange">Interface 1 — Before</div>
+    <h2>Current Equipment Detail Page</h2>
+    <p class="desc">The existing Equipment detail page is a pure asset tracker. It stores descriptive metadata and assignment data but has no financial fields. This is the baseline we're enhancing.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/equipment/[id] — current state</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">EQ-0042</span>
+                <h3 style="margin:0;">CAT 320 Excavator</h3>
+                <span class="badge green">Active</span>
+            </div>
+
+            <div class="wf-detail-tabs">
+                <div class="wf-detail-tab active">Overview</div>
+                <div class="wf-detail-tab">Form Submissions</div>
+                <div class="wf-detail-tab">Assigned To</div>
+                <div class="wf-detail-tab">Location</div>
+                <div class="wf-detail-tab">Expenses</div>
+                <div class="wf-detail-tab">Account Payable</div>
+            </div>
+
+            <div class="wf-form">
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>Equipment Name</label>
+                        <div class="input">CAT 320 Excavator</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Category</label>
+                        <div class="input select">Heavy Equipment</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Year</label>
+                        <div class="input">2021</div>
+                    </div>
+                </div>
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>Date Purchased</label>
+                        <div class="input">Jun 15, 2021</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Price</label>
+                        <div class="input">$285,000.00</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Status</label>
+                        <div class="input select">Active</div>
+                    </div>
+                </div>
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>In-Service Date</label>
+                        <div class="input">Jul 1, 2021</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Last Inspection</label>
+                        <div class="input">Feb 10, 2026</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Next Inspection</label>
+                        <div class="input">Aug 10, 2026</div>
+                    </div>
+                </div>
+                <div class="wf-field">
+                    <label>Description</label>
+                    <div class="input textarea">30-ton hydraulic excavator. Equipped with 1.2m³ bucket. GPS tracking enabled.</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:1.5rem; padding:12px; background:var(--danger-light); border:1px solid var(--danger); border-radius:8px;">
+                <span style="font-size:1rem;">⚠</span>
+                <div style="font-size:0.75rem; color:#991b1b;">
+                    <strong>Missing Fields (not in schema):</strong>
+                    <code style="font-size:0.68rem;">costRatePerHour</code>,
+                    <code style="font-size:0.68rem;">billableRatePerHour</code>,
+                    <code style="font-size:0.68rem;">runningHours</code>
+                    — No financial data. No timesheet integration. No hours tracking.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Verified:</strong> Current <code>Equipment</code> model confirmed in <code>schema.prisma</code>. Fields: <code>name</code>, <code>year</code>, <code>description</code>, <code>datePurchased</code>, <code>priceOfEquipment</code>, <code>equipmentCategoryId</code>, inspection dates, <code>statusId</code>, <code>companyId</code>, assignments, attributes, questions, assets. No financial fields exist.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: PHASE 1 — RATE CONFIGURATION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="phase-1-rates">
+    <div class="section-tag green">Interface 2 — Phase 1</div>
+    <h2>Phase 1 — Rate Configuration</h2>
+    <p class="desc">Add cost and billable rate fields to the Equipment model and edit form. Display the auto-calculated running hours prominently on the detail header. This is the data foundation for all subsequent phases.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-11107</span>
+        <span class="badge blue">Q21030-11108</span>
+        <span class="badge orange">Backend + Frontend</span>
+    </div>
+
+    <h3>Enhanced Equipment Detail — Header with Running Hours</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/equipment/[id] — enhanced header</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">EQ-0042</span>
+                    <h3 style="margin:0;">CAT 320 Excavator</h3>
+                    <span class="badge green">Active</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; background:var(--accent-light); border:2px solid var(--accent); border-radius:8px; padding:8px 16px;">
+                    <span style="font-size:0.65rem; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em;">Total Operating Hours</span>
+                    <span style="font-size:1.3rem; font-weight:800; font-family:var(--mono); color:var(--accent);">1,247.5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Enhanced Equipment Edit Form — New Rate Fields</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/equipment/[id]/edit — new financial fields</div></div>
+        <div class="wireframe-body">
+            <div class="wf-section-title" style="margin-bottom:1rem;">Existing Fields</div>
+            <div class="wf-form" style="margin-bottom:1.5rem;">
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>Equipment Name</label>
+                        <div class="input">CAT 320 Excavator</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Category</label>
+                        <div class="input select">Heavy Equipment</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Year</label>
+                        <div class="input">2021</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-section-title" style="margin-bottom:1rem; border-color:var(--success); color:var(--success);">New — Rate Configuration</div>
+            <div class="wf-form">
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>Internal Cost Rate ($/hr) <span class="req">*</span></label>
+                        <div class="input new-field">$45.00</div>
+                        <div class="field-hint">What it costs the company to operate this equipment per hour</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Billable Rate ($/hr)</label>
+                        <div class="input new-field">$75.00</div>
+                        <div class="field-hint">What the customer is charged per hour for this equipment</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Running Hours</label>
+                        <div class="input readonly">1,247.5</div>
+                        <div class="field-hint">Read-only. Auto-calculated from approved time entries.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-btn-row" style="margin-top:1.5rem;">
+                <div class="wf-btn secondary">Cancel</div>
+                <div class="wf-btn primary">Save Equipment</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">More Equipment Examples</h3>
+    <table class="wf-table" style="margin-top:0.5rem;">
+        <thead>
+            <tr>
+                <th>Equipment</th>
+                <th>Category</th>
+                <th class="right">Cost Rate</th>
+                <th class="right">Billable Rate</th>
+                <th class="right">Running Hours</th>
+                <th class="right">Margin</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>CAT 320 Excavator</strong></td>
+                <td>Heavy Equipment</td>
+                <td class="right mono">$45.00/hr</td>
+                <td class="right mono">$75.00/hr</td>
+                <td class="right mono">1,247.5</td>
+                <td class="right mono" style="color:var(--success);">40.0%</td>
+            </tr>
+            <tr>
+                <td><strong>Hilti TE 70 Hammer Drill</strong></td>
+                <td>Power Tools</td>
+                <td class="right mono">$8.50/hr</td>
+                <td class="right mono">$15.00/hr</td>
+                <td class="right mono">842.0</td>
+                <td class="right mono" style="color:var(--success);">43.3%</td>
+            </tr>
+            <tr>
+                <td><strong>Bobcat S770 Skid Steer</strong></td>
+                <td>Heavy Equipment</td>
+                <td class="right mono">$35.00/hr</td>
+                <td class="right mono">$60.00/hr</td>
+                <td class="right mono">2,105.0</td>
+                <td class="right mono" style="color:var(--success);">41.7%</td>
+            </tr>
+            <tr>
+                <td><strong>JLG 600S Boom Lift</strong></td>
+                <td>Aerial Equipment</td>
+                <td class="right mono">$55.00/hr</td>
+                <td class="right mono">$95.00/hr</td>
+                <td class="right mono">678.5</td>
+                <td class="right mono" style="color:var(--success);">42.1%</td>
+            </tr>
+            <tr>
+                <td><strong>Lincoln Electric Welder</strong></td>
+                <td>Welding Equipment</td>
+                <td class="right mono">$12.00/hr</td>
+                <td class="right mono">$22.00/hr</td>
+                <td class="right mono">1,580.0</td>
+                <td class="right mono" style="color:var(--success);">45.5%</td>
+            </tr>
+            <tr>
+                <td><strong>Kubota U55 Mini Excavator</strong></td>
+                <td>Heavy Equipment</td>
+                <td class="right mono">$28.00/hr</td>
+                <td class="right mono">$50.00/hr</td>
+                <td class="right mono">920.0</td>
+                <td class="right mono" style="color:var(--success);">44.0%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> Add three new columns to <code>Equipment</code> table: <code>costRatePerHour Decimal? @db.Decimal(10, 2)</code>, <code>billableRatePerHour Decimal? @db.Decimal(10, 2)</code>, <code>runningHours Decimal @default(0) @db.Decimal(10, 2)</code>. Update the Equipment add/edit form components to include currency inputs for rates and a read-only display for running hours. Running hours is updated via the approval flow, not user input.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: PHASE 1 — DATA MODEL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="data-model">
+    <div class="section-tag purple">Data Model</div>
+    <h2>Phase 1 — Data Model</h2>
+    <p class="desc">Two schema changes: extend the existing <code>Equipment</code> model with rate fields, and create the new <code>EquipmentTimeEntry</code> model that captures equipment hours per job.</p>
+
+    <h3>Equipment Model — New Fields</h3>
+    <div class="model-card" style="max-width:640px;">
+        <div class="mc-header">
+            <span>model Equipment</span>
+            <span class="mc-badge">EXTEND EXISTING</span>
+        </div>
+        <div class="mc-body">
+            <div class="mc-section">Existing fields (unchanged)</div>
+            <div class="mc-field"><span class="mc-name">id</span><span class="mc-type">String @id @db.VarChar(21)</span><span class="mc-desc">nanoid</span></div>
+            <div class="mc-field"><span class="mc-name">name</span><span class="mc-type">String</span><span class="mc-desc"></span></div>
+            <div class="mc-field"><span class="mc-name">year</span><span class="mc-type">String?</span><span class="mc-desc"></span></div>
+            <div class="mc-field"><span class="mc-name">priceOfEquipment</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Purchase price</span></div>
+            <div class="mc-field"><span class="mc-name">statusId</span><span class="mc-type">String? @db.VarChar(21)</span><span class="mc-desc">FK to EquipmentStatus</span></div>
+            <div class="mc-field" style="color:var(--text-muted); font-style:italic; font-size:0.7rem; padding:4px 16px;">... other existing fields omitted ...</div>
+            <div class="mc-section" style="background:var(--success-light); color:#065f46;">New fields — Phase 1</div>
+            <div class="mc-field new-field"><span class="mc-name">costRatePerHour</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Internal cost per hour</span></div>
+            <div class="mc-field new-field"><span class="mc-name">billableRatePerHour</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Customer-facing rate</span></div>
+            <div class="mc-field new-field"><span class="mc-name">runningHours</span><span class="mc-type">Decimal @default(0) @db.Decimal(10,2)</span><span class="mc-desc">Auto-calculated total</span></div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">EquipmentTimeEntry — New Model</h3>
+    <div class="model-card">
+        <div class="mc-header">
+            <span>model EquipmentTimeEntry</span>
+            <span class="mc-badge">NEW MODEL</span>
+        </div>
+        <div class="mc-body">
+            <div class="mc-section">Primary key</div>
+            <div class="mc-field pk"><span class="mc-name">id</span><span class="mc-type">String @id @db.VarChar(21)</span><span class="mc-desc">nanoid</span></div>
+
+            <div class="mc-section">Foreign keys</div>
+            <div class="mc-field fk"><span class="mc-name">equipmentId</span><span class="mc-type">String @db.VarChar(21)</span><span class="mc-desc">FK → Equipment</span></div>
+            <div class="mc-field fk"><span class="mc-name">jobId</span><span class="mc-type">String @db.VarChar(21)</span><span class="mc-desc">FK → Job</span></div>
+            <div class="mc-field fk"><span class="mc-name">userId</span><span class="mc-type">String @db.VarChar(21)</span><span class="mc-desc">FK → User (who logged)</span></div>
+            <div class="mc-field fk"><span class="mc-name">costCodeId</span><span class="mc-type">String? @db.VarChar(21)</span><span class="mc-desc">FK → CostCode (optional)</span></div>
+            <div class="mc-field fk"><span class="mc-name">timeSheetRecordValueId</span><span class="mc-type">String? @db.VarChar(21)</span><span class="mc-desc">FK → TimeSheetRecordValue</span></div>
+            <div class="mc-field fk"><span class="mc-name">instanceId</span><span class="mc-type">String @db.VarChar(21)</span><span class="mc-desc">FK → Instance (multi-tenant)</span></div>
+
+            <div class="mc-section">Core data</div>
+            <div class="mc-field"><span class="mc-name">date</span><span class="mc-type">DateTime @db.Date</span><span class="mc-desc">Entry date</span></div>
+            <div class="mc-field"><span class="mc-name">hours</span><span class="mc-type">Decimal @db.Decimal(10,2)</span><span class="mc-desc">Hours operated</span></div>
+            <div class="mc-field"><span class="mc-name">meterReadingStart</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Meter at start (optional)</span></div>
+            <div class="mc-field"><span class="mc-name">meterReadingEnd</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Meter at end (optional)</span></div>
+            <div class="mc-field"><span class="mc-name">isBillable</span><span class="mc-type">Boolean @default(true)</span><span class="mc-desc">Billable to customer</span></div>
+
+            <div class="mc-section">Rate snapshots</div>
+            <div class="mc-field"><span class="mc-name">costRateSnapshot</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Cost rate at entry time</span></div>
+            <div class="mc-field"><span class="mc-name">billableRateSnapshot</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">Billable rate at entry time</span></div>
+            <div class="mc-field"><span class="mc-name">calculatedCost</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">hours × costRateSnapshot</span></div>
+            <div class="mc-field"><span class="mc-name">calculatedRevenue</span><span class="mc-type">Decimal? @db.Decimal(10,2)</span><span class="mc-desc">hours × billableRateSnapshot</span></div>
+
+            <div class="mc-section">Status &amp; audit</div>
+            <div class="mc-field"><span class="mc-name">status</span><span class="mc-type">EquipmentTimeEntryStatus</span><span class="mc-desc">PENDING | APPROVED | REJECTED</span></div>
+            <div class="mc-field"><span class="mc-name">createdAt</span><span class="mc-type">DateTime @default(now())</span><span class="mc-desc"></span></div>
+            <div class="mc-field"><span class="mc-name">updatedAt</span><span class="mc-type">DateTime @updatedAt</span><span class="mc-desc"></span></div>
+            <div class="mc-field"><span class="mc-name">isDeleted</span><span class="mc-type">Boolean @default(false)</span><span class="mc-desc">Soft delete</span></div>
+
+            <div class="mc-section">Indexes</div>
+            <div class="mc-field"><span class="mc-name">@@index</span><span class="mc-type">[equipmentId]</span><span class="mc-desc">Filter by equipment</span></div>
+            <div class="mc-field"><span class="mc-name">@@index</span><span class="mc-type">[jobId]</span><span class="mc-desc">Filter by job</span></div>
+            <div class="mc-field"><span class="mc-name">@@index</span><span class="mc-type">[userId]</span><span class="mc-desc">Filter by user</span></div>
+            <div class="mc-field"><span class="mc-name">@@index</span><span class="mc-type">[instanceId]</span><span class="mc-desc">Multi-tenant isolation</span></div>
+            <div class="mc-field"><span class="mc-name">@@index</span><span class="mc-type">[date]</span><span class="mc-desc">Date range queries</span></div>
+        </div>
+    </div>
+
+    <div class="snapshot-callout" style="margin-top:1.5rem;">
+        <div class="sc-icon">📸</div>
+        <div class="sc-text">
+            <strong>Rate Snapshot Concept:</strong> When an <code>EquipmentTimeEntry</code> is created, the equipment's current <code>costRatePerHour</code> and <code>billableRatePerHour</code> are captured into <code>costRateSnapshot</code> and <code>billableRateSnapshot</code>. This ensures historical data stays accurate even if rates change later. The <code>calculatedCost</code> and <code>calculatedRevenue</code> are computed at creation time: <code>hours × rateSnapshot</code>.
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> Create migration for both the Equipment column additions and the new <code>EquipmentTimeEntry</code> table. Add <code>enum EquipmentTimeEntryStatus { PENDING APPROVED REJECTED }</code> to schema. Ensure <code>runningHours</code> defaults to <code>0</code> and is NOT nullable.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: PHASE 2 — EQUIPMENT HOURS IN TIMESHEETS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="phase-2-timesheets">
+    <div class="section-tag">Interface 3 — Phase 2</div>
+    <h2>Phase 2 — Equipment Hours in Timesheets</h2>
+    <p class="desc">Embed equipment hour logging into the existing timesheet entry workflow. Workers select equipment assigned to the job, log hours with optional meter readings, and toggle billable status. Approval updates <code>EquipmentTimeEntry.status</code> and accumulates <code>Equipment.runningHours</code>.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-11106</span>
+        <span class="badge blue">Q21030-11108</span>
+        <span class="badge orange">Backend + Frontend + Mobile</span>
+    </div>
+
+    <h3>Desktop Timesheet Entry — Equipment Section</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/timesheets/new — equipment section</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:1rem;">
+                <h3 style="margin:0; font-size:1rem;">Timesheet Entry</h3>
+                <span class="badge gray">Mar 10, 2026</span>
+            </div>
+
+            <div class="wf-form" style="margin-bottom:1.5rem;">
+                <div class="wf-section-title">Labor Entry (existing)</div>
+                <div class="wf-form-row col4">
+                    <div class="wf-field">
+                        <label>Job</label>
+                        <div class="input select">Sarnia Refinery — Unit 4</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Cost Code</label>
+                        <div class="input select">03-100 Excavation</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Hours</label>
+                        <div class="input">8.0</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Pay Type</label>
+                        <div class="input select">Regular</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-section-title" style="border-color:var(--success); color:var(--success);">Equipment Hours (new)</div>
+            <div style="background:var(--success-light); border:1px solid var(--success); border-radius:8px; padding:16px; margin-top:0.75rem;">
+                <div class="wf-form">
+                    <div class="wf-form-row col4">
+                        <div class="wf-field">
+                            <label>Equipment <span class="req">*</span></label>
+                            <div class="input select new-field">CAT 320 Excavator</div>
+                            <div class="field-hint">Filtered to equipment assigned to this job</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Hours <span class="req">*</span></label>
+                            <div class="input new-field">8.0</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Meter Start</label>
+                            <div class="input new-field">4,521</div>
+                            <div class="field-hint">Optional — hour meter reading</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Meter End</label>
+                            <div class="input new-field">4,529</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+                        <label style="font-size:0.72rem; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <span style="width:32px; height:18px; background:var(--success); border-radius:9px; display:inline-block; position:relative;">
+                                <span style="width:14px; height:14px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></span>
+                            </span>
+                            Billable
+                        </label>
+                        <span style="font-size:0.68rem; color:var(--text-muted); font-family:var(--mono);">Default: ON — equipment hours charged to customer</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:1.5rem; background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Entry Preview</div>
+                <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px;">
+                    <span style="font-size:0.82rem; font-weight:600;">CAT 320 Excavator</span>
+                    <span class="badge blue" style="font-size:0.6rem;">8.0 hrs</span>
+                    <span style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted);">Meter: 4,521 → 4,529</span>
+                    <span class="badge green" style="font-size:0.6rem;">Billable ✓</span>
+                    <span style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted); margin-left:auto;">Cost: $360.00 | Revenue: $600.00</span>
+                </div>
+            </div>
+
+            <div class="wf-btn-row" style="margin-top:1rem;">
+                <div class="wf-btn secondary">Cancel</div>
+                <div class="wf-btn primary">Submit Timesheet</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Mobile Timesheet Entry — Equipment Section</h3>
+    <div class="two-col">
+        <div>
+            <div class="mobile-frame">
+                <div class="mf-status">
+                    <span>9:41 AM</span>
+                    <span>Appello Mobile</span>
+                </div>
+                <div class="mf-header">
+                    ← Timesheet Entry — Mar 10
+                </div>
+                <div class="mf-body">
+                    <div style="margin-bottom:16px;">
+                        <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Job</div>
+                        <div style="border:1px solid var(--border-strong); border-radius:6px; padding:10px; font-size:0.82rem;">Sarnia Refinery — Unit 4</div>
+                    </div>
+
+                    <div style="font-size:0.72rem; font-weight:700; color:var(--success); border-bottom:2px solid var(--success); padding-bottom:4px; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.06em;">Equipment Hours</div>
+
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Equipment</div>
+                        <div style="border:1px solid var(--success); background:var(--success-light); border-radius:6px; padding:10px; font-size:0.82rem; font-weight:600; color:#065f46; display:flex; justify-content:space-between;">
+                            <span>CAT 320 Excavator</span>
+                            <span style="font-size:0.7rem;">▾</span>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:0.6rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Hours</div>
+                            <div style="border:1px solid var(--success); background:var(--success-light); border-radius:6px; padding:10px; font-size:0.85rem; font-weight:700; color:#065f46; text-align:center;">8.0</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.6rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Meter Start</div>
+                            <div style="border:1px solid var(--border-strong); border-radius:6px; padding:10px; font-size:0.85rem; text-align:center; color:var(--text-muted);">4,521</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.6rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Meter End</div>
+                            <div style="border:1px solid var(--border-strong); border-radius:6px; padding:10px; font-size:0.85rem; text-align:center; color:var(--text-muted);">4,529</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid var(--border); margin-bottom:12px;">
+                        <span style="font-size:0.78rem; font-weight:600;">Billable</span>
+                        <span style="width:36px; height:20px; background:var(--success); border-radius:10px; display:inline-block; position:relative;">
+                            <span style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></span>
+                        </span>
+                    </div>
+
+                    <div style="background:var(--accent); color:white; text-align:center; padding:14px; border-radius:8px; font-weight:700; font-size:0.85rem; cursor:pointer;">Submit</div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4>Mobile Equipment Entry — Key Points</h4>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:0.5rem;">
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green" style="flex-shrink:0;">Layout</span>
+                    <span>Stacked single-column layout at 375px. Equipment section appears below the labor entry section.</span>
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue" style="flex-shrink:0;">Dropdown</span>
+                    <span>Equipment dropdown filtered to equipment assigned to the selected job via <code style="font-size:0.68rem;">EquipmentAssignment</code>.</span>
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge orange" style="flex-shrink:0;">Meter</span>
+                    <span>Meter readings are optional. If provided, end − start is validated against hours (warning if delta doesn't match).</span>
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge purple" style="flex-shrink:0;">Toggle</span>
+                    <span>Billable defaults to <strong>ON</strong>. Workers can toggle off for internal/non-billable equipment use (e.g., mobilization).</span>
+                </div>
+            </div>
+
+            <h4 style="margin-top:1.5rem;">Approval Flow</h4>
+            <div class="flow" style="margin-top:0.5rem;">
+                <div class="flow-node active">
+                    <h4>Timesheet Submitted</h4>
+                    <p>EquipmentTimeEntry.status = PENDING</p>
+                    <span class="who">Rate snapshots captured</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Manager reviews</span></div>
+                <div class="flow-node success">
+                    <h4>Timesheet Approved</h4>
+                    <p>EquipmentTimeEntry.status → APPROVED</p>
+                </div>
+                <div class="flow-arrow"><span class="label">System auto-updates</span></div>
+                <div class="flow-node" style="border-color:var(--purple);">
+                    <h4>Running Hours Updated</h4>
+                    <p>Equipment.runningHours += approved hours</p>
+                    <span class="who">Atomic increment</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note" style="margin-top:1.5rem;">
+        <strong>Dev:</strong> Equipment dropdown queries <code>EquipmentAssignment</code> filtered by <code>jobId</code> from the selected timesheet job. Rate snapshots are captured from <code>Equipment.costRatePerHour</code> and <code>Equipment.billableRatePerHour</code> at entry creation time (not at approval). On approval, atomically increment <code>Equipment.runningHours</code> using <code>prisma.equipment.update({ data: { runningHours: { increment: approvedHours } } })</code>. On rejection after prior approval, decrement.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: EQUIPMENT HOURS LOG TAB -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="hours-log">
+    <div class="section-tag green">Interface 4 — Phase 2</div>
+    <h2>Equipment Hours Log Tab</h2>
+    <p class="desc">A new "Hours Log" tab on the Equipment detail page that lists all time entries with cost/revenue calculations, status badges, and a running total.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/equipment/[id]?tab=hours-log</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">EQ-0042</span>
+                <h3 style="margin:0;">CAT 320 Excavator</h3>
+                <div style="margin-left:auto; display:flex; align-items:center; gap:6px; background:var(--accent-light); border:2px solid var(--accent); border-radius:8px; padding:6px 14px;">
+                    <span style="font-size:0.62rem; font-weight:600; color:var(--accent); text-transform:uppercase;">Running Hours</span>
+                    <span style="font-size:1.1rem; font-weight:800; font-family:var(--mono); color:var(--accent);">1,247.5</span>
+                </div>
+            </div>
+
+            <div class="wf-detail-tabs">
+                <div class="wf-detail-tab">Overview</div>
+                <div class="wf-detail-tab">Form Submissions</div>
+                <div class="wf-detail-tab">Assigned To</div>
+                <div class="wf-detail-tab">Location</div>
+                <div class="wf-detail-tab">Expenses</div>
+                <div class="wf-detail-tab">Account Payable</div>
+                <div class="wf-detail-tab new active">Hours Log</div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-chip select">Date Range: All</div>
+                <div class="filter-chip select">Job: All</div>
+                <div class="filter-chip select">Worker: All</div>
+                <div class="filter-chip select">Status: All</div>
+            </div>
+
+            <div class="kpi-row" style="grid-template-columns:repeat(5,1fr); margin-bottom:1.25rem;">
+                <div class="kpi">
+                    <div class="kpi-label">Total Hours</div>
+                    <div class="kpi-value" style="color:var(--accent); font-size:1.2rem;">1,247.5</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Billable Hours</div>
+                    <div class="kpi-value" style="color:var(--success); font-size:1.2rem;">1,105.0</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Total Cost</div>
+                    <div class="kpi-value" style="color:var(--text); font-size:1.2rem;">$56,137</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Total Revenue</div>
+                    <div class="kpi-value" style="color:var(--success); font-size:1.2rem;">$82,875</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Margin</div>
+                    <div class="kpi-value" style="color:var(--success); font-size:1.2rem;">32.3%</div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="wf-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Job</th>
+                            <th>Worker</th>
+                            <th class="right">Hours</th>
+                            <th class="right">Meter Start</th>
+                            <th class="right">Meter End</th>
+                            <th class="center">Billable</th>
+                            <th class="right">Cost</th>
+                            <th class="right">Revenue</th>
+                            <th class="center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono">Mar 10, 2026</td>
+                            <td><strong>Sarnia Refinery — Unit 4</strong></td>
+                            <td>Ben Fenske</td>
+                            <td class="right mono">8.0</td>
+                            <td class="right mono">4,521</td>
+                            <td class="right mono">4,529</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$360.00</td>
+                            <td class="right mono">$600.00</td>
+                            <td class="center"><span class="badge green">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 9, 2026</td>
+                            <td><strong>Sarnia Refinery — Unit 4</strong></td>
+                            <td>Jared Crotwell</td>
+                            <td class="right mono">10.0</td>
+                            <td class="right mono">4,511</td>
+                            <td class="right mono">4,521</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$450.00</td>
+                            <td class="right mono">$750.00</td>
+                            <td class="center"><span class="badge green">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 8, 2026</td>
+                            <td><strong>Dow Chemical — Bay 7</strong></td>
+                            <td>Mike Thompson</td>
+                            <td class="right mono">6.5</td>
+                            <td class="right mono">4,504</td>
+                            <td class="right mono">4,511</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$292.50</td>
+                            <td class="right mono">$487.50</td>
+                            <td class="center"><span class="badge orange">Pending</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 7, 2026</td>
+                            <td><strong>NOVA Chemicals — Coker</strong></td>
+                            <td>Nick Newman</td>
+                            <td class="right mono">4.0</td>
+                            <td class="right mono">—</td>
+                            <td class="right mono">—</td>
+                            <td class="center"><span style="color:var(--text-muted);">No</span></td>
+                            <td class="right mono">$180.00</td>
+                            <td class="right mono" style="color:var(--text-muted);">$0.00</td>
+                            <td class="center"><span class="badge green">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 6, 2026</td>
+                            <td><strong>Sarnia Refinery — Unit 4</strong></td>
+                            <td>Ben Fenske</td>
+                            <td class="right mono">8.0</td>
+                            <td class="right mono">4,496</td>
+                            <td class="right mono">4,504</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$360.00</td>
+                            <td class="right mono">$600.00</td>
+                            <td class="center"><span class="badge green">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 5, 2026</td>
+                            <td><strong>Dow Chemical — Bay 7</strong></td>
+                            <td>Jake Rodriguez</td>
+                            <td class="right mono">7.5</td>
+                            <td class="right mono">4,489</td>
+                            <td class="right mono">4,496</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$337.50</td>
+                            <td class="right mono">$562.50</td>
+                            <td class="center"><span class="badge red">Rejected</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">Mar 4, 2026</td>
+                            <td><strong>Sarnia Refinery — Unit 4</strong></td>
+                            <td>Jared Crotwell</td>
+                            <td class="right mono">8.0</td>
+                            <td class="right mono">4,481</td>
+                            <td class="right mono">4,489</td>
+                            <td class="center"><span class="badge green">Yes</span></td>
+                            <td class="right mono">$360.00</td>
+                            <td class="right mono">$600.00</td>
+                            <td class="center"><span class="badge green">Approved</span></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>Running Total (showing 7 of 156 entries)</strong></td>
+                            <td class="right mono">52.0</td>
+                            <td class="right mono" colspan="2"></td>
+                            <td></td>
+                            <td class="right mono">$2,340.00</td>
+                            <td class="right mono">$3,600.00</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="text-align:center; padding:12px; font-size:0.72rem; color:var(--text-muted);">
+                Showing 7 of 156 entries · <span style="color:var(--accent); cursor:pointer; font-weight:600;">Load More</span>
+            </div>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> Query <code>EquipmentTimeEntry</code> where <code>equipmentId = [current equipment]</code>, ordered by <code>date DESC</code>. Use pagination (cursor-based or offset). Status badges: <span style="color:var(--orange);">Pending (orange)</span>, <span style="color:var(--success);">Approved (green)</span>, <span style="color:var(--danger);">Rejected (red)</span>. KPI row aggregates from approved entries only. Table shows all entries regardless of status.
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7: GRAPHQL & MODEL LAYER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="architecture">
+    <div class="section-tag orange">Architecture</div>
+    <h2>GraphQL &amp; Model Layer</h2>
+    <p class="desc">Full implementation architecture across all layers — from database migration through GraphQL resolvers to frontend components.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Implementation Architecture — Change Map</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>File</th>
+                        <th>Action</th>
+                        <th>Phase</th>
+                        <th>Effort</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge purple">Migration</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/api/prisma/schema.prisma</code></td>
+                        <td>Add <code>costRatePerHour</code>, <code>billableRatePerHour</code>, <code>runningHours</code> to Equipment. Create <code>EquipmentTimeEntry</code> model + <code>EquipmentTimeEntryStatus</code> enum.</td>
+                        <td><span class="badge blue">P1</span></td>
+                        <td><span class="badge green">Small</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge purple">Model</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/api/src/models/EquipmentTimeEntry.ts</code></td>
+                        <td>New <code>BaseModel</code> class with CRUD operations, rate snapshot logic on create, running hours increment on approval.</td>
+                        <td><span class="badge blue">P1</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">GraphQL</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/api/src/graphql/models/EquipmentTimeEntry.ts</code></td>
+                        <td>New resolver with CRUD queries + mutations. Approval mutation updates status and running hours. Type resolvers for Equipment, Job, User relationships.</td>
+                        <td><span class="badge blue">P1</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">Schema Reg.</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/api/src/graphql/schema.ts</code></td>
+                        <td>Register in 4 places: import, typeDef, Query, Mutation spreads.</td>
+                        <td><span class="badge blue">P1</span></td>
+                        <td><span class="badge green">Small</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Frontend</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">Equipment detail page components</code></td>
+                        <td>Add rate input fields (cost, billable) to Equipment add/edit form. Add running hours display to detail header. Add "Hours Log" tab.</td>
+                        <td><span class="badge blue">P1+P2</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Timesheet</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">Timesheet entry components (desktop)</code></td>
+                        <td>Add equipment selector (filtered by job assignment), hours, meter readings, billable toggle. Create <code>EquipmentTimeEntry</code> on submit.</td>
+                        <td><span class="badge purple">P2</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Mobile</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/mobile/src/.../timesheet components</code></td>
+                        <td>Same fields as desktop in stacked single-column layout (375px). Equipment dropdown, hours, meter readings, billable toggle.</td>
+                        <td><span class="badge purple">P2</span></td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green">Codegen</span></td>
+                        <td><code style="font-family:var(--mono); font-size:0.68rem;">apps/frontend/src/graphql/queries/</code></td>
+                        <td>New <code>.graphql</code> query files for <code>EquipmentTimeEntry</code> list, get, create, update. Run <code>pnpm run codegen</code> to generate hooks.</td>
+                        <td><span class="badge blue">P1</span></td>
+                        <td><span class="badge green">Small</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">GraphQL Type Definition (Preview)</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">EquipmentTimeEntry — GraphQL Type</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;"><span style="color:var(--purple);">type</span> <span style="color:var(--accent);">EquipmentTimeEntry</span> {
+  id: ID!
+  equipmentId: String!
+  jobId: String!
+  userId: String!
+  costCodeId: String
+  date: DateTime!
+  hours: Float!
+  meterReadingStart: Float
+  meterReadingEnd: Float
+  isBillable: Boolean!
+  costRateSnapshot: Float
+  billableRateSnapshot: Float
+  calculatedCost: Float
+  calculatedRevenue: Float
+  status: EquipmentTimeEntryStatus!
+  timeSheetRecordValueId: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  <span style="color:var(--text-muted);"># Relationships (PascalCase per convention)</span>
+  Equipment: Equipment!
+  Job: Job!
+  User: User!
+  CostCode: CostCode
+}
+
+<span style="color:var(--purple);">enum</span> <span style="color:var(--accent);">EquipmentTimeEntryStatus</span> {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+<span style="color:var(--purple);">input</span> <span style="color:var(--accent);">CreateEquipmentTimeEntryInput</span> {
+  equipmentId: String!
+  jobId: String!
+  costCodeId: String
+  date: DateTime!
+  hours: Float!
+  meterReadingStart: Float
+  meterReadingEnd: Float
+  isBillable: Boolean
+}
+
+<span style="color:var(--purple);">type</span> <span style="color:var(--accent);">Query</span> {
+  getEquipmentTimeEntries(equipmentId: String, jobId: String): [EquipmentTimeEntry!]!
+  getEquipmentTimeEntry(id: ID!): EquipmentTimeEntry
+}
+
+<span style="color:var(--purple);">type</span> <span style="color:var(--accent);">Mutation</span> {
+  createEquipmentTimeEntry(input: CreateEquipmentTimeEntryInput!): EquipmentTimeEntry!
+  approveEquipmentTimeEntry(id: ID!): EquipmentTimeEntry!
+  rejectEquipmentTimeEntry(id: ID!): EquipmentTimeEntry!
+  deleteEquipmentTimeEntry(id: ID!): Boolean!
+}</pre>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Schema Registration Checklist</h3>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:0.5rem;">
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:1.2rem; margin-bottom:6px;">1️⃣</div>
+            <h4 style="font-size:0.72rem; color:var(--accent);">Import</h4>
+            <div style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted); margin-top:4px;">
+                <code>import { EquipmentTimeEntryResolvers } from "./models/EquipmentTimeEntry"</code>
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:1.2rem; margin-bottom:6px;">2️⃣</div>
+            <h4 style="font-size:0.72rem; color:var(--accent);">typeDef</h4>
+            <div style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted); margin-top:4px;">
+                <code>EquipmentTimeEntryResolvers.typeDef ?? gql``</code>
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:1.2rem; margin-bottom:6px;">3️⃣</div>
+            <h4 style="font-size:0.72rem; color:var(--accent);">Query</h4>
+            <div style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted); margin-top:4px;">
+                <code>...EquipmentTimeEntryResolvers.Query</code>
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:1.2rem; margin-bottom:6px;">4️⃣</div>
+            <h4 style="font-size:0.72rem; color:var(--accent);">Mutation</h4>
+            <div style="font-size:0.68rem; font-family:var(--mono); color:var(--text-muted); margin-top:4px;">
+                <code>...EquipmentTimeEntryResolvers.Mutation</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note" style="margin-top:1rem;">
+        <strong>Dev:</strong> Follow the hierarchy: Prisma → Models → GraphQL. Models must NOT import from GraphQL. GraphQL resolvers call model methods. Rate snapshots are captured in the model's <code>createItem()</code> method by reading <code>Equipment.costRatePerHour</code> and <code>Equipment.billableRatePerHour</code>. The approval mutation in the model atomically updates both <code>EquipmentTimeEntry.status</code> and <code>Equipment.runningHours</code> in a <code>prisma.$transaction</code>.
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Equipment Module — Phases 1 &amp; 2 — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">SP6 · Release 1.32.0-RC1 · Confidential · March 2026</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>

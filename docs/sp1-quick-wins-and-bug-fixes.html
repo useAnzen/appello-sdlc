@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Quick Wins &amp; Bug Fixes — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.file { border-style: dashed; justify-content: center; min-height: 64px; }
+.wf-field .input.person { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-node.warning { border-color: var(--warning); }
+.flow-node.danger { border-color: var(--danger); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* HORIZONTAL FLOW */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; flex-wrap: wrap; justify-content: center; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* DASHBOARD MOCK */
+.dash-mock { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
+.dash-toolbar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.dash-toolbar h3 { font-size: 0.9rem; margin: 0; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.6rem; font-weight: 800; font-family: var(--mono); }
+.kpi .kpi-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 4px; }
+.kpi.green .kpi-value { color: var(--success); }
+.kpi.amber .kpi-value { color: var(--orange); }
+.kpi.blue .kpi-value { color: var(--accent); }
+.kpi.red .kpi-value { color: var(--danger); }
+
+/* NOTIFICATION BELL MOCK */
+.bell-mock {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%; background: var(--bg-panel); border: 1px solid var(--border);
+    font-size: 1.1rem; cursor: pointer;
+}
+.bell-mock .bell-count {
+    position: absolute; top: -4px; right: -4px; background: var(--danger); color: white;
+    font-size: 0.55rem; font-weight: 700; min-width: 16px; height: 16px; line-height: 16px;
+    text-align: center; border-radius: 10px; padding: 0 4px;
+}
+
+/* BEFORE/AFTER COMPARISON */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+.compare-box { border-radius: var(--radius); padding: 1.25rem; }
+.compare-box.before { background: var(--danger-light); border: 2px solid var(--danger); }
+.compare-box.after { background: var(--success-light); border: 2px solid var(--success); }
+.compare-box h4 { font-size: 0.82rem; margin-bottom: 0.75rem; }
+.compare-box.before h4 { color: #991b1b; }
+.compare-box.after h4 { color: #065f46; }
+
+/* SEQUENCE DIAGRAMS */
+.seq-step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.seq-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: white; }
+.seq-num.red { background: var(--danger); }
+.seq-num.green { background: var(--success); }
+.seq-num.blue { background: var(--info); }
+.seq-num.gray { background: var(--border-strong); }
+.seq-text { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; padding-top: 2px; }
+.seq-text strong { color: var(--text); }
+
+/* SQL CODE */
+.sql-block {
+    background: #1e293b; color: #e2e8f0; padding: 14px 16px; border-radius: 8px;
+    font-family: var(--mono); font-size: 0.72rem; line-height: 1.7; overflow-x: auto; margin-top: 0.75rem;
+}
+.sql-block .keyword { color: #93c5fd; }
+.sql-block .string { color: #86efac; }
+.sql-block .comment { color: #64748b; font-style: italic; }
+.sql-block .highlight { background: rgba(239, 68, 68, 0.25); display: inline; padding: 1px 4px; border-radius: 3px; }
+.sql-block .fix { background: rgba(16, 185, 129, 0.25); display: inline; padding: 1px 4px; border-radius: 3px; }
+
+/* BUGGY METRIC HIGHLIGHT */
+.kpi.buggy { border: 2px solid var(--danger); position: relative; }
+.kpi.buggy::after {
+    content: "BUG"; position: absolute; top: -8px; right: -8px;
+    background: var(--danger); color: white; font-size: 0.55rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; font-family: var(--mono);
+}
+
+/* DATA FLOW */
+.data-flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1rem 0; }
+.data-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 16px; text-align: center; min-width: 200px; position: relative;
+    box-shadow: var(--shadow); font-size: 0.75rem;
+}
+.data-node.primary { border-color: var(--accent); background: var(--accent-light); }
+.data-node.secondary { border-color: var(--purple); background: var(--purple-light); }
+.data-node .node-label { font-weight: 700; margin-bottom: 2px; }
+.data-node .node-detail { font-size: 0.65rem; color: var(--text-muted); font-family: var(--mono); }
+.data-arrow { width: 2px; height: 20px; background: var(--border-strong); position: relative; }
+.data-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.data-arrow-split { display: flex; align-items: flex-start; gap: 0; justify-content: center; position: relative; }
+.data-arrow-split::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 2px; background: var(--border-strong); }
+
+/* HEADER META */
+.spec-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 2rem; }
+.spec-meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-secondary); }
+.spec-meta-item .label { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.62rem; letter-spacing: 0.04em; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .compare-grid { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="overview">
+    <div style="margin-bottom: 1.5rem;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span class="section-tag red">Bug Fix</span>
+            <span class="section-tag red">Bug Fix</span>
+            <span class="section-tag orange">Enhancement</span>
+            <span class="section-tag orange">Enhancement</span>
+        </div>
+        <h2 style="font-size:2rem; margin-bottom:0.25rem;">SP1 — Quick Wins &amp; Bug Fixes</h2>
+        <p class="desc" style="max-width:800px;">Four independent items addressing customer-reported bugs and UX improvements. Each item can be developed, tested, and deployed independently with zero cross-dependencies.</p>
+    </div>
+
+    <div class="spec-meta">
+        <div class="spec-meta-item"><span class="label">Release</span> <strong>1.32.0-RC1</strong></div>
+        <div class="spec-meta-item"><span class="label">Sprint</span> <strong>SP1</strong></div>
+        <div class="spec-meta-item"><span class="label">Effort</span> <span class="badge blue">Low — 4 independent items</span></div>
+        <div class="spec-meta-item"><span class="label">Priority</span> <span class="badge red">High</span></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; border-left:3px solid var(--danger);">
+            <div style="font-size:0.62rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Q21030-11099</div>
+            <div style="font-size:0.82rem; font-weight:600;">Time-Off Notification Bug</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px;">Rival Insulation</div>
+            <div style="margin-top:6px;"><span class="badge red">Bug Fix</span></div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; border-left:3px solid var(--danger);">
+            <div style="font-size:0.62rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Q21030-11103</div>
+            <div style="font-size:0.82rem; font-weight:600;">Dashboard Metric Bug</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px;">Rival Insulation</div>
+            <div style="margin-top:6px;"><span class="badge red">Bug Fix</span></div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; border-left:3px solid var(--orange);">
+            <div style="font-size:0.62rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Q21030-11011</div>
+            <div style="font-size:0.82rem; font-weight:600;">List Pagination &amp; Search State</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px;">Paul Mceachren, Rival</div>
+            <div style="margin-top:6px;"><span class="badge orange">Enhancement</span></div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px; border-left:3px solid var(--orange);">
+            <div style="font-size:0.62rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Q21030-11199</div>
+            <div style="font-size:0.82rem; font-weight:600;">Notes ↔ Equipment Association</div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px;">Thermogenics</div>
+            <div style="margin-top:6px;"><span class="badge orange">Enhancement</span></div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: TIME-OFF NOTIFICATION BUG -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="time-off-notification">
+    <span class="section-tag red">Bug Fix</span>
+    <h2>Time-Off Notification Bug</h2>
+    <p class="desc">When a manager views a time-off request, the notification is cleared for ALL managers — not just the one who viewed it. This means other managers never see the notification.</p>
+
+    <div class="spec-meta">
+        <div class="spec-meta-item"><span class="label">Jira</span> <strong>Q21030-11099</strong></div>
+        <div class="spec-meta-item"><span class="label">Customer</span> <strong>Rival Insulation</strong></div>
+        <div class="spec-meta-item"><span class="label">Reported</span> Jan 28, 2026 Onboarding Session</div>
+    </div>
+
+    <!-- Notification Bell + Leave Request -->
+    <h3>Current Flow — How Notifications Work</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Notification System — Leave Requests</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; gap:2rem; align-items:flex-start;">
+                <!-- Bell -->
+                <div style="text-align:center;">
+                    <div style="font-size:0.68rem; font-weight:600; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Manager Header Bar</div>
+                    <div style="display:inline-flex; align-items:center; gap:12px; background:var(--bg-panel); padding:10px 16px; border-radius:8px; border:1px solid var(--border);">
+                        <div style="font-size:0.78rem; color:var(--text-secondary);">... Dashboard</div>
+                        <div class="bell-mock">
+                            🔔
+                            <span class="bell-count">3</span>
+                        </div>
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:white; font-size:0.65rem; font-weight:700;">MJ</div>
+                    </div>
+                </div>
+                <!-- Arrow -->
+                <div style="display:flex; align-items:center; padding-top:2rem;">
+                    <div style="width:40px; height:2px; background:var(--border-strong);"></div>
+                    <div style="font-size:0.6rem; color:var(--text-muted);">▶</div>
+                </div>
+                <!-- Leave Request Detail -->
+                <div style="flex:1; max-width:400px;">
+                    <div style="font-size:0.68rem; font-weight:600; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Leave Request Detail View</div>
+                    <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div style="font-weight:600; font-size:0.85rem;">Time-Off Request</div>
+                            <span class="badge orange">Pending Approval</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Employee</span><span style="font-weight:600;">John Smith</span></div>
+                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Type</span><span>Vacation</span></div>
+                            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Dates</span><span>Mar 15–19, 2026</span></div>
+                            <div style="display:flex; justify-content:space-between; padding:4px 0;"><span style="color:var(--text-muted);">Days</span><span style="font-weight:600;">5 days</span></div>
+                        </div>
+                        <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:10px;">
+                            <div class="wf-btn danger" style="font-size:0.7rem;">Deny</div>
+                            <div class="wf-btn primary" style="font-size:0.7rem;">Approve</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before / After Comparison -->
+    <h3 style="margin-top:2rem;">Root Cause &amp; Fix</h3>
+    <div class="compare-grid">
+        <div class="compare-box before">
+            <h4>❌ Before (Bug)</h4>
+            <div class="seq-step"><div class="seq-num red">1</div><div class="seq-text"><strong>Manager A</strong> views the leave request</div></div>
+            <div class="seq-step"><div class="seq-num red">2</div><div class="seq-text"><code style="font-size:0.68rem;">editNotificationStatus</code> fires — marks the <code style="font-size:0.68rem;">NotificationStatus</code> record as read</div></div>
+            <div class="seq-step"><div class="seq-num red">3</div><div class="seq-text"><strong>No ownership check</strong> — the resolver accepts <em>any</em> NotificationStatus ID without verifying it belongs to Manager A</div></div>
+            <div class="seq-step"><div class="seq-num red">4</div><div class="seq-text"><strong>Manager B</strong> never sees the notification — it was already marked read for everyone</div></div>
+            <div style="margin-top:12px; padding:10px; background:rgba(255,255,255,0.5); border-radius:6px;">
+                <div style="font-size:0.68rem; font-weight:600; color:#991b1b; margin-bottom:6px;">Issue 2: No cascadeSetAsRead</div>
+                <div style="font-size:0.72rem; color:#991b1b;">Only clicking the bell icon marks notifications as read. Viewing the leave request detail page does NOT trigger <code style="font-size:0.68rem;">cascadeSetAsRead</code> for the viewing user.</div>
+            </div>
+        </div>
+        <div class="compare-box after">
+            <h4>✅ After (Fix)</h4>
+            <div class="seq-step"><div class="seq-num green">1</div><div class="seq-text"><strong>Manager A</strong> views the leave request</div></div>
+            <div class="seq-step"><div class="seq-num green">2</div><div class="seq-text"><code style="font-size:0.68rem;">cascadeSetAsRead</code> fires — marks only <strong>Manager A's</strong> NotificationStatus as read</div></div>
+            <div class="seq-step"><div class="seq-num green">3</div><div class="seq-text"><strong>Ownership guard</strong> on <code style="font-size:0.68rem;">editNotificationStatus</code> — resolver validates <code style="font-size:0.68rem;">NotificationStatus.userId === ctx.user.id</code></div></div>
+            <div class="seq-step"><div class="seq-num green">4</div><div class="seq-text"><strong>Manager B</strong> still sees their own unread notification — badge count intact</div></div>
+            <div style="margin-top:12px; padding:10px; background:rgba(255,255,255,0.5); border-radius:6px;">
+                <div style="font-size:0.68rem; font-weight:600; color:#065f46; margin-bottom:6px;">Both fixes combined</div>
+                <div style="font-size:0.72rem; color:#065f46;">1. Ownership guard prevents cross-user status mutation<br>2. <code style="font-size:0.68rem;">cascadeSetAsRead</code> on leave request view marks only the viewing user's notifications</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Diagram -->
+    <h3 style="margin-top:2rem;">Notification Ownership Model</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Notification → NotificationStatus (per-user)</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; gap:1.5rem; justify-content:center; align-items:flex-start; flex-wrap:wrap;">
+                <!-- Notification Record -->
+                <div style="text-align:center;">
+                    <div style="background:var(--accent-light); border:2px solid var(--accent); border-radius:8px; padding:12px 20px; min-width:200px;">
+                        <div style="font-size:0.7rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em;">Notification</div>
+                        <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">Leave Request: John Smith</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted); font-family:var(--mono); margin-top:4px;">type: LEAVE_REQUEST</div>
+                    </div>
+                    <div style="width:2px; height:20px; background:var(--border-strong); margin:0 auto;"></div>
+                    <div style="font-size:0.6rem; color:var(--text-muted); font-style:italic;">creates one NotificationStatus per recipient</div>
+                    <div style="display:flex; gap:12px; margin-top:8px; justify-content:center;">
+                        <div style="width:2px; height:20px; background:var(--border-strong);"></div>
+                        <div style="width:2px; height:20px; background:var(--border-strong);"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:1.5rem; justify-content:center; margin-top:8px; flex-wrap:wrap;">
+                <!-- Manager A -->
+                <div style="background:var(--success-light); border:2px solid var(--success); border-radius:8px; padding:10px 16px; min-width:180px; text-align:center;">
+                    <div style="font-size:0.65rem; font-weight:700; color:#065f46; text-transform:uppercase;">NotificationStatus</div>
+                    <div style="font-size:0.78rem; font-weight:600; margin-top:2px;">Manager A</div>
+                    <div style="font-size:0.65rem; color:#065f46; font-family:var(--mono); margin-top:4px;">isRead: true ✓</div>
+                    <div style="font-size:0.6rem; color:#065f46; margin-top:2px;">(viewed the request)</div>
+                </div>
+                <!-- Manager B -->
+                <div style="background:var(--info-light); border:2px solid var(--info); border-radius:8px; padding:10px 16px; min-width:180px; text-align:center;">
+                    <div style="font-size:0.65rem; font-weight:700; color:#1d4ed8; text-transform:uppercase;">NotificationStatus</div>
+                    <div style="font-size:0.78rem; font-weight:600; margin-top:2px;">Manager B</div>
+                    <div style="font-size:0.65rem; color:#1d4ed8; font-family:var(--mono); margin-top:4px;">isRead: false</div>
+                    <div style="font-size:0.6rem; color:#1d4ed8; margin-top:2px;">(still unread — correct!)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> Two changes required:<br>
+        <strong>1.</strong> <code>apps/api/src/graphql/models/NotificationStatus.ts</code> — Add ownership guard: verify <code>NotificationStatus.userId === context.user.id</code> before allowing status mutation in <code>editNotificationStatus</code> resolver.<br>
+        <strong>2.</strong> <code>apps/api/src/models/Notification.ts</code> ~line 439 — Add <code>cascadeSetAsRead</code> call when a user views the leave request detail page. This should mark only the viewing user's NotificationStatus records for that reference as read.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: DASHBOARD METRIC BUG -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="dashboard-metric">
+    <span class="section-tag red">Bug Fix</span>
+    <h2>Dashboard Metric Bug — Total In-Progress Jobs Value</h2>
+    <p class="desc">"Total In-Progress Jobs Value" on the main dashboard includes archived jobs, inflating the displayed value. The raw SQL query filters by workflow state but does not exclude archived records.</p>
+
+    <div class="spec-meta">
+        <div class="spec-meta-item"><span class="label">Jira</span> <strong>Q21030-11103</strong></div>
+        <div class="spec-meta-item"><span class="label">Customer</span> <strong>Rival Insulation</strong></div>
+    </div>
+
+    <!-- Dashboard Wireframe -->
+    <h3>Dashboard — Affected Metric</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/ (Main Dashboard)</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0;">Company Dashboard</h3>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted);">Period:</div>
+                    <div class="wf-btn secondary" style="font-size:0.68rem;">This Month ▾</div>
+                </div>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi blue">
+                    <div class="kpi-label">Active Jobs</div>
+                    <div class="kpi-value">24</div>
+                    <div class="kpi-sub">Currently in progress</div>
+                </div>
+                <div class="kpi buggy">
+                    <div class="kpi-label">Total In-Progress Value</div>
+                    <div class="kpi-value" style="color:var(--danger);">$4.2M</div>
+                    <div class="kpi-sub" style="color:var(--danger);">⚠ Includes archived jobs!</div>
+                </div>
+                <div class="kpi green">
+                    <div class="kpi-label">Jobs Won (Month)</div>
+                    <div class="kpi-value">7</div>
+                    <div class="kpi-sub">+3 from last month</div>
+                </div>
+                <div class="kpi amber">
+                    <div class="kpi-label">Pending Estimates</div>
+                    <div class="kpi-value">12</div>
+                    <div class="kpi-sub">$2.1M pipeline</div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--danger-light); border:1px solid var(--danger); border-radius:6px; font-size:0.75rem; color:#991b1b; margin-top:4px;">
+                ⚠ <strong>Bug:</strong> The "Total In-Progress Value" metric ($4.2M) is inflated because the query includes archived jobs. The correct value after fix is approximately <strong>$3.6M</strong>.
+            </div>
+        </div>
+    </div>
+
+    <!-- SQL Fix -->
+    <h3 style="margin-top:2rem;">Root Cause — SQL Query</h3>
+    <div class="two-col">
+        <div>
+            <h4 style="color:#991b1b;">Before (Buggy Query)</h4>
+            <div class="sql-block">
+<span class="keyword">SELECT</span> <span class="keyword">SUM</span>(jlf.jobValue) <span class="keyword">AS</span> totalValue
+<span class="keyword">FROM</span> JobListFeed jlf
+<span class="keyword">INNER JOIN</span> Job j <span class="keyword">ON</span> j.id = jlf.id
+<span class="keyword">WHERE</span> j.workflowState = <span class="string">'inprogress'</span>
+  <span class="keyword">AND</span> j.isDeleted = <span class="string">0</span>
+  <span class="comment">-- ⚠ Missing: AND j.isArchived = 0</span>
+            </div>
+        </div>
+        <div>
+            <h4 style="color:#065f46;">After (Fixed Query)</h4>
+            <div class="sql-block">
+<span class="keyword">SELECT</span> <span class="keyword">SUM</span>(jlf.jobValue) <span class="keyword">AS</span> totalValue
+<span class="keyword">FROM</span> JobListFeed jlf
+<span class="keyword">INNER JOIN</span> Job j <span class="keyword">ON</span> j.id = jlf.id
+<span class="keyword">WHERE</span> j.workflowState = <span class="string">'inprogress'</span>
+  <span class="keyword">AND</span> j.isDeleted = <span class="string">0</span>
+  <span class="fix"><span class="keyword">AND</span> j.isArchived = <span class="string">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impact Table -->
+    <h3 style="margin-top:2rem;">Impact Analysis</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Metric comparison — before / after</div></div>
+        <div class="wireframe-body">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>Metric</th><th>Before Fix</th><th>After Fix</th><th>Delta</th><th>Issue</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Total In-Progress Value</strong></td>
+                        <td class="mono" style="color:var(--danger);">$4,217,500</td>
+                        <td class="mono" style="color:var(--success);">$3,612,800</td>
+                        <td class="mono">-$604,700</td>
+                        <td><span class="badge red">Archived jobs included</span></td>
+                    </tr>
+                    <tr>
+                        <td>Active Jobs Count</td>
+                        <td class="mono">24</td>
+                        <td class="mono">24</td>
+                        <td class="mono">—</td>
+                        <td><span class="badge green">Not affected</span></td>
+                    </tr>
+                    <tr>
+                        <td>Jobs Won (Month)</td>
+                        <td class="mono">7</td>
+                        <td class="mono">7</td>
+                        <td class="mono">—</td>
+                        <td><span class="badge green">Not affected</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> <code>apps/api/src/models/MetricOption.ts</code> — function <code>getTotalValueOfAllJobsInProgress</code> (lines ~226–242). Add <code>AND j.isArchived = 0</code> to the WHERE clause. Also audit other metric queries in this file for the same missing filter.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: LIST PAGINATION & SEARCH STATE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="list-pagination">
+    <span class="section-tag orange">Enhancement</span>
+    <h2>List Pagination &amp; Search State Persistence</h2>
+    <p class="desc">Navigating from a list page to a detail page and pressing "Back" resets the page number and search text. Filters are already preserved, but page number and search text are lost.</p>
+
+    <div class="spec-meta">
+        <div class="spec-meta-item"><span class="label">Jira</span> <strong>Q21030-11011</strong></div>
+        <div class="spec-meta-item"><span class="label">Customer</span> <strong>Paul Mceachren, Rival Insulation</strong></div>
+        <div class="spec-meta-item"><span class="label">Evidence</span> <span class="badge purple">Loom Video</span></div>
+    </div>
+
+    <!-- Navigation Flow -->
+    <h3>Navigation Flow — Before vs. After</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/jobs (list) → /jobs/[id] (detail) → ← back</div></div>
+        <div class="wireframe-body">
+            <!-- Step 1: List at Page 3 -->
+            <div style="display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap;">
+                <div style="flex:1; min-width:280px;">
+                    <div style="font-size:0.68rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Step 1 — User is on page 3 with search</div>
+                    <div style="background:var(--bg-panel); border-radius:8px; padding:12px; border:1px solid var(--border);">
+                        <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
+                            <div style="flex:1; background:var(--bg-white); border:1px solid var(--accent); border-radius:6px; padding:6px 10px; font-size:0.75rem; color:var(--text); display:flex; align-items:center; gap:4px;">
+                                🔍 <strong style="color:var(--accent);">sarnia</strong>
+                            </div>
+                            <div style="font-size:0.68rem; padding:4px 8px; background:var(--accent-light); border:1px solid var(--accent); border-radius:5px; color:var(--accent); font-weight:600;">Status: Active</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:0.75rem;">Sarnia Refinery — Unit 4 Turnaround</div>
+                            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:0.75rem;">Sarnia Chemical Plant — Pipe Insulation</div>
+                            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:0.75rem;">Sarnia Ethylene — Maintenance</div>
+                        </div>
+                        <div style="display:flex; justify-content:center; gap:4px; margin-top:10px; align-items:center;">
+                            <div style="font-size:0.68rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-muted);">← Prev</div>
+                            <div style="font-size:0.68rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-muted);">1</div>
+                            <div style="font-size:0.68rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-muted);">2</div>
+                            <div style="font-size:0.68rem; padding:4px 8px; background:var(--accent); color:white; border-radius:4px; font-weight:700;">3</div>
+                            <div style="font-size:0.68rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-muted);">4</div>
+                            <div style="font-size:0.68rem; padding:4px 8px; border:1px solid var(--border); border-radius:4px; color:var(--text-muted);">Next →</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:2rem; gap:6px;">
+                    <div style="font-size:0.6rem; color:var(--text-muted); font-family:var(--mono);">click row</div>
+                    <div style="width:40px; height:2px; background:var(--border-strong);"></div>
+                    <div style="font-size:0.5rem; color:var(--text-muted);">▶</div>
+                </div>
+
+                <!-- Step 2: Detail Page -->
+                <div style="flex:0.8; min-width:200px;">
+                    <div style="font-size:0.68rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Step 2 — Detail page</div>
+                    <div style="background:var(--bg-panel); border-radius:8px; padding:12px; border:1px solid var(--border);">
+                        <div style="font-weight:600; font-size:0.82rem; margin-bottom:6px;">Sarnia Refinery — Unit 4</div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:8px;">Job details, estimates, financials...</div>
+                        <div class="wf-btn secondary" style="font-size:0.68rem;">← Back to Jobs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before/After -->
+    <div class="compare-grid" style="margin-top:1.5rem;">
+        <div class="compare-box before">
+            <h4>❌ Before — Back Button Result</h4>
+            <div class="seq-step"><div class="seq-num red">1</div><div class="seq-text">Page number resets to <strong>page 1</strong></div></div>
+            <div class="seq-step"><div class="seq-num red">2</div><div class="seq-text">Search text clears to <strong>empty</strong></div></div>
+            <div class="seq-step"><div class="seq-num green">3</div><div class="seq-text">Filters (Status: Active) <strong>preserved</strong> ✓</div></div>
+            <div style="margin-top:10px; padding:8px; background:rgba(255,255,255,0.5); border-radius:6px; font-size:0.72rem; color:#991b1b;">
+                User must re-type search and re-navigate to page 3 — very frustrating for large lists
+            </div>
+        </div>
+        <div class="compare-box after">
+            <h4>✅ After — Back Button Result</h4>
+            <div class="seq-step"><div class="seq-num green">1</div><div class="seq-text">Page number restored to <strong>page 3</strong> ✓</div></div>
+            <div class="seq-step"><div class="seq-num green">2</div><div class="seq-text">Search text restored to <strong>"sarnia"</strong> ✓</div></div>
+            <div class="seq-step"><div class="seq-num green">3</div><div class="seq-text">Filters (Status: Active) <strong>preserved</strong> ✓</div></div>
+            <div style="margin-top:10px; padding:8px; background:rgba(255,255,255,0.5); border-radius:6px; font-size:0.72rem; color:#065f46;">
+                Seamless back-navigation — user picks up exactly where they left off
+            </div>
+        </div>
+    </div>
+
+    <!-- State Persistence Table -->
+    <h3 style="margin-top:2rem;">State Persistence — Current vs. Proposed</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">ListTableContext state persistence</div></div>
+        <div class="wireframe-body">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>State Property</th><th>Persisted Today?</th><th>After Fix</th><th>Storage Mechanism</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Column Filters</strong></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td class="mono" style="font-size:0.68rem;">ListTableContext (URL params)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sort Order</strong></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td class="mono" style="font-size:0.68rem;">ListTableContext (URL params)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Table View Config</strong></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td class="mono" style="font-size:0.68rem;">ListTableContext (URL params)</td>
+                    </tr>
+                    <tr style="background: var(--danger-light);">
+                        <td><strong>Page Number</strong></td>
+                        <td><span class="badge red">✗ No — resets to 1</span></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td class="mono" style="font-size:0.68rem;">ListTableContext (URL params)</td>
+                    </tr>
+                    <tr style="background: var(--danger-light);">
+                        <td><strong>Search Text</strong></td>
+                        <td><span class="badge red">✗ No — clears</span></td>
+                        <td><span class="badge green">✓ Yes</span></td>
+                        <td class="mono" style="font-size:0.68rem;">ListTableContext (URL params)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top:12px; padding:10px 14px; background:var(--info-light); border:1px solid var(--info); border-radius:6px; font-size:0.75rem; color:#1d4ed8;">
+                <strong>Approach:</strong> Persist <code style="font-size:0.68rem;">page</code> and <code style="font-size:0.68rem;">search</code> in URL query params alongside existing filter state. On back-navigation, restore from URL params.
+            </div>
+        </div>
+    </div>
+
+    <!-- Affected Lists -->
+    <h3 style="margin-top:1.5rem;">Affected List Views</h3>
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Jobs</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Projects</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Estimates</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Equipment</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Contacts</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">Invoices</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">RFIs</div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:6px; padding:10px; text-align:center; font-size:0.75rem; font-weight:600;">All ListTable views</div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> Changes in the shared ListTable framework — affects all list views globally:<br>
+        <strong>1.</strong> <code>packages/ui/src/components/ListTable/Table.tsx</code> — Persist current page number to URL params on page change.<br>
+        <strong>2.</strong> <code>packages/ui/src/components/ListTable/ListTable.tsx</code> — Persist search text to URL params on search input change (debounced).<br>
+        <strong>3.</strong> <code>packages/ui/src/context/ListTableContext.tsx</code> — On mount, read <code>page</code> and <code>search</code> from URL params and restore state.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: NOTES ↔ EQUIPMENT ASSOCIATION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="notes-equipment">
+    <span class="section-tag orange">Enhancement</span>
+    <h2>Notes ↔ Equipment Association</h2>
+    <p class="desc">Users need to link a note to both a Job AND a piece of Equipment from the Job context. Currently, notes created on a Job can only reference the Job — there's no way to also associate with Equipment assigned to that Job.</p>
+
+    <div class="spec-meta">
+        <div class="spec-meta-item"><span class="label">Jira</span> <strong>Q21030-11199</strong></div>
+        <div class="spec-meta-item"><span class="label">Customer</span> <strong>Thermogenics</strong></div>
+        <div class="spec-meta-item"><span class="label">Reported</span> Daily Standup, Feb 27, 2026</div>
+    </div>
+
+    <!-- Note Creation Flyout -->
+    <h3>Note Creation Flyout — New Equipment Selector</h3>
+    <div class="two-col">
+        <div>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">flyout — Create Note (from Job context)</div></div>
+                <div class="wireframe-body">
+                    <div class="wf-form">
+                        <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--accent-light); border-radius:6px; font-size:0.72rem; color:var(--accent); font-weight:600;">📋 Context: Sarnia Refinery — Unit 4 Turnaround</div>
+
+                        <div class="wf-field">
+                            <label>Note Title <span class="req">*</span></label>
+                            <div class="input">Crane #204 — hydraulic leak observed at boom joint</div>
+                        </div>
+
+                        <div class="wf-field">
+                            <label>Note Content <span class="req">*</span></label>
+                            <div class="input textarea">During daily inspection, noticed hydraulic fluid weeping from the boom pivot joint on Crane #204. Not actively leaking but should be inspected before next lift operation. Took photos for reference.</div>
+                        </div>
+
+                        <div style="border:2px solid var(--orange); border-radius:8px; padding:12px; background:var(--orange-light);">
+                            <div class="wf-field">
+                                <label style="color:#92400e;">Associate with Equipment <span style="font-size:0.6rem; font-weight:400; text-transform:none; letter-spacing:0;">(NEW)</span></label>
+                                <div class="input select" style="border-color:var(--orange); background:var(--bg-white);">Crane #204 — Liebherr LTM 1300 ▾</div>
+                                <div class="field-hint">Shows equipment assigned to this job via EquipmentAssignment</div>
+                            </div>
+                        </div>
+
+                        <div class="wf-field">
+                            <label>Attachments</label>
+                            <div class="input file">📎 Drop files or click to upload</div>
+                        </div>
+
+                        <div class="wf-btn-row">
+                            <div class="wf-btn secondary">Cancel</div>
+                            <div class="wf-btn primary">Save Note</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment Dropdown Detail -->
+        <div>
+            <h3>Equipment Dropdown — Options</h3>
+            <div class="wireframe" style="margin-top:0;">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Equipment selector — filtered by job</div></div>
+                <div class="wireframe-body" style="padding:0;">
+                    <div style="padding:8px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+                        <div style="font-size:0.72rem; color:var(--text-muted);">🔍</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Search equipment...</div>
+                    </div>
+                    <div style="padding:4px;">
+                        <div style="padding:8px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer; background:var(--accent-light); border:1px solid var(--accent);">
+                            <div style="font-weight:600; color:var(--accent);">Crane #204 — Liebherr LTM 1300</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">Equipment ID: EQ-0041 · Assigned: Feb 10</div>
+                        </div>
+                        <div style="padding:8px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer;">
+                            <div style="font-weight:600;">Forklift #12 — Toyota 8FGU25</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">Equipment ID: EQ-0087 · Assigned: Feb 12</div>
+                        </div>
+                        <div style="padding:8px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer;">
+                            <div style="font-weight:600;">Scaffold Tower — Section B4</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">Equipment ID: EQ-0112 · Assigned: Feb 15</div>
+                        </div>
+                        <div style="padding:8px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer;">
+                            <div style="font-weight:600;">Welder #7 — Miller XMT 350</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">Equipment ID: EQ-0023 · Assigned: Feb 10</div>
+                        </div>
+                    </div>
+                    <div style="padding:6px 12px; border-top:1px solid var(--border); font-size:0.65rem; color:var(--text-muted); font-style:italic;">
+                        Showing 4 equipment items assigned to this job
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Note Appears On Both Pages</h3>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue">Job Detail</span>
+                    <span style="flex:1;">Notes tab → "Crane #204 — hydraulic leak..."</span>
+                    <span class="badge green">✓ Visible</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge purple">Equipment Detail</span>
+                    <span style="flex:1;">Notes tab → "Crane #204 — hydraulic leak..."</span>
+                    <span class="badge green">✓ Visible</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Flow Diagram -->
+    <h3 style="margin-top:2rem;">Data Flow — Dual NoteReferences</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">NoteReferences — polymorphic join table</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:center;">
+                <div style="max-width:600px; width:100%;">
+                    <!-- Note Record -->
+                    <div style="text-align:center;">
+                        <div style="background:var(--accent-light); border:2px solid var(--accent); border-radius:8px; padding:14px 20px; display:inline-block;">
+                            <div style="font-size:0.65rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em;">Note</div>
+                            <div style="font-size:0.82rem; font-weight:600; margin-top:4px;">Crane #204 — hydraulic leak observed</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); font-family:var(--mono); margin-top:4px;">id: "note_abc123"</div>
+                        </div>
+                    </div>
+
+                    <!-- Split Arrow -->
+                    <div style="display:flex; justify-content:center; margin:8px 0;">
+                        <div style="width:2px; height:20px; background:var(--border-strong);"></div>
+                    </div>
+                    <div style="text-align:center; font-size:0.65rem; color:var(--text-muted); font-family:var(--mono); margin-bottom:8px;">On save → creates TWO NoteReferences entries</div>
+                    <div style="display:flex; justify-content:center; gap:4rem;">
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            <div style="width:2px; height:20px; background:var(--border-strong);"></div>
+                            <div style="font-size:0.55rem; color:var(--border-strong);">▼</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            <div style="width:2px; height:20px; background:var(--border-strong);"></div>
+                            <div style="font-size:0.55rem; color:var(--border-strong);">▼</div>
+                        </div>
+                    </div>
+
+                    <!-- Two NoteReferences -->
+                    <div style="display:flex; justify-content:center; gap:1.5rem; margin-top:4px;">
+                        <div style="background:var(--info-light); border:2px solid var(--info); border-radius:8px; padding:12px 16px; flex:1; max-width:240px;">
+                            <div style="font-size:0.62rem; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.04em;">NoteReferences #1</div>
+                            <div style="font-size:0.72rem; font-family:var(--mono); margin-top:6px; line-height:1.8; color:var(--text-secondary);">
+                                noteId: <span style="color:var(--accent);">"note_abc123"</span><br>
+                                referenceTable: <span style="color:var(--success);">"Job"</span><br>
+                                referenceId: <span style="color:var(--text);">"job_xyz789"</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--purple-light); border:2px solid var(--purple); border-radius:8px; padding:12px 16px; flex:1; max-width:240px;">
+                            <div style="font-size:0.62rem; font-weight:700; color:#5b21b6; text-transform:uppercase; letter-spacing:0.04em;">NoteReferences #2</div>
+                            <div style="font-size:0.72rem; font-family:var(--mono); margin-top:6px; line-height:1.8; color:var(--text-secondary);">
+                                noteId: <span style="color:var(--accent);">"note_abc123"</span><br>
+                                referenceTable: <span style="color:var(--success);">"Equipment"</span><br>
+                                referenceId: <span style="color:var(--text);">"eq_0041"</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Query explanation -->
+                    <div style="display:flex; justify-content:center; gap:1.5rem; margin-top:12px;">
+                        <div style="flex:1; max-width:240px; text-align:center;">
+                            <div style="font-size:0.55rem; color:var(--border-strong);">▼</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:4px;">
+                                <strong>Job Detail</strong> → Notes tab<br>
+                                <code style="font-size:0.6rem;">NoteFeed WHERE referenceTable='Job'</code>
+                            </div>
+                        </div>
+                        <div style="flex:1; max-width:240px; text-align:center;">
+                            <div style="font-size:0.55rem; color:var(--border-strong);">▼</div>
+                            <div style="font-size:0.65rem; color:var(--text-muted); margin-top:4px;">
+                                <strong>Equipment Detail</strong> → Notes tab<br>
+                                <code style="font-size:0.6rem;">NoteFeed WHERE referenceTable='Equipment'</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Implementation Details -->
+    <h3 style="margin-top:2rem;">Implementation Summary</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Changes required</div></div>
+        <div class="wireframe-body">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>Layer</th><th>File / Area</th><th>Change</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge blue">Frontend</span></td>
+                        <td>Note creation flyout / form</td>
+                        <td>Add "Associate with Equipment" dropdown. Query <code style="font-size:0.68rem;">EquipmentAssignment</code> for the current Job to populate options.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">Frontend</span></td>
+                        <td>Equipment Detail → Notes tab</td>
+                        <td>Ensure <code style="font-size:0.68rem;">NoteFeed</code> query uses <code style="font-size:0.68rem;">referenceTable='Equipment'</code> to show associated notes.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge purple">API</span></td>
+                        <td>Note creation mutation</td>
+                        <td>When <code style="font-size:0.68rem;">equipmentId</code> is provided, create a second <code style="font-size:0.68rem;">NoteReferences</code> entry with <code style="font-size:0.68rem;">referenceTable='Equipment'</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge gray">SQL View</span></td>
+                        <td><code style="font-size:0.68rem;">NoteFeed.sql</code></td>
+                        <td>Verify the view handles multiple <code style="font-size:0.68rem;">NoteReferences</code> per note without duplication (may need <code style="font-size:0.68rem;">DISTINCT</code>).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dev-note">
+        <strong>Dev:</strong> The <code>NoteReferences</code> table is already a polymorphic join table — adding a second entry is architecturally consistent. Key considerations:<br>
+        <strong>1.</strong> The note creation mutation needs an optional <code>equipmentId</code> parameter.<br>
+        <strong>2.</strong> The Equipment dropdown should only show equipment from <code>EquipmentAssignment</code> for the current Job.<br>
+        <strong>3.</strong> <code>NoteFeed.sql</code> — check for note duplication if a note has multiple NoteReferences. May need <code>DISTINCT</code> or grouping to prevent the same note appearing twice on the Job Notes tab.
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">SP1 — Quick Wins &amp; Bug Fixes — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Confidential · March 2026 · Release 1.32.0-RC1 · For developer reference and customer sign-off</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Reporting Suite — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table th.right, .wf-table td.right { text-align: right; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+.wf-table tr.total-row td { font-weight: 700; border-top: 2px solid var(--border); background: var(--bg-panel); }
+.wf-table tr.negative td { color: var(--danger); }
+
+/* BUTTONS */
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* CHART */
+.chart-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.chart-box h4 { font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 10px; }
+.chart-wrap { height: 250px; position: relative; }
+
+/* DETAIL TAB BAR */
+.wf-detail-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
+.wf-detail-tab { padding: 8px 16px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; }
+.wf-detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.wf-detail-tab.new { color: var(--success); border-bottom-color: var(--success); position: relative; }
+.wf-detail-tab.new::after { content: "NEW"; position: absolute; top: -2px; right: -4px; font-size: 0.45rem; background: var(--success); color: white; padding: 1px 4px; border-radius: 3px; font-weight: 700; letter-spacing: 0.06em; }
+
+/* TIMELINE */
+.timeline { display: flex; flex-direction: column; gap: 0; padding-left: 20px; border-left: 2px solid var(--border); margin: 1rem 0; }
+.timeline-entry { position: relative; padding: 12px 0 12px 20px; }
+.timeline-entry::before { content: ""; position: absolute; left: -27px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg-white); border: 2px solid var(--accent); }
+.timeline-entry.system::before { border-color: var(--text-muted); background: var(--bg-panel); }
+.timeline-entry .tl-date { font-size: 0.65rem; font-family: var(--mono); color: var(--text-muted); margin-bottom: 3px; }
+.timeline-entry .tl-user { font-size: 0.72rem; font-weight: 600; color: var(--accent); }
+.timeline-entry .tl-change { font-size: 0.78rem; color: var(--text); margin-top: 2px; }
+.timeline-entry .tl-change .old-val { text-decoration: line-through; color: var(--danger); background: var(--danger-light); padding: 1px 4px; border-radius: 3px; font-family: var(--mono); font-size: 0.7rem; }
+.timeline-entry .tl-change .new-val { color: var(--success); background: var(--success-light); padding: 1px 4px; border-radius: 3px; font-family: var(--mono); font-size: 0.7rem; }
+
+/* COMPARE CARD */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.compare-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.compare-card .cc-header { padding: 10px 14px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.compare-card .cc-header.exists { background: var(--success-light); color: #065f46; }
+.compare-card .cc-header.new { background: var(--info-light); color: #1d4ed8; }
+.compare-card .cc-body { padding: 14px; font-size: 0.75rem; line-height: 1.8; }
+.compare-card .cc-body code { font-family: var(--mono); font-size: 0.68rem; background: var(--bg-panel); padding: 1px 6px; border-radius: 3px; }
+
+/* PREREQUISITE CALLOUT */
+.prereq-callout {
+    background: var(--orange-light); border: 1px solid var(--orange); border-radius: 8px;
+    padding: 14px 16px; margin-top: 1rem; display: flex; align-items: flex-start; gap: 10px;
+}
+.prereq-callout .prereq-icon { font-size: 1.2rem; flex-shrink: 0; }
+.prereq-callout .prereq-text { font-size: 0.78rem; color: #92400e; line-height: 1.6; }
+.prereq-callout .prereq-text strong { color: #78350f; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-chip { font-size: 0.7rem; padding: 5px 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+.filter-chip.select::after { content: "▾"; font-size: 0.6rem; margin-left: 2px; }
+
+/* KPI ROW */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.4rem; font-weight: 800; font-family: var(--mono); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .compare-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .kpi-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: SALES BY JOB TYPE REPORT -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="sales-by-job-type">
+    <div class="section-tag">Report 1</div>
+    <h2>Sales by Job Type Report</h2>
+    <p class="desc">A new pivot-table report page at <code>/reports/sales-by-job-type</code> that breaks down estimate and change order bid amounts by job type. Cloned from the existing Sales by Customer Type report.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-11012</span>
+        <span class="badge gray">Frontend Only</span>
+        <span style="font-size:0.72rem; color:var(--text-muted);">Requested by <strong>David Smith</strong>, Estimator/PM at Rival Insulation</span>
+    </div>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/reports/sales-by-job-type</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h3 style="margin:0;">Sales by Job Type</h3>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Export CSV</div>
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Export PDF</div>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-chip select">Date Range: Jan 1 – Dec 31, 2025</div>
+                <div class="filter-chip select">Job Type: All</div>
+                <div class="filter-chip select">Status: All</div>
+                <div class="filter-chip" style="border-color:var(--accent); color:var(--accent); cursor:pointer;">Clear Filters</div>
+            </div>
+
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Job Type</th>
+                        <th>Type</th>
+                        <th class="right">Quantity</th>
+                        <th class="right">Bid Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:var(--bg);">
+                        <td rowspan="2"><strong>Automotive</strong></td>
+                        <td><span class="badge blue">Estimate</span></td>
+                        <td class="right mono">12</td>
+                        <td class="right mono">$1,450,000</td>
+                    </tr>
+                    <tr style="background:var(--bg);">
+                        <td><span class="badge green">Change Order</span></td>
+                        <td class="right mono">5</td>
+                        <td class="right mono">$185,400</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2"><strong>Apartments</strong></td>
+                        <td><span class="badge blue">Estimate</span></td>
+                        <td class="right mono">8</td>
+                        <td class="right mono">$2,340,000</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green">Change Order</span></td>
+                        <td class="right mono">3</td>
+                        <td class="right mono">$92,500</td>
+                    </tr>
+                    <tr style="background:var(--bg);">
+                        <td rowspan="2"><strong>Hospitals</strong></td>
+                        <td><span class="badge blue">Estimate</span></td>
+                        <td class="right mono">4</td>
+                        <td class="right mono">$3,870,000</td>
+                    </tr>
+                    <tr style="background:var(--bg);">
+                        <td><span class="badge green">Change Order</span></td>
+                        <td class="right mono">7</td>
+                        <td class="right mono">$412,300</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2"><strong>Industrial</strong></td>
+                        <td><span class="badge blue">Estimate</span></td>
+                        <td class="right mono">15</td>
+                        <td class="right mono">$5,120,000</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green">Change Order</span></td>
+                        <td class="right mono">9</td>
+                        <td class="right mono">$678,200</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td class="right mono">63</td>
+                        <td class="right mono">$14,148,400</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> Clone <code>sales-by-customer-type.tsx</code>. Use existing <code>EstimateChangeOrderListFeed</code> query — it already returns <code>jobTypeId</code> and <code>jobTypeName</code>. Group by <code>jobTypeName</code> in the PivotTable component. No backend changes required.
+            </div>
+        </div>
+    </div>
+
+    <div class="two-col" style="margin-top:1.5rem;">
+        <div>
+            <h3>Implementation Reference</h3>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> <code style="font-size:0.68rem;">EstimateChangeOrderListFeed</code> query with <code style="font-size:0.68rem;">jobTypeId</code>, <code style="font-size:0.68rem;">jobTypeName</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> <code style="font-size:0.68rem;">sales-by-customer-type.tsx</code> — clone and modify groupBy
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge green">Exists</span> PivotTable component for grouping + aggregation
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue">New</span> Route entry at <code style="font-size:0.68rem;">/reports/sales-by-job-type</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+                    <span class="badge blue">New</span> Sidebar nav entry under Reports section
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Expected Job Types (Rival)</h3>
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>Job Type</th><th>Example Jobs</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Automotive</strong></td><td>Stellantis Windsor, Toyota Cambridge</td></tr>
+                    <tr><td><strong>Apartments</strong></td><td>Brock Commons Phase 2, King West Towers</td></tr>
+                    <tr><td><strong>Hospitals</strong></td><td>Sunnybrook Expansion, St. Michael's Reno</td></tr>
+                    <tr><td><strong>Industrial</strong></td><td>Sarnia Refinery, NOVA Chemicals, Dow</td></tr>
+                    <tr><td><strong>Commercial</strong></td><td>Scotia Plaza, Union Station Revit</td></tr>
+                    <tr><td><strong>Institutional</strong></td><td>York U Science Building, TDSB Portfolio</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: ANNUAL LABOR HOURS REPORT -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="annual-labor-hours">
+    <div class="section-tag">Report 2</div>
+    <h2>Annual Labor Hours Report</h2>
+    <p class="desc">A year-over-year labor hours report that visualizes Regular, Overtime, and Double Time hours across each month. Designed for annual workforce planning and OSHA total-hours calculation.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-10964</span>
+        <span class="badge gray">Frontend Only</span>
+        <span style="font-size:0.72rem; color:var(--text-muted);">Requested by <strong>Sophia Kiafoulis</strong>, Rival Insulation</span>
+    </div>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/reports/annual-labor-hours</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0;">Annual Labor Hours</h3>
+                    <div class="wf-field" style="gap:0;">
+                        <div class="input select" style="min-height:32px; padding:4px 10px; font-size:0.78rem; font-weight:600; min-width:100px;">2025</div>
+                    </div>
+                </div>
+                <div class="wf-btn secondary" style="font-size:0.7rem;">Export CSV</div>
+            </div>
+
+            <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);">
+                <div class="kpi">
+                    <div class="kpi-label">Total Hours</div>
+                    <div class="kpi-value" style="color:var(--accent); font-size:1.3rem;">52,590</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Regular</div>
+                    <div class="kpi-value" style="color:#2563eb; font-size:1.3rem;">48,400</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Overtime</div>
+                    <div class="kpi-value" style="color:var(--orange); font-size:1.3rem;">3,690</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Double Time</div>
+                    <div class="kpi-value" style="color:var(--danger); font-size:1.3rem;">500</div>
+                </div>
+            </div>
+
+            <div class="chart-box" style="margin-bottom:1.5rem;">
+                <h4>Monthly Breakdown — Regular / Overtime / Double Time</h4>
+                <div class="chart-wrap"><canvas id="laborHoursChart"></canvas></div>
+            </div>
+
+            <h4 style="margin-bottom:8px;">Monthly Detail</h4>
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th class="right">Total Hours</th>
+                        <th class="right">Regular</th>
+                        <th class="right">Overtime</th>
+                        <th class="right">Double Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>January</strong></td><td class="right mono">4,200</td><td class="right mono">3,800</td><td class="right mono">350</td><td class="right mono">50</td></tr>
+                    <tr><td><strong>February</strong></td><td class="right mono">3,900</td><td class="right mono">3,500</td><td class="right mono">380</td><td class="right mono">20</td></tr>
+                    <tr><td><strong>March</strong></td><td class="right mono">4,250</td><td class="right mono">3,900</td><td class="right mono">320</td><td class="right mono">30</td></tr>
+                    <tr><td><strong>April</strong></td><td class="right mono">4,540</td><td class="right mono">4,100</td><td class="right mono">400</td><td class="right mono">40</td></tr>
+                    <tr><td><strong>May</strong></td><td class="right mono">4,680</td><td class="right mono">4,200</td><td class="right mono">420</td><td class="right mono">60</td></tr>
+                    <tr><td><strong>June</strong></td><td class="right mono">4,730</td><td class="right mono">4,300</td><td class="right mono">380</td><td class="right mono">50</td></tr>
+                    <tr><td><strong>July</strong></td><td class="right mono">4,780</td><td class="right mono">4,400</td><td class="right mono">350</td><td class="right mono">30</td></tr>
+                    <tr><td><strong>August</strong></td><td class="right mono">4,820</td><td class="right mono">4,500</td><td class="right mono">300</td><td class="right mono">20</td></tr>
+                    <tr><td><strong>September</strong></td><td class="right mono">4,580</td><td class="right mono">4,200</td><td class="right mono">340</td><td class="right mono">40</td></tr>
+                    <tr><td><strong>October</strong></td><td class="right mono">4,410</td><td class="right mono">4,000</td><td class="right mono">360</td><td class="right mono">50</td></tr>
+                    <tr><td><strong>November</strong></td><td class="right mono">4,200</td><td class="right mono">3,800</td><td class="right mono">350</td><td class="right mono">50</td></tr>
+                    <tr><td><strong>December</strong></td><td class="right mono">4,100</td><td class="right mono">3,700</td><td class="right mono">340</td><td class="right mono">60</td></tr>
+                    <tr class="total-row">
+                        <td><strong>Total</strong></td>
+                        <td class="right mono">53,190</td>
+                        <td class="right mono">48,400</td>
+                        <td class="right mono">4,290</td>
+                        <td class="right mono">500</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> Query <code>timesheetReport</code> with <code>dateRange</code> spanning Jan 1 – Dec 31 of selected year. Aggregate client-side by month using <code>timesheetDate</code>. Group hours by <code>payType</code> (Regular / Overtime / Double Time). Chart.js stacked bar already configured — data flows from aggregation. Year selector defaults to previous calendar year.
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: YEAR-END MARGIN REVIEW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="year-end-margin">
+    <div class="section-tag orange">Report 3</div>
+    <h2>Year-End Margin Review</h2>
+    <p class="desc">A point-in-time snapshot showing all open jobs with their contract values, costs to date, revenue recognized, and margin. Designed for year-end financial review and WIP scheduling.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-10996</span>
+        <span class="badge orange">Backend + Frontend</span>
+        <span style="font-size:0.72rem; color:var(--text-muted);">Requested by <strong>Stacey Needham</strong>, Thermec Insulation Services</span>
+    </div>
+
+    <div class="prereq-callout">
+        <div class="prereq-icon">⚠</div>
+        <div class="prereq-text">
+            <strong>Blocking Prerequisite:</strong> Stacey uploaded a sample spreadsheet to HubSpot (file ID <code style="font-family:var(--mono);font-size:0.72rem;">205677800078</code>). This file contains the exact column layout and data shape she expects. <strong>Review this file before building.</strong> Download from HubSpot before starting implementation.
+        </div>
+    </div>
+
+    <div class="wireframe" style="margin-top:1.5rem;">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/reports/year-end-margin-review</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0;">Year-End Margin Review</h3>
+                    <div class="wf-field" style="gap:0;">
+                        <div class="input" style="min-height:32px; padding:4px 10px; font-size:0.78rem; font-weight:600; min-width:150px;">📅 As of: December 31, 2025</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <label style="font-size:0.7rem; font-weight:600; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                        <span style="width:28px; height:16px; background:var(--accent); border-radius:8px; display:inline-block; position:relative;">
+                            <span style="width:12px; height:12px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></span>
+                        </span>
+                        Open Jobs Only
+                    </label>
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Export Excel</div>
+                </div>
+            </div>
+
+            <div class="kpi-row" style="grid-template-columns:repeat(5,1fr); margin-bottom:1.25rem;">
+                <div class="kpi">
+                    <div class="kpi-label">Open Jobs</div>
+                    <div class="kpi-value" style="color:var(--accent);">24</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Total Contract</div>
+                    <div class="kpi-value" style="color:var(--accent); font-size:1.1rem;">$8.4M</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Total Costs</div>
+                    <div class="kpi-value" style="color:var(--text); font-size:1.1rem;">$5.9M</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Revenue Recognized</div>
+                    <div class="kpi-value" style="color:var(--success); font-size:1.1rem;">$6.2M</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Avg Margin</div>
+                    <div class="kpi-value" style="color:var(--success);">29.8%</div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="wf-table">
+                    <thead>
+                        <tr>
+                            <th>Job Name</th>
+                            <th>Customer</th>
+                            <th class="right">Contract Value</th>
+                            <th class="right">Costs to Date</th>
+                            <th class="right">Revenue Recognized</th>
+                            <th class="right">Margin ($)</th>
+                            <th class="right">Margin (%)</th>
+                            <th class="right">% Complete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Sarnia Refinery — Unit 4 Turnaround</strong></td>
+                            <td>Imperial Oil</td>
+                            <td class="right mono">$1,250,000</td>
+                            <td class="right mono">$845,000</td>
+                            <td class="right mono">$937,500</td>
+                            <td class="right mono" style="color:var(--success);">$92,500</td>
+                            <td class="right mono" style="color:var(--success);">9.9%</td>
+                            <td class="right mono">75%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NOVA Chemicals Coker Reinsulation</strong></td>
+                            <td>NOVA Chemicals</td>
+                            <td class="right mono">$680,000</td>
+                            <td class="right mono">$412,000</td>
+                            <td class="right mono">$510,000</td>
+                            <td class="right mono" style="color:var(--success);">$98,000</td>
+                            <td class="right mono" style="color:var(--success);">19.2%</td>
+                            <td class="right mono">60%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dow Chemical Bay 7 — Pipe Insulation</strong></td>
+                            <td>Dow Chemical</td>
+                            <td class="right mono">$340,000</td>
+                            <td class="right mono">$295,000</td>
+                            <td class="right mono">$306,000</td>
+                            <td class="right mono" style="color:var(--success);">$11,000</td>
+                            <td class="right mono" style="color:var(--success);">3.6%</td>
+                            <td class="right mono">90%</td>
+                        </tr>
+                        <tr class="negative" style="background:var(--danger-light);">
+                            <td><strong>Stellantis Windsor — HVAC Wrap</strong></td>
+                            <td>Stellantis</td>
+                            <td class="right mono">$185,000</td>
+                            <td class="right mono">$204,600</td>
+                            <td class="right mono">$166,500</td>
+                            <td class="right mono">-$38,100</td>
+                            <td class="right mono">-22.9%</td>
+                            <td class="right mono">85%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sunnybrook Hospital Wing C</strong></td>
+                            <td>Sunnybrook Health</td>
+                            <td class="right mono">$920,000</td>
+                            <td class="right mono">$340,000</td>
+                            <td class="right mono">$368,000</td>
+                            <td class="right mono" style="color:var(--success);">$28,000</td>
+                            <td class="right mono" style="color:var(--success);">7.6%</td>
+                            <td class="right mono">40%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>King West Towers — Fireproofing</strong></td>
+                            <td>Concord Pacific</td>
+                            <td class="right mono">$475,000</td>
+                            <td class="right mono">$118,750</td>
+                            <td class="right mono">$142,500</td>
+                            <td class="right mono" style="color:var(--success);">$23,750</td>
+                            <td class="right mono" style="color:var(--success);">16.7%</td>
+                            <td class="right mono">25%</td>
+                        </tr>
+                        <tr class="negative" style="background:var(--danger-light);">
+                            <td><strong>TDSB Portfolio — Summer Renos</strong></td>
+                            <td>TDSB</td>
+                            <td class="right mono">$95,000</td>
+                            <td class="right mono">$103,400</td>
+                            <td class="right mono">$90,250</td>
+                            <td class="right mono">-$13,150</td>
+                            <td class="right mono">-14.6%</td>
+                            <td class="right mono">95%</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="2"><strong>Total (24 jobs)</strong></td>
+                            <td class="right mono">$8,420,000</td>
+                            <td class="right mono">$5,892,750</td>
+                            <td class="right mono">$6,210,750</td>
+                            <td class="right mono">$318,000</td>
+                            <td class="right mono">5.1%</td>
+                            <td class="right mono">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dev-note" style="margin-top:1rem;">
+                <strong>Dev:</strong> This report aggregates across multiple existing data sources: Job contract value from SOV, costs from TimeSheetRecord + ExpenseRecord + PurchaseOrder, revenue from InvoiceRecord. The "As of" date filter determines which records are included (createdAt ≤ asOfDate). <code>% Complete</code> = costs / contract value. Negative-margin rows highlighted automatically when margin &lt; 0.
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+        <h3>Data Sources</h3>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:0.5rem;">
+            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                <h4 style="color:var(--accent);">Contract Value</h4>
+                <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.8;">
+                    <code style="font-size:0.65rem;">ScheduleOfValues</code><br>
+                    Sum of all SOV line items for the job
+                </div>
+            </div>
+            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                <h4 style="color:var(--orange);">Costs to Date</h4>
+                <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.8;">
+                    <code style="font-size:0.65rem;">TimeSheetRecord</code> +<br>
+                    <code style="font-size:0.65rem;">ExpenseRecord</code> +<br>
+                    <code style="font-size:0.65rem;">PurchaseOrder</code>
+                </div>
+            </div>
+            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                <h4 style="color:var(--success);">Revenue Recognized</h4>
+                <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.8;">
+                    <code style="font-size:0.65rem;">InvoiceRecord</code><br>
+                    Sum of invoiced amounts
+                </div>
+            </div>
+            <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+                <h4 style="color:var(--danger);">Margin</h4>
+                <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.8;">
+                    Revenue − Costs<br>
+                    <code style="font-size:0.65rem;">margin% = (rev − cost) / rev × 100</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: JOB AUDIT LOG -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="job-audit-log">
+    <div class="section-tag green">Report 4</div>
+    <h2>Job Audit Log</h2>
+    <p class="desc">A new tab on the Job Detail Page that surfaces the existing audit trail for every change made to a job record. No backend work required — all data and hooks already exist.</p>
+
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1.5rem;">
+        <span class="badge blue">Q21030-11101</span>
+        <span class="badge blue">Q21030-8882</span>
+        <span class="badge green">Frontend Only</span>
+        <span style="font-size:0.72rem; color:var(--text-muted);">Requested by <strong>Brad Viers</strong>, Rival Insulation (Jun 4, 2025) &amp; Thermec (Q21030-8882)</span>
+    </div>
+
+    <div style="background:var(--info-light); border:1px solid var(--info); border-radius:8px; padding:12px 16px; margin-bottom:1.5rem; font-size:0.78rem; color:#1d4ed8;">
+        <strong>Brad Viers:</strong> "We have something called the audit log. It shows every single time something happens to a record."
+    </div>
+
+    <h3>Job Detail Page — New "Audit Log" Tab</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/jobs/[id] — Tab Bar</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">JOB-1847</span>
+                <h3 style="margin:0;">Sarnia Refinery — Unit 4 Turnaround</h3>
+            </div>
+            <div class="wf-detail-tabs">
+                <div class="wf-detail-tab">Overview</div>
+                <div class="wf-detail-tab">Financial</div>
+                <div class="wf-detail-tab">Schedule of Values</div>
+                <div class="wf-detail-tab">Estimates</div>
+                <div class="wf-detail-tab">Invoices</div>
+                <div class="wf-detail-tab">Timesheets</div>
+                <div class="wf-detail-tab">Expenses</div>
+                <div class="wf-detail-tab">Documents</div>
+                <div class="wf-detail-tab new active">Audit Log</div>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted); font-style:italic; padding:8px 0;">New tab added to the existing tab bar. Highlighted in green to indicate new feature.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Audit Log Timeline View</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/jobs/[id]?tab=audit-log</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h4 style="margin:0;">Change History</h4>
+                <div class="filter-bar" style="margin-bottom:0;">
+                    <div class="filter-chip select">Field: All</div>
+                    <div class="filter-chip select">User: All</div>
+                    <div class="filter-chip select">Date Range</div>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-entry">
+                    <div class="tl-date">Mar 1, 2026 at 2:30 PM</div>
+                    <div class="tl-user">Chris Tremberth</div>
+                    <div class="tl-change">
+                        Changed <strong>Status</strong> from <span class="old-val">Archived</span> to <span class="new-val">In Progress</span>
+                    </div>
+                </div>
+                <div class="timeline-entry">
+                    <div class="tl-date">Feb 28, 2026 at 9:15 AM</div>
+                    <div class="tl-user">Brad Viers</div>
+                    <div class="tl-change">
+                        Changed <strong>Project Lead</strong> from <span class="old-val">Eric Krekelberg</span> to <span class="new-val">Brad Viers</span>
+                    </div>
+                </div>
+                <div class="timeline-entry system">
+                    <div class="tl-date">Feb 15, 2026 at 11:00 AM</div>
+                    <div class="tl-user" style="color:var(--text-muted);">System</div>
+                    <div class="tl-change">
+                        Changed <strong>isArchived</strong> from <span class="old-val">false</span> to <span class="new-val">true</span>
+                    </div>
+                </div>
+                <div class="timeline-entry">
+                    <div class="tl-date">Feb 10, 2026 at 3:45 PM</div>
+                    <div class="tl-user">David Smith</div>
+                    <div class="tl-change">
+                        Changed <strong>Contract Value</strong> from <span class="old-val">$1,100,000</span> to <span class="new-val">$1,250,000</span>
+                    </div>
+                </div>
+                <div class="timeline-entry">
+                    <div class="tl-date">Jan 22, 2026 at 10:00 AM</div>
+                    <div class="tl-user">Sophia Kiafoulis</div>
+                    <div class="tl-change">
+                        Changed <strong>Estimated Completion</strong> from <span class="old-val">Mar 15, 2026</span> to <span class="new-val">Apr 30, 2026</span>
+                    </div>
+                </div>
+                <div class="timeline-entry">
+                    <div class="tl-date">Jan 15, 2026 at 8:30 AM</div>
+                    <div class="tl-user">Nick Newman</div>
+                    <div class="tl-change">
+                        Changed <strong>Job Superintendent</strong> from <span class="old-val">(empty)</span> to <span class="new-val">Chris Tremberth</span>
+                    </div>
+                </div>
+                <div class="timeline-entry system">
+                    <div class="tl-date">Dec 12, 2025 at 2:00 PM</div>
+                    <div class="tl-user" style="color:var(--text-muted);">System</div>
+                    <div class="tl-change">
+                        <strong>Job created</strong> — initial record
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; padding:12px; font-size:0.72rem; color:var(--text-muted);">Showing 7 of 42 changes · <span style="color:var(--accent); cursor:pointer; font-weight:600;">Load More</span></div>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> NO backend work needed. Audit model exists at <code>schema.prisma</code> line 661. Generated hook <code>useGetAuditDataForEntityQuery</code> is ready. Just add tab to <code>JobDetailsPage/index.tsx</code> (line ~138) and create <code>JobAuditLog.tsx</code> component. Query with <code>entityType: "Job"</code> and <code>entityId</code> from route params.
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">What Already Exists vs. What's New</h3>
+    <div class="compare-grid">
+        <div class="compare-card">
+            <div class="cc-header exists">What Already Exists</div>
+            <div class="cc-body">
+                <strong>Prisma Schema</strong><br>
+                <code>Audit</code> model at <code>schema.prisma:661</code> — stores <code>entityType</code>, <code>entityId</code>, <code>fieldName</code>, <code>oldValue</code>, <code>newValue</code>, <code>changedByUserId</code>, <code>createdAt</code>
+                <br><br>
+                <strong>GraphQL Layer</strong><br>
+                <code>getAuditDataForEntity</code> query — accepts <code>entityType</code> + <code>entityId</code>, returns full audit trail with user details
+                <br><br>
+                <strong>Generated Hooks</strong><br>
+                <code>useGetAuditDataForEntityQuery</code> — ready to use in any React component, auto-generated via codegen
+                <br><br>
+                <strong>Write-Side</strong><br>
+                <code>BaseAuditableModel</code> already writes audit records on every <code>editItem()</code> call for all auditable entities including Job
+            </div>
+        </div>
+        <div class="compare-card">
+            <div class="cc-header new">What's New (This Ticket)</div>
+            <div class="cc-body">
+                <strong>1. Tab Registration</strong><br>
+                Add <code>"Audit Log"</code> tab to <code>JobDetailsPage/index.tsx</code> tab array (~line 138)
+                <br><br>
+                <strong>2. JobAuditLog Component</strong><br>
+                New file: <code>JobAuditLog.tsx</code> — timeline component that calls <code>useGetAuditDataForEntityQuery</code> and renders changes chronologically
+                <br><br>
+                <strong>3. Timeline UI</strong><br>
+                Vertical timeline with user avatars, field names, old→new value diffs, timestamps. System changes shown differently from user changes.
+                <br><br>
+                <strong>4. Filters (Optional)</strong><br>
+                Field name filter, user filter, and date range filter for narrowing audit history
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+        <h3>Audit Data Shape</h3>
+        <div class="wireframe">
+            <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">GraphQL Response — getAuditDataForEntity</div></div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;">{
+  "data": {
+    "getAuditDataForEntity": [
+      {
+        "id": "audit_abc123",
+        "entityType": "Job",
+        "entityId": "job_xyz789",
+        "fieldName": "status",
+        "oldValue": "Archived",
+        "newValue": "In Progress",
+        "changedByUserId": "usr_ct001",
+        "ChangedByUser": {
+          "firstName": "Chris",
+          "lastName": "Tremberth"
+        },
+        "createdAt": "2026-03-01T14:30:00Z"
+      }
+    ]
+  }
+}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Reporting Suite — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">SP4 · Release 1.32.0-RC1 · Confidential · March 2026</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var lhc = document.getElementById("laborHoursChart");
+    if (lhc) new Chart(lhc, {
+        type: "bar",
+        data: {
+            labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+            datasets: [{
+                label: "Regular",
+                data: [3800,3500,3900,4100,4200,4300,4400,4500,4200,4000,3800,3700],
+                backgroundColor: "#2563eb"
+            },{
+                label: "Overtime",
+                data: [350,380,320,400,420,380,350,300,340,360,350,340],
+                backgroundColor: "#f59e0b"
+            },{
+                label: "Double Time",
+                data: [50,20,30,40,60,50,30,20,40,50,50,60],
+                backgroundColor: "#ef4444"
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(226,232,240,0.5)" } },
+                y: { stacked: true, ticks: { callback: function(v) { return v.toLocaleString(); }, color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(226,232,240,0.5)" } }
+            },
+            plugins: {
+                legend: { position: "bottom", labels: { font: { size: 11, family: "Inter" }, color: "#475569", padding: 16 } },
+                tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ": " + ctx.parsed.y.toLocaleString() + " hrs"; } } }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

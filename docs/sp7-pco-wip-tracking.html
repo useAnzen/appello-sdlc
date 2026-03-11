@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — PCO/WIP Tracking — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --teal: #14b8a6;
+    --teal-light: #ccfbf1;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+.section-tag.teal { color: #0f766e; background: var(--teal-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* HEADER HERO */
+.spec-hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    color: white;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.spec-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+.spec-hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+.spec-hero .subtitle { font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 560px; }
+.spec-hero .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.spec-hero .meta-item { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 10px 14px; }
+.spec-hero .meta-item .mk { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+.spec-hero .meta-item .mv { font-size: 0.82rem; font-weight: 600; }
+.customer-quote {
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.9);
+    font-style: italic;
+    line-height: 1.6;
+    position: relative;
+}
+.customer-quote::before { content: "\201C"; font-size: 2rem; position: absolute; top: 4px; left: 10px; color: rgba(245,158,11,0.5); font-style: normal; }
+.customer-quote .attribution { font-style: normal; font-weight: 600; color: #fbbf24; margin-top: 6px; font-size: 0.72rem; }
+
+/* CONCEPT CARDS */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 1rem; }
+.concept-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    border-top: 3px solid var(--accent);
+    box-shadow: var(--shadow);
+}
+.concept-card.tm { border-top-color: var(--success); }
+.concept-card.pq { border-top-color: var(--orange); }
+.concept-card.wip { border-top-color: var(--purple); }
+.concept-card h4 { font-size: 0.82rem; margin-bottom: 4px; }
+.concept-card .abbr { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin-bottom: 6px; }
+.concept-card p { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; }
+.concept-card .formula { font-family: var(--mono); font-size: 0.7rem; background: var(--bg-panel); padding: 6px 10px; border-radius: 4px; margin-top: 8px; color: var(--accent); }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-form-row.col5 { grid-template-columns: 2fr 1fr 1fr 1fr 2fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.file { border-style: dashed; justify-content: center; min-height: 64px; }
+.wf-field .input.person { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn.success { background: var(--success); color: white; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+.wf-table .amount { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; text-align: right; }
+.wf-table .total-row td { font-weight: 700; border-top: 2px solid var(--border-strong); background: var(--bg-panel); }
+.wf-table .subtotal-row td { font-weight: 600; background: var(--bg); border-top: 1px dashed var(--border-strong); }
+.wf-table .highlight-row td { background: var(--accent-light); }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+.badge.teal { background: var(--teal-light); color: #0f766e; }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-node.warning { border-color: var(--warning); }
+.flow-node.danger { border-color: var(--danger); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* HORIZONTAL FLOW */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* BRANCH FLOW (for rejected state) */
+.flow-branch {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+    position: relative;
+}
+.flow-branch::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 60%;
+    height: 2px;
+    background: var(--border-strong);
+    transform: translateX(-50%);
+}
+.flow-branch-arm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+}
+.flow-branch-arm::before {
+    content: "";
+    width: 2px;
+    height: 16px;
+    background: var(--border-strong);
+}
+
+/* DETAIL PAGE WIREFRAME */
+.wf-detail-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; }
+.wf-detail-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
+.wf-detail-tab { padding: 8px 16px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; }
+.wf-detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.wf-detail-sidebar { display: flex; flex-direction: column; gap: 12px; }
+.sidebar-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.sidebar-card h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+.sidebar-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.sidebar-field:last-child { border-bottom: none; }
+.sidebar-field .fk { color: var(--text-muted); }
+.sidebar-field .fv { font-weight: 600; }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* KPI GRID */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.kpi-grid.col5 { grid-template-columns: repeat(5, 1fr); }
+.kpi-grid.col3 { grid-template-columns: repeat(3, 1fr); }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.6rem; font-weight: 800; font-family: var(--mono); }
+.kpi .kpi-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 4px; }
+.kpi.green .kpi-value { color: var(--success); }
+.kpi.amber .kpi-value { color: var(--orange); }
+.kpi.blue .kpi-value { color: var(--accent); }
+.kpi.red .kpi-value { color: var(--danger); }
+.kpi.purple .kpi-value { color: var(--purple); }
+.kpi.teal .kpi-value { color: var(--teal); }
+
+/* COMPARE CARDS (paper vs digital) */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+.compare-card {
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    position: relative;
+}
+.compare-card.before {
+    background: linear-gradient(135deg, #fef2f2, #fff7ed);
+    border: 2px solid #fca5a5;
+}
+.compare-card.after {
+    background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+    border: 2px solid #6ee7b7;
+}
+.compare-card h3 { font-size: 0.9rem; margin-bottom: 0.75rem; }
+.compare-card .compare-step {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 0.78rem; color: var(--text-secondary);
+}
+.compare-card .compare-step:last-child { border-bottom: none; }
+.compare-card .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-weight: 700; flex-shrink: 0;
+}
+.compare-card.before .step-num { background: #fca5a5; color: #7f1d1d; }
+.compare-card.after .step-num { background: #6ee7b7; color: #064e3b; }
+.compare-card .time-badge {
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 600;
+    padding: 2px 6px; border-radius: 3px; margin-left: auto; flex-shrink: 0;
+}
+.compare-card.before .time-badge { background: #fecaca; color: #991b1b; }
+.compare-card.after .time-badge { background: #a7f3d0; color: #065f46; }
+
+/* PERM MATRIX */
+.perm-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.perm-table th { background: var(--bg-panel); padding: 6px 10px; font-weight: 600; text-align: left; border: 1px solid var(--border); font-size: 0.65rem; text-transform: uppercase; }
+.perm-table td { padding: 6px 10px; border: 1px solid var(--border); }
+.perm-table .perm-name { font-family: var(--mono); font-size: 0.68rem; color: var(--accent); }
+
+/* DATA MODEL DIAGRAM */
+.model-diagram {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    margin-top: 1rem;
+}
+.model-header {
+    background: var(--bg-dark);
+    color: white;
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.model-header .model-icon { font-size: 0.9rem; }
+.model-body { padding: 12px 16px; }
+.model-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+}
+.model-field:last-child { border-bottom: none; }
+.model-field .fname { font-family: var(--mono); font-weight: 500; min-width: 160px; }
+.model-field .ftype { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); }
+.model-field .fmeta { font-size: 0.62rem; color: var(--text-muted); margin-left: auto; }
+.model-field .fk-badge { font-size: 0.55rem; background: var(--orange-light); color: #92400e; padding: 1px 4px; border-radius: 2px; font-weight: 600; }
+.model-field .pk-badge { font-size: 0.55rem; background: var(--info-light); color: #1d4ed8; padding: 1px 4px; border-radius: 2px; font-weight: 600; }
+.model-field .enum-badge { font-size: 0.55rem; background: var(--purple-light); color: #5b21b6; padding: 1px 4px; border-radius: 2px; font-weight: 600; }
+.model-field .idx-badge { font-size: 0.55rem; background: var(--success-light); color: #065f46; padding: 1px 4px; border-radius: 2px; font-weight: 600; }
+
+/* FINANCIAL OVERVIEW MOCK */
+.fin-overview {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    margin-top: 1rem;
+}
+.fin-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+}
+.fin-row:last-child { border-bottom: none; }
+.fin-row .fin-label { color: var(--text-secondary); }
+.fin-row .fin-value { font-family: var(--mono); font-weight: 700; font-size: 0.88rem; }
+.fin-row.total { background: var(--bg-dark); color: white; }
+.fin-row.total .fin-label { color: rgba(255,255,255,0.7); }
+.fin-row.total .fin-value { color: white; }
+.fin-row.new { background: var(--accent-light); }
+.fin-row.new .fin-label { color: var(--accent); font-weight: 600; }
+.fin-row.new .fin-value { color: var(--accent); }
+.fin-row.sub { padding-left: 2rem; font-size: 0.75rem; }
+.fin-row.sub .fin-label { color: var(--text-muted); }
+.fin-row.sub .fin-value { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+
+/* INLINE EDITABLE TABLE */
+.ie-table { width: 100%; border-collapse: collapse; }
+.ie-table th {
+    background: var(--bg-panel); font-weight: 600; color: var(--text-secondary);
+    text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--border);
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.ie-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+    font-size: 0.78rem; vertical-align: middle;
+}
+.ie-table td.editable {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: text;
+}
+.ie-table .add-row {
+    color: var(--accent); font-weight: 600; font-size: 0.72rem; cursor: pointer;
+    padding: 8px 10px;
+}
+.ie-table .total-cell {
+    font-family: var(--mono); font-weight: 700; text-align: right;
+}
+
+/* T&M WORKSHEET */
+.tm-category {
+    margin-bottom: 1rem;
+}
+.tm-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px 6px 0 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.tm-category-header.labor { background: var(--info-light); color: #1d4ed8; }
+.tm-category-header.material { background: var(--success-light); color: #065f46; }
+.tm-category-header.equipment { background: var(--orange-light); color: #92400e; }
+.tm-category-header.overhead { background: var(--purple-light); color: #5b21b6; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .wf-detail-layout { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4, .wf-form-row.col5 { grid-template-columns: 1fr; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .concept-grid { grid-template-columns: 1fr; }
+    .spec-hero .meta-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .topnav .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HERO HEADER                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="spec-hero">
+    <div style="position:relative; z-index:1;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <span class="badge blue" style="font-size:0.6rem; padding:3px 8px;">SP7</span>
+            <span class="badge orange" style="font-size:0.6rem; padding:3px 8px;">Release 1.32.0-RC1</span>
+        </div>
+        <h1>PCO / WIP Tracking Workflow</h1>
+        <p class="subtitle">End-to-end Potential Change Order management — from field T&M capture to invoicing — with real-time Work-in-Progress tracking integrated into Job Financials.</p>
+
+        <div class="meta-grid">
+            <div class="meta-item"><div class="mk">Jira</div><div class="mv">Q21030-11102</div></div>
+            <div class="meta-item"><div class="mk">Release</div><div class="mv">1.32.0-RC1</div></div>
+            <div class="meta-item"><div class="mk">Effort</div><div class="mv">4–6 weeks</div></div>
+            <div class="meta-item"><div class="mk">Priority</div><div class="mv">Critical</div></div>
+            <div class="meta-item"><div class="mk">Stakeholders</div><div class="mv">Ben Fenske, Chris Tremberth</div></div>
+            <div class="meta-item"><div class="mk">Customer</div><div class="mv">Rival Insulation</div></div>
+        </div>
+
+        <div class="customer-quote">
+            <div style="padding-left:1rem;">We currently fill the sheet out by hand in the field, take a picture of it, send it to the office, then Heidi keys in all the data into a spreadsheet, then we email it to the customer. This is a terrible workflow.</div>
+            <div class="attribution">— Chris Tremberth, Rival Insulation</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: KEY CONCEPTS                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="concepts">
+    <div class="section-tag">Concepts</div>
+    <h2>Key Concepts</h2>
+    <p class="desc">PCOs represent additional work beyond the original contract scope. They fall into two categories and feed directly into WIP calculations for real-time job financial health.</p>
+
+    <div class="concept-grid">
+        <div class="concept-card">
+            <h4>PCO — Potential Change Order</h4>
+            <div class="abbr">Parent concept</div>
+            <p>Additional work identified beyond the original contract scope. Begins as a field capture and advances through approval to become an official change order or be invoiced directly.</p>
+        </div>
+        <div class="concept-card tm">
+            <h4>T&M — Time & Material</h4>
+            <div class="abbr">PCO Type: T_AND_M</div>
+            <p>Work already completed, billed on actual time and materials consumed. Represents <strong>recoverable revenue</strong> that needs to be invoiced to the customer. Replaces the paper T&M sheet.</p>
+        </div>
+        <div class="concept-card pq">
+            <h4>Pending Quote</h4>
+            <div class="abbr">PCO Type: PENDING_QUOTE</div>
+            <p>Proposed future work not yet approved or performed. Represents <strong>potential revenue</strong> pending customer sign-off. May convert to a formal Change Order when approved.</p>
+        </div>
+        <div class="concept-card wip">
+            <h4>WIP — Work in Progress</h4>
+            <div class="abbr">Real-time financial metric</div>
+            <p>The remaining unbilled contract value, including all approved PCOs. A key metric for understanding job financial health and cash flow.</p>
+            <div class="formula">WIP = Original Contract + Approved COs + Approved PCOs − Billed to Date</div>
+        </div>
+    </div>
+    <div class="dev-note"><strong>Dev:</strong> PCOs exist upstream of EstimateChangeOrderRecord. When a Pending Quote PCO is approved, it can optionally be converted to a formal Change Order via the existing CO workflow. T&M PCOs flow directly to invoicing.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: PCO LIST VIEW                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="pco-list">
+    <div class="section-tag">Interface 1</div>
+    <h2>PCO List View</h2>
+    <p class="desc">Route: Job Detail Page → <code>PCOs</code> tab. Follows the same TableFeed pattern as Estimates, Change Orders, and RFIs on the Job Detail page.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">job/[id] → PCOs tab</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <h3 style="margin:0;">Potential Change Orders</h3>
+                    <span class="badge gray">6 total</span>
+                    <span class="badge green" style="font-size:0.6rem;">$12,700 approved</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn primary" style="font-size:0.7rem;">+ Create PCO</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:12px;">
+                <div class="input select" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg);">Status: All</div>
+                <div class="input select" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg);">Type: All</div>
+                <div class="input" style="font-size:0.7rem; padding:4px 8px; min-height:28px; border:1px solid var(--border); border-radius:5px; background:var(--bg); flex:1;">🔍 Search PCOs...</div>
+            </div>
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>PCO #</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Amount</th>
+                        <th>Submitted</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono">PCO-001</td>
+                        <td><strong>Extra insulation — Building C east wall</strong></td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge green">Approved</span></td>
+                        <td class="amount">$4,200.00</td>
+                        <td class="mono">Feb 15</td>
+                        <td class="mono">—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-002</td>
+                        <td><strong>Ductwork modification — Floor 3</strong></td>
+                        <td><span class="badge orange">Pending Quote</span></td>
+                        <td><span class="badge orange">Submitted</span></td>
+                        <td class="amount">$8,500.00</td>
+                        <td class="mono">Feb 28</td>
+                        <td class="mono">Mar 15</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-003</td>
+                        <td><strong>Emergency pipe wrap — Unit 7 leak repair</strong></td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge gray">Draft</span></td>
+                        <td class="amount">$1,850.00</td>
+                        <td class="mono">—</td>
+                        <td class="mono">—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-004</td>
+                        <td><strong>Additional vapor barrier — penthouse level</strong></td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge green">Approved</span></td>
+                        <td class="amount">$3,250.00</td>
+                        <td class="mono">Feb 20</td>
+                        <td class="mono">—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-005</td>
+                        <td><strong>Fire stop material upgrade — core shafts</strong></td>
+                        <td><span class="badge orange">Pending Quote</span></td>
+                        <td><span class="badge red">Rejected</span></td>
+                        <td class="amount">$6,800.00</td>
+                        <td class="mono">Feb 22</td>
+                        <td class="mono">—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-006</td>
+                        <td><strong>Mechanical room insulation — HVAC units 3-6</strong></td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge blue">Invoiced</span></td>
+                        <td class="amount">$5,250.00</td>
+                        <td class="mono">Jan 30</td>
+                        <td class="mono">—</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;">
+                <span style="font-size:0.68rem; color:var(--text-muted); margin-right:4px;">Legend:</span>
+                <span class="badge gray">Draft</span>
+                <span class="badge orange">Submitted</span>
+                <span class="badge green">Approved</span>
+                <span class="badge red">Rejected</span>
+                <span class="badge blue">Invoiced</span>
+            </div>
+
+            <div class="dev-note"><strong>Dev:</strong> New tab on JobDetail page, same pattern as Estimates/COs. Use existing <code>configureColumns.ts</code> approach. Route: <code>/jobs/[id]?tab=pcos</code>. Permission: <code>pco___view</code>. PCO numbers auto-increment per job.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: PCO CREATE/EDIT FORM                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="pco-form">
+    <div class="section-tag">Interface 2</div>
+    <h2>PCO Create / Edit Form</h2>
+    <p class="desc">Opens as a flyout from the PCO list or as a full page. Includes inline-editable line items with cost code association and real-time total calculation.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">flyout — Create PCO</div></div>
+        <div class="wireframe-body">
+            <div class="wf-form">
+                <div class="wf-section-title">General Information</div>
+                <div class="wf-field">
+                    <label>Title <span class="req">*</span></label>
+                    <div class="input">Extra insulation — Building C east wall</div>
+                </div>
+                <div class="wf-field">
+                    <label>Description</label>
+                    <div class="input textarea">Customer requested additional R-30 insulation on Building C east wall due to thermal bridging identified during commissioning. Work includes material, installation labor, and vapor barrier application. Area: approx. 150 sq ft.</div>
+                </div>
+                <div class="wf-form-row col2">
+                    <div class="wf-field">
+                        <label>Type <span class="req">*</span></label>
+                        <div class="input select">T&M (Time & Material)</div>
+                        <div class="field-hint">T&M = completed work · Pending Quote = proposed future work</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Due Date</label>
+                        <div class="input">2026-03-15</div>
+                        <div class="field-hint">Customer response deadline (optional)</div>
+                    </div>
+                </div>
+
+                <div class="wf-section-title">Line Items</div>
+                <div style="overflow-x:auto;">
+                    <table class="ie-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:200px;">Description</th>
+                                <th style="min-width:80px;">Qty</th>
+                                <th style="min-width:100px;">Unit Cost</th>
+                                <th style="min-width:100px; text-align:right;">Total</th>
+                                <th style="min-width:140px;">Cost Code</th>
+                                <th style="width:40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="editable">Insulation material — R-30 fiberglass batt</td>
+                                <td class="editable">150 sq ft</td>
+                                <td class="editable">$3.50</td>
+                                <td class="total-cell">$525.00</td>
+                                <td><span class="badge blue" style="font-size:0.62rem;">31 Insulation</span></td>
+                                <td style="text-align:center; color:var(--danger); cursor:pointer; font-size:0.7rem;">✕</td>
+                            </tr>
+                            <tr>
+                                <td class="editable">Labor — insulation install (2 crew)</td>
+                                <td class="editable">24 hrs</td>
+                                <td class="editable">$65.00</td>
+                                <td class="total-cell">$1,560.00</td>
+                                <td><span class="badge blue" style="font-size:0.62rem;">01 Labor</span></td>
+                                <td style="text-align:center; color:var(--danger); cursor:pointer; font-size:0.7rem;">✕</td>
+                            </tr>
+                            <tr>
+                                <td class="editable">Vapor barrier — polyethylene sheeting</td>
+                                <td class="editable">150 sq ft</td>
+                                <td class="editable">$1.25</td>
+                                <td class="total-cell">$187.50</td>
+                                <td><span class="badge blue" style="font-size:0.62rem;">31 Insulation</span></td>
+                                <td style="text-align:center; color:var(--danger); cursor:pointer; font-size:0.7rem;">✕</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="add-row" colspan="3">+ Add Line Item</td>
+                                <td class="total-cell" style="font-size:0.88rem; color:var(--accent); border-top:2px solid var(--accent);">$2,272.50</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="dev-note"><strong>Dev:</strong> Line items = <code>PCOLineItem</code> model. Inline editing pattern — same as SOV line items. Cost code picker reuses existing <code>CostCodeSelector</code>. Totals auto-calculate: <code>totalCost = quantity × unitCost</code>, <code>estimatedAmount = SUM(lineItem.totalCost)</code>.</div>
+
+                <div class="wf-section-title">Attachments</div>
+                <div class="wf-field">
+                    <label>Supporting Documents</label>
+                    <div class="input file">📎 Drop files or click to upload — Photos, drawings, specs, prior quotes</div>
+                    <div class="field-hint">AssetReference(referenceTable: "PotentialChangeOrder") — reuses existing Asset system</div>
+                </div>
+
+                <div class="wf-btn-row">
+                    <div class="wf-btn secondary">Cancel</div>
+                    <div class="wf-btn secondary">Save Draft</div>
+                    <div class="wf-btn primary">Submit PCO</div>
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Flyout pattern — same as <code>useFlyout()</code> for Job/Equipment creation. On submit: status → SUBMITTED, <code>pcoNumber</code> auto-generated (<code>PCO-{sequential per job}</code>), <code>submittedDate</code> set, notification fires to PM/Finance.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: PCO DETAIL PAGE                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="pco-detail">
+    <div class="section-tag">Interface 3</div>
+    <h2>PCO Detail Page</h2>
+    <p class="desc">Route: Job Detail → PCOs tab → click into PCO. Follows the Job Detail / RFI Detail pattern with tabs and a sidebar panel.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">job/[id]/pcos/PCO-001</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">PCO-001</span>
+                        <span class="badge green">T&M</span>
+                        <span class="badge green">Approved</span>
+                    </div>
+                    <h3 style="margin-top:4px;">Extra insulation — Building C east wall</h3>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Export PDF</div>
+                    <div class="wf-btn secondary" style="font-size:0.7rem;">Edit</div>
+                    <div class="wf-btn primary" style="font-size:0.7rem;">→ Create Invoice</div>
+                </div>
+            </div>
+
+            <div class="wf-detail-layout">
+                <div>
+                    <div class="wf-detail-tabs">
+                        <div class="wf-detail-tab active">Details</div>
+                        <div class="wf-detail-tab">Line Items</div>
+                        <div class="wf-detail-tab">Files</div>
+                        <div class="wf-detail-tab">Activity</div>
+                    </div>
+
+                    <div style="padding:0;">
+                        <h4>Description</h4>
+                        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">Customer requested additional R-30 insulation on Building C east wall due to thermal bridging identified during commissioning. Work includes material, installation labor, and vapor barrier application. Area: approx. 150 sq ft.</p>
+
+                        <h4>Line Items (3)</h4>
+                        <table class="wf-table" style="margin-bottom:1rem;">
+                            <thead>
+                                <tr><th>Description</th><th>Qty</th><th>Unit Cost</th><th style="text-align:right;">Total</th><th>Cost Code</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Insulation material — R-30 fiberglass batt</td>
+                                    <td class="mono">150 sq ft</td>
+                                    <td class="mono">$3.50</td>
+                                    <td class="amount">$525.00</td>
+                                    <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Labor — insulation install (2 crew)</td>
+                                    <td class="mono">24 hrs</td>
+                                    <td class="mono">$65.00</td>
+                                    <td class="amount">$1,560.00</td>
+                                    <td><span class="badge blue" style="font-size:0.6rem;">01 Labor</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Vapor barrier — polyethylene sheeting</td>
+                                    <td class="mono">150 sq ft</td>
+                                    <td class="mono">$1.25</td>
+                                    <td class="amount">$187.50</td>
+                                    <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td colspan="3" style="text-align:right; font-weight:700;">Estimated Total</td>
+                                    <td class="amount" style="color:var(--accent);">$2,272.50</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Attachments (2 files)</h4>
+                        <div style="display:flex; gap:8px; margin-top:0.5rem;">
+                            <div style="width:100px; height:60px; background:var(--bg-panel); border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">📷 Site photo</div>
+                            <div style="width:100px; height:60px; background:var(--bg-panel); border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:var(--text-muted);">📄 Spec sheet</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wf-detail-sidebar">
+                    <div class="sidebar-card">
+                        <h4>Status</h4>
+                        <div style="text-align:center; padding:8px 0;">
+                            <span class="badge green" style="font-size:0.78rem; padding:6px 14px;">Approved</span>
+                        </div>
+                        <div style="display:flex; justify-content:center; margin-top:6px;">
+                            <div class="wf-btn primary" style="font-size:0.68rem;">Advance Status →</div>
+                        </div>
+                    </div>
+                    <div class="sidebar-card">
+                        <h4>Details</h4>
+                        <div class="sidebar-field"><span class="fk">Created By</span><span class="fv">Chris Tremberth</span></div>
+                        <div class="sidebar-field"><span class="fk">Created</span><span class="fv mono" style="font-size:0.7rem;">Feb 14, 2026</span></div>
+                        <div class="sidebar-field"><span class="fk">Submitted</span><span class="fv mono" style="font-size:0.7rem;">Feb 15, 2026</span></div>
+                        <div class="sidebar-field"><span class="fk">Approved</span><span class="fv mono" style="font-size:0.7rem;">Feb 18, 2026</span></div>
+                        <div class="sidebar-field"><span class="fk">Approved By</span><span class="fv">Ben Fenske</span></div>
+                        <div class="sidebar-field"><span class="fk">Job</span><span class="fv" style="color:var(--accent);">Sarnia Refinery — Unit 4</span></div>
+                    </div>
+                    <div class="sidebar-card" style="border:1px solid var(--accent); background:var(--accent-light);">
+                        <h4 style="color:var(--accent);">Financial Summary</h4>
+                        <div class="sidebar-field"><span class="fk">Estimated</span><span class="fv mono">$2,272.50</span></div>
+                        <div class="sidebar-field"><span class="fk">Approved</span><span class="fv mono" style="color:var(--success);">$4,200.00</span></div>
+                        <div class="sidebar-field"><span class="fk">Invoiced</span><span class="fv mono">$0.00</span></div>
+                        <div class="sidebar-field"><span class="fk">Outstanding</span><span class="fv mono" style="color:var(--danger);">$4,200.00</span></div>
+                    </div>
+                    <div class="sidebar-card">
+                        <h4>Related</h4>
+                        <div class="sidebar-field"><span class="fk">Change Order</span><span class="fv" style="color:var(--text-muted); font-style:italic;">Not linked</span></div>
+                        <div class="sidebar-field"><span class="fk">Invoice</span><span class="fv" style="color:var(--text-muted); font-style:italic;">Pending</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Same layout pattern as Job Detail / RFI Detail. Tabs: Details, Line Items (editable inline table), Files (AssetReference), Activity (audit trail). Sidebar: status card + metadata + financial summary + related records. "Create Invoice" button links approved PCO to Invoice flow.</div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: STATUS WORKFLOW — STATE MACHINE                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="lifecycle">
+    <div class="section-tag orange">Workflow</div>
+    <h2>PCO Status Workflow — State Machine</h2>
+    <p class="desc">Every PCO follows this lifecycle. Status transitions are permission-gated, require specific field validations, and trigger notifications at each step.</p>
+
+    <div class="two-col">
+        <div>
+            <div class="flow">
+                <div class="flow-node" style="border-color: var(--text-muted);">
+                    <h4>Draft</h4>
+                    <p>Creator builds PCO with line items. Can save and return.</p>
+                    <span class="who">pco.create</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Submit →</span></div>
+                <div class="flow-node warning">
+                    <h4>Submitted</h4>
+                    <p>Sent for review. PM/Finance notified. Cannot edit without rejection.</p>
+                    <span class="who">auto-notification</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Review →</span></div>
+
+                <div style="display:flex; gap:2rem; align-items:flex-start; position:relative;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+                        <div class="flow-node success" style="min-width:180px;">
+                            <h4>Approved</h4>
+                            <p>Approved amount confirmed. Flows into WIP calculation.</p>
+                            <span class="who">PM / Finance</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">Invoice linked →</span></div>
+                        <div class="flow-node" style="border-color:var(--info); min-width:180px;">
+                            <h4>Invoiced</h4>
+                            <p>Fully billed. Linked to invoice record.</p>
+                            <span class="who">Finance</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+                        <div class="flow-node danger" style="min-width:180px;">
+                            <h4>Rejected</h4>
+                            <p>Reason recorded. Creator can re-edit and re-submit.</p>
+                            <span class="who">PM / Finance</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">Re-edit →</span></div>
+                        <div class="flow-node" style="border-color:var(--text-muted); min-width:180px; border-style:dashed;">
+                            <h4>Back to Draft</h4>
+                            <p>Original creator revises and can re-submit.</p>
+                            <span class="who">Original creator</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Horizontal Summary</h3>
+            <div class="hflow">
+                <div class="hflow-node" style="border-color:var(--text-muted);"><h4>Draft</h4><p>Build & save</p></div>
+                <div class="hflow-arrow"></div>
+                <div class="hflow-node" style="border-color:var(--orange);"><h4>Submitted</h4><p>Awaiting review</p></div>
+                <div class="hflow-arrow"></div>
+                <div class="hflow-node" style="border-color:var(--success);"><h4>Approved</h4><p>In WIP calc</p></div>
+                <div class="hflow-arrow"></div>
+                <div class="hflow-node" style="border-color:var(--info); background:var(--info-light);"><h4>Invoiced</h4><p>Fully billed</p></div>
+            </div>
+        </div>
+
+        <div>
+            <h3>Transition Rules</h3>
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>From</th><th>To</th><th>Who</th><th>Gate</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge gray">Draft</span></td>
+                        <td><span class="badge orange">Submitted</span></td>
+                        <td>Any user with <code style="font-size:0.62rem;">pco___create</code></td>
+                        <td>Title + type + ≥1 line item required</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Submitted</span></td>
+                        <td><span class="badge green">Approved</span></td>
+                        <td>PM / Finance</td>
+                        <td><code style="font-size:0.62rem;">approvedAmount</code> set, <code style="font-size:0.62rem;">approvedById</code> recorded</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Submitted</span></td>
+                        <td><span class="badge red">Rejected</span></td>
+                        <td>PM / Finance</td>
+                        <td>Rejection reason required</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green">Approved</span></td>
+                        <td><span class="badge blue">Invoiced</span></td>
+                        <td>Finance</td>
+                        <td>Invoice record linked (<code style="font-size:0.62rem;">invoiceId</code>)</td>
+                    </tr>
+                    <tr style="background:var(--orange-light);">
+                        <td><span class="badge red">Rejected</span></td>
+                        <td><span class="badge gray">Draft</span></td>
+                        <td>Original creator</td>
+                        <td>Can re-edit and re-submit</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="dev-note"><strong>Dev:</strong> Transition enforcement in model layer (<code>PotentialChangeOrder.editItem()</code>). Same pattern as <code>EstimateChangeOrderRecord</code> status changes. <code>approvedAmount</code> can differ from <code>estimatedAmount</code> — PM may negotiate scope down.</div>
+
+            <h3 style="margin-top:1.5rem;">Per-Status Required Fields</h3>
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>Status</th><th>Required Fields</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge gray">Draft</span></td><td>title, type</td></tr>
+                    <tr><td><span class="badge orange">Submitted</span></td><td>+ description, ≥1 PCOLineItem, submittedDate, createdById</td></tr>
+                    <tr><td><span class="badge green">Approved</span></td><td>+ approvedAmount, approvedDate, approvedById</td></tr>
+                    <tr><td><span class="badge red">Rejected</span></td><td>+ rejectionReason</td></tr>
+                    <tr><td><span class="badge blue">Invoiced</span></td><td>+ invoicedAmount, invoiceId link</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: T&M DIGITAL WORKSHEET                                  -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="tm-worksheet">
+    <div class="section-tag green">Interface 4</div>
+    <h2>T&M Digital Worksheet</h2>
+    <p class="desc">The T&M worksheet replaces the current paper-based process. For T&M-type PCOs, the line items are structured by category (labor, material, equipment) with worker names, hours, rates, and markup — producing a customer-ready PDF.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">T&M Worksheet — PCO-001</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">PCO-001</span>
+                        <span class="badge green">T&M</span>
+                        <span class="badge green">Approved</span>
+                    </div>
+                    <h3 style="margin-top:2px;">Extra insulation — Building C east wall</h3>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Job: Sarnia Refinery — Unit 4 · Date: Feb 15, 2026 · Submitted by: Chris Tremberth</div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <div class="wf-btn success" style="font-size:0.7rem;">📄 Export PDF</div>
+                </div>
+            </div>
+
+            <!-- LABOR -->
+            <div class="tm-category">
+                <div class="tm-category-header labor">👷 Labor</div>
+                <table class="wf-table">
+                    <thead><tr><th>Worker</th><th>Classification</th><th>Date</th><th style="text-align:right;">Hours</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Total</th><th>Cost Code</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>M. Rodriguez</td>
+                            <td>Insulator Journeyman</td>
+                            <td class="mono">Feb 14</td>
+                            <td class="amount">8.0</td>
+                            <td class="amount">$65.00</td>
+                            <td class="amount">$520.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">01 Labor</span></td>
+                        </tr>
+                        <tr>
+                            <td>J. Santos</td>
+                            <td>Insulator Apprentice</td>
+                            <td class="mono">Feb 14</td>
+                            <td class="amount">8.0</td>
+                            <td class="amount">$42.00</td>
+                            <td class="amount">$336.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">01 Labor</span></td>
+                        </tr>
+                        <tr>
+                            <td>M. Rodriguez</td>
+                            <td>Insulator Journeyman</td>
+                            <td class="mono">Feb 15</td>
+                            <td class="amount">4.0</td>
+                            <td class="amount">$65.00</td>
+                            <td class="amount">$260.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">01 Labor</span></td>
+                        </tr>
+                        <tr>
+                            <td>J. Santos</td>
+                            <td>Insulator Apprentice</td>
+                            <td class="mono">Feb 15</td>
+                            <td class="amount">4.0</td>
+                            <td class="amount">$42.00</td>
+                            <td class="amount">$168.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">01 Labor</span></td>
+                        </tr>
+                        <tr class="subtotal-row">
+                            <td colspan="5" style="text-align:right;">Labor Subtotal</td>
+                            <td class="amount">$1,284.00</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MATERIAL -->
+            <div class="tm-category">
+                <div class="tm-category-header material">📦 Material</div>
+                <table class="wf-table">
+                    <thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th style="text-align:right;">Unit Cost</th><th style="text-align:right;">Total</th><th>Cost Code</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>R-30 Fiberglass batt insulation</td>
+                            <td class="mono">150</td>
+                            <td>sq ft</td>
+                            <td class="amount">$3.50</td>
+                            <td class="amount">$525.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                        </tr>
+                        <tr>
+                            <td>6-mil polyethylene vapor barrier</td>
+                            <td class="mono">150</td>
+                            <td>sq ft</td>
+                            <td class="amount">$1.25</td>
+                            <td class="amount">$187.50</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                        </tr>
+                        <tr>
+                            <td>Foil tape & adhesive</td>
+                            <td class="mono">3</td>
+                            <td>rolls</td>
+                            <td class="amount">$18.00</td>
+                            <td class="amount">$54.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                        </tr>
+                        <tr>
+                            <td>Metal jacketing (aluminum)</td>
+                            <td class="mono">45</td>
+                            <td>lin ft</td>
+                            <td class="amount">$8.50</td>
+                            <td class="amount">$382.50</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">31 Insulation</span></td>
+                        </tr>
+                        <tr class="subtotal-row">
+                            <td colspan="4" style="text-align:right;">Material Subtotal</td>
+                            <td class="amount">$1,149.00</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- EQUIPMENT -->
+            <div class="tm-category">
+                <div class="tm-category-header equipment">🔧 Equipment</div>
+                <table class="wf-table">
+                    <thead><tr><th>Equipment</th><th>Qty</th><th>Unit</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Total</th><th>Cost Code</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>Scissor lift rental</td>
+                            <td class="mono">2</td>
+                            <td>days</td>
+                            <td class="amount">$185.00</td>
+                            <td class="amount">$370.00</td>
+                            <td><span class="badge blue" style="font-size:0.6rem;">05 Equipment</span></td>
+                        </tr>
+                        <tr class="subtotal-row">
+                            <td colspan="4" style="text-align:right;">Equipment Subtotal</td>
+                            <td class="amount">$370.00</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TOTALS -->
+            <div style="background:var(--bg-panel); border-radius:8px; padding:16px; margin-top:12px;">
+                <table style="width:100%; font-size:0.82rem; border-collapse:collapse;">
+                    <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 0;">Labor</td><td style="text-align:right; font-family:var(--mono); font-weight:600; padding:6px 0;">$1,284.00</td></tr>
+                    <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 0;">Material</td><td style="text-align:right; font-family:var(--mono); font-weight:600; padding:6px 0;">$1,149.00</td></tr>
+                    <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 0;">Equipment</td><td style="text-align:right; font-family:var(--mono); font-weight:600; padding:6px 0;">$370.00</td></tr>
+                    <tr style="border-bottom:2px solid var(--border-strong);"><td style="padding:6px 0; font-weight:600;">Subtotal</td><td style="text-align:right; font-family:var(--mono); font-weight:700; padding:6px 0;">$2,803.00</td></tr>
+                    <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 0; color:var(--purple);">Overhead & Markup (15%)</td><td style="text-align:right; font-family:var(--mono); font-weight:600; padding:6px 0; color:var(--purple);">$420.45</td></tr>
+                    <tr><td style="padding:8px 0; font-weight:800; font-size:1rem;">Grand Total</td><td style="text-align:right; font-family:var(--mono); font-weight:800; font-size:1.1rem; padding:8px 0; color:var(--accent);">$3,223.45</td></tr>
+                </table>
+            </div>
+
+            <div class="dev-note"><strong>Dev:</strong> T&M worksheet is an enriched view of the PCOLineItem data, categorized by <code>lineItemCategory</code> enum (LABOR, MATERIAL, EQUIPMENT, OVERHEAD). PDF export via existing PSPDFKit pipeline. Template: customer-branded T&M sheet with company logo, job info, and all line items. Markup % is instance-configurable.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2.5rem;">Paper vs. Digital Workflow</h3>
+    <div class="compare-grid">
+        <div class="compare-card before">
+            <h3 style="color:#991b1b;">❌ Before — Paper Process</h3>
+            <div class="compare-step">
+                <div class="step-num">1</div>
+                <span>Foreman fills out T&M sheet by hand in the field</span>
+                <span class="time-badge">15 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">2</div>
+                <span>Takes a photo of the handwritten sheet with phone</span>
+                <span class="time-badge">1 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">3</div>
+                <span>Texts or emails photo to the office</span>
+                <span class="time-badge">2 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">4</div>
+                <span>Heidi in the office deciphers handwriting and keys data into a spreadsheet</span>
+                <span class="time-badge">20 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">5</div>
+                <span>Formats the spreadsheet and emails it to the customer</span>
+                <span class="time-badge">10 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">6</div>
+                <span>Waits for customer response — no tracking or follow-up</span>
+                <span class="time-badge">??</span>
+            </div>
+            <div style="text-align:center; padding:10px 0; font-size:0.78rem; font-weight:700; color:#991b1b; border-top:2px solid #fca5a5; margin-top:8px;">~48 min per T&M + risk of errors + no audit trail</div>
+        </div>
+        <div class="compare-card after">
+            <h3 style="color:#065f46;">✅ After — Digital in Appello</h3>
+            <div class="compare-step">
+                <div class="step-num">1</div>
+                <span>Foreman creates PCO on phone/tablet from Job Detail page</span>
+                <span class="time-badge">5 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">2</div>
+                <span>Adds line items with cost codes — totals auto-calculate</span>
+                <span class="time-badge">3 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">3</div>
+                <span>Attaches photos directly from camera</span>
+                <span class="time-badge">1 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">4</div>
+                <span>Taps "Submit" — PM/Finance notified instantly</span>
+                <span class="time-badge">instant</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">5</div>
+                <span>Export branded PDF → email to customer or track status</span>
+                <span class="time-badge">1 min</span>
+            </div>
+            <div class="compare-step">
+                <div class="step-num">6</div>
+                <span>Full audit trail, status tracking, and WIP integration</span>
+                <span class="time-badge">auto</span>
+            </div>
+            <div style="text-align:center; padding:10px 0; font-size:0.78rem; font-weight:700; color:#065f46; border-top:2px solid #6ee7b7; margin-top:8px;">~10 min per T&M + zero re-entry + full traceability</div>
+        </div>
+    </div>
+    <div class="dev-note"><strong>Customer Impact:</strong> Chris Tremberth estimates this saves Rival Insulation <strong>~40 minutes per T&M</strong> and eliminates the spreadsheet bottleneck in the office. With 10-15 T&Ms per week, that's 7-10 hours saved weekly.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: JOB FINANCIAL INTEGRATION                              -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="financial-integration">
+    <div class="section-tag teal">Interface 5</div>
+    <h2>Job Financial Integration</h2>
+    <p class="desc">PCO data integrates directly into the Job Financial Overview. Approved PCOs increase the Total Contract Value and affect the WIP calculation in real time.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">job/[id] → Financial Overview</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0;">Job Financial Overview — Sarnia Refinery Unit 4</h3>
+                <span class="badge teal">Live WIP</span>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <div class="kpi-label">Original Contract</div>
+                    <div class="kpi-value" style="font-size:1.3rem;">$185,000</div>
+                </div>
+                <div class="kpi blue">
+                    <div class="kpi-label">Approved COs</div>
+                    <div class="kpi-value" style="font-size:1.3rem;">$25,000</div>
+                </div>
+                <div class="kpi green">
+                    <div class="kpi-label">Approved PCOs</div>
+                    <div class="kpi-value" style="font-size:1.3rem;">$12,700</div>
+                    <div class="kpi-sub" style="color:var(--success);">NEW — from PCO module</div>
+                </div>
+                <div class="kpi purple">
+                    <div class="kpi-label">Total Contract Value</div>
+                    <div class="kpi-value" style="font-size:1.3rem;">$222,700</div>
+                </div>
+            </div>
+
+            <div class="fin-overview">
+                <div class="fin-row"><span class="fin-label">Original Contract Value</span><span class="fin-value">$185,000.00</span></div>
+                <div class="fin-row"><span class="fin-label">Approved Change Orders</span><span class="fin-value">$25,000.00</span></div>
+                <div class="fin-row new"><span class="fin-label">Approved PCOs (new)</span><span class="fin-value">$12,700.00</span></div>
+                <div class="fin-row total"><span class="fin-label">Total Contract Value</span><span class="fin-value">$222,700.00</span></div>
+                <div class="fin-row"><span class="fin-label">Billed to Date</span><span class="fin-value">$150,000.00</span></div>
+                <div class="fin-row new"><span class="fin-label">Work in Progress (WIP)</span><span class="fin-value" style="color:var(--accent);">$72,700.00</span></div>
+            </div>
+
+            <h4 style="margin-top:1.5rem; margin-bottom:8px;">PCO Summary by Status</h4>
+            <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);">
+                <div class="kpi">
+                    <div class="kpi-label">Draft</div>
+                    <div class="kpi-value" style="font-size:1.1rem; color:var(--text-muted);">1</div>
+                    <div class="kpi-sub">$1,850</div>
+                </div>
+                <div class="kpi amber">
+                    <div class="kpi-label">Submitted</div>
+                    <div class="kpi-value" style="font-size:1.1rem;">1</div>
+                    <div class="kpi-sub">$8,500</div>
+                </div>
+                <div class="kpi green">
+                    <div class="kpi-label">Approved</div>
+                    <div class="kpi-value" style="font-size:1.1rem;">2</div>
+                    <div class="kpi-sub">$7,450</div>
+                </div>
+                <div class="kpi red">
+                    <div class="kpi-label">Rejected</div>
+                    <div class="kpi-value" style="font-size:1.1rem;">1</div>
+                    <div class="kpi-sub">$6,800</div>
+                </div>
+                <div class="kpi blue">
+                    <div class="kpi-label">Invoiced</div>
+                    <div class="kpi-value" style="font-size:1.1rem;">1</div>
+                    <div class="kpi-sub">$5,250</div>
+                </div>
+            </div>
+
+            <div class="dev-note"><strong>Dev:</strong> WIP formula: <code>TotalContractValue - BilledToDate</code> where <code>TotalContractValue = OriginalContract + SUM(approvedCOs) + SUM(approvedPCOs)</code>. Update existing <code>JobFinancialOverview</code> component to include PCO aggregation query. New fields on Job view: <code>approvedPCOTotal</code>, <code>pendingPCOTotal</code>, <code>wipAmount</code>. Consider creating a Prisma view for performance.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">WIP Calculation Breakdown</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">WIP Calculation — Step by Step</div></div>
+        <div class="wireframe-body">
+            <table class="wf-table">
+                <thead><tr><th>Component</th><th>Source</th><th style="text-align:right;">Value</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Original Contract</strong></td>
+                        <td class="mono" style="font-size:0.68rem;">Job.contractValue</td>
+                        <td class="amount">$185,000.00</td>
+                        <td style="font-size:0.7rem; color:var(--text-muted);">From accepted Estimate</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Approved Change Orders</strong></td>
+                        <td class="mono" style="font-size:0.68rem;">SUM(CO.approvedAmount)</td>
+                        <td class="amount">$25,000.00</td>
+                        <td style="font-size:0.7rem; color:var(--text-muted);">Existing CO system</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td><strong>Approved PCOs</strong></td>
+                        <td class="mono" style="font-size:0.68rem;">SUM(PCO.approvedAmount) WHERE status=APPROVED</td>
+                        <td class="amount" style="color:var(--success);">$12,700.00</td>
+                        <td style="font-size:0.7rem; color:var(--success);">NEW — from PCO module</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Total Contract Value</strong></td>
+                        <td class="amount">$222,700.00</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Billed to Date</strong></td>
+                        <td class="mono" style="font-size:0.68rem;">SUM(Invoice.amount) WHERE status=SENT</td>
+                        <td class="amount">($150,000.00)</td>
+                        <td style="font-size:0.7rem; color:var(--text-muted);">Existing Invoice system</td>
+                    </tr>
+                    <tr class="total-row" style="background:var(--accent);">
+                        <td colspan="2" style="color:white;"><strong>Work in Progress (WIP)</strong></td>
+                        <td class="amount" style="color:white; font-size:1rem;">$72,700.00</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: DATA MODEL                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="data-model">
+    <div class="section-tag purple">Data Model</div>
+    <h2>Data Model</h2>
+    <p class="desc">Two new Prisma models: <code>PotentialChangeOrder</code> and <code>PCOLineItem</code>. Follows existing patterns from <code>EstimateChangeOrderRecord</code> and <code>ScheduleOfValues</code>.</p>
+
+    <div class="two-col">
+        <div>
+            <div class="model-diagram">
+                <div class="model-header"><span class="model-icon">📋</span> PotentialChangeOrder</div>
+                <div class="model-body">
+                    <div class="model-field"><span class="fname">id</span><span class="ftype">String @id @db.VarChar(21)</span><span class="pk-badge">PK</span></div>
+                    <div class="model-field"><span class="fname">instanceId</span><span class="ftype">String @db.VarChar(21)</span><span class="fk-badge">FK</span></div>
+                    <div class="model-field"><span class="fname">jobId</span><span class="ftype">String @db.VarChar(21)</span><span class="fk-badge">FK</span></div>
+                    <div class="model-field"><span class="fname">projectId</span><span class="ftype">String? @db.VarChar(21)</span><span class="fk-badge">FK</span></div>
+                    <div class="model-field"><span class="fname">pcoNumber</span><span class="ftype">Int</span><span class="fmeta">Auto-increment per job</span></div>
+                    <div class="model-field"><span class="fname">title</span><span class="ftype">String @db.VarChar(500)</span></div>
+                    <div class="model-field"><span class="fname">description</span><span class="ftype">String? @db.Text</span></div>
+                    <div class="model-field"><span class="fname">type</span><span class="ftype">PCOType</span><span class="enum-badge">ENUM</span></div>
+                    <div class="model-field"><span class="fname">status</span><span class="ftype">PCOStatus</span><span class="enum-badge">ENUM</span></div>
+                    <div class="model-field"><span class="fname">estimatedAmount</span><span class="ftype">Decimal? @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">approvedAmount</span><span class="ftype">Decimal? @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">invoicedAmount</span><span class="ftype">Decimal? @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">markupPercent</span><span class="ftype">Decimal? @db.Decimal(5,2)</span><span class="fmeta">e.g. 15.00</span></div>
+                    <div class="model-field"><span class="fname">dueDate</span><span class="ftype">DateTime?</span></div>
+                    <div class="model-field"><span class="fname">submittedDate</span><span class="ftype">DateTime?</span></div>
+                    <div class="model-field"><span class="fname">approvedDate</span><span class="ftype">DateTime?</span></div>
+                    <div class="model-field"><span class="fname">rejectionReason</span><span class="ftype">String? @db.Text</span></div>
+                    <div class="model-field"><span class="fname">createdById</span><span class="ftype">String @db.VarChar(21)</span><span class="fk-badge">FK → User</span></div>
+                    <div class="model-field"><span class="fname">approvedById</span><span class="ftype">String? @db.VarChar(21)</span><span class="fk-badge">FK → User</span></div>
+                    <div class="model-field"><span class="fname">invoiceId</span><span class="ftype">String? @db.VarChar(21)</span><span class="fk-badge">FK → Invoice</span></div>
+                    <div class="model-field"><span class="fname">changeOrderId</span><span class="ftype">String? @db.VarChar(21)</span><span class="fk-badge">FK → CO</span></div>
+                    <div class="model-field"><span class="fname">isArchived</span><span class="ftype">Boolean @default(false)</span></div>
+                    <div class="model-field"><span class="fname">isDeleted</span><span class="ftype">Boolean @default(false)</span></div>
+                    <div class="model-field"><span class="fname">createdAt</span><span class="ftype">DateTime @default(now())</span></div>
+                    <div class="model-field"><span class="fname">updatedAt</span><span class="ftype">DateTime @updatedAt</span></div>
+                    <div style="margin-top:8px; padding:8px; background:var(--bg-panel); border-radius:4px; font-family:var(--mono); font-size:0.62rem; color:var(--text-muted);">
+                        @@index([instanceId, jobId, status])<br>
+                        @@index([instanceId, isDeleted, isArchived])<br>
+                        @@unique([jobId, pcoNumber])
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem; display:flex; gap:8px;">
+                <div style="flex:1; background:var(--purple-light); border-radius:6px; padding:10px; font-size:0.68rem;">
+                    <div style="font-weight:700; color:#5b21b6; margin-bottom:4px;">enum PCOType</div>
+                    <code style="font-size:0.62rem;">T_AND_M | PENDING_QUOTE</code>
+                </div>
+                <div style="flex:1; background:var(--purple-light); border-radius:6px; padding:10px; font-size:0.68rem;">
+                    <div style="font-weight:700; color:#5b21b6; margin-bottom:4px;">enum PCOStatus</div>
+                    <code style="font-size:0.62rem;">DRAFT | SUBMITTED | APPROVED | REJECTED | INVOICED</code>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="model-diagram">
+                <div class="model-header"><span class="model-icon">📝</span> PCOLineItem</div>
+                <div class="model-body">
+                    <div class="model-field"><span class="fname">id</span><span class="ftype">String @id @db.VarChar(21)</span><span class="pk-badge">PK</span></div>
+                    <div class="model-field"><span class="fname">pcoId</span><span class="ftype">String @db.VarChar(21)</span><span class="fk-badge">FK → PCO</span></div>
+                    <div class="model-field"><span class="fname">description</span><span class="ftype">String @db.VarChar(500)</span></div>
+                    <div class="model-field"><span class="fname">category</span><span class="ftype">PCOLineItemCategory?</span><span class="enum-badge">ENUM</span></div>
+                    <div class="model-field"><span class="fname">quantity</span><span class="ftype">Decimal @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">unit</span><span class="ftype">String? @db.VarChar(50)</span><span class="fmeta">sq ft, hrs, ea</span></div>
+                    <div class="model-field"><span class="fname">unitCost</span><span class="ftype">Decimal @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">totalCost</span><span class="ftype">Decimal @db.Decimal(10,2)</span></div>
+                    <div class="model-field"><span class="fname">costCodeId</span><span class="ftype">String? @db.VarChar(21)</span><span class="fk-badge">FK → CostCode</span></div>
+                    <div class="model-field"><span class="fname">workerName</span><span class="ftype">String? @db.VarChar(191)</span><span class="fmeta">T&M labor</span></div>
+                    <div class="model-field"><span class="fname">workerClassification</span><span class="ftype">String? @db.VarChar(191)</span><span class="fmeta">T&M labor</span></div>
+                    <div class="model-field"><span class="fname">workDate</span><span class="ftype">DateTime?</span><span class="fmeta">T&M labor</span></div>
+                    <div class="model-field"><span class="fname">sortOrder</span><span class="ftype">Int @default(0)</span></div>
+                    <div class="model-field"><span class="fname">isDeleted</span><span class="ftype">Boolean @default(false)</span></div>
+                    <div class="model-field"><span class="fname">createdAt</span><span class="ftype">DateTime @default(now())</span></div>
+                    <div class="model-field"><span class="fname">updatedAt</span><span class="ftype">DateTime @updatedAt</span></div>
+                    <div style="margin-top:8px; padding:8px; background:var(--bg-panel); border-radius:4px; font-family:var(--mono); font-size:0.62rem; color:var(--text-muted);">
+                        @@index([pcoId, isDeleted])
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem; background:var(--purple-light); border-radius:6px; padding:10px; font-size:0.68rem;">
+                <div style="font-weight:700; color:#5b21b6; margin-bottom:4px;">enum PCOLineItemCategory</div>
+                <code style="font-size:0.62rem;">LABOR | MATERIAL | EQUIPMENT | OVERHEAD | OTHER</code>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Relationships</h3>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.72rem;">
+                    <span class="badge blue" style="font-size:0.55rem;">1:N</span>
+                    <span><strong>PotentialChangeOrder</strong> → <strong>PCOLineItem</strong></span>
+                    <span style="color:var(--text-muted); margin-left:auto; font-size:0.62rem;">cascade delete</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.72rem;">
+                    <span class="badge blue" style="font-size:0.55rem;">N:1</span>
+                    <span><strong>PotentialChangeOrder</strong> → <strong>Job</strong></span>
+                    <span style="color:var(--text-muted); margin-left:auto; font-size:0.62rem;">required</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.72rem;">
+                    <span class="badge orange" style="font-size:0.55rem;">N:1</span>
+                    <span><strong>PotentialChangeOrder</strong> → <strong>EstimateChangeOrderRecord</strong></span>
+                    <span style="color:var(--text-muted); margin-left:auto; font-size:0.62rem;">optional — PCO can convert to CO</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.72rem;">
+                    <span class="badge orange" style="font-size:0.55rem;">N:1</span>
+                    <span><strong>PotentialChangeOrder</strong> → <strong>Invoice</strong></span>
+                    <span style="color:var(--text-muted); margin-left:auto; font-size:0.62rem;">optional — linked when invoiced</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.72rem;">
+                    <span class="badge green" style="font-size:0.55rem;">N:1</span>
+                    <span><strong>PCOLineItem</strong> → <strong>CostCode</strong></span>
+                    <span style="color:var(--text-muted); margin-left:auto; font-size:0.62rem;">optional</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Auto-Numbering</h3>
+            <div style="padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.75rem; line-height:1.8;">
+                Pattern: <code style="font-size:0.7rem;">PCO-{NNN}</code> per job<br>
+                Examples: PCO-001, PCO-002, PCO-003<br>
+                Generated on first submit (not on draft creation)<br>
+                Uses <code style="font-size:0.7rem;">MAX(pcoNumber) + 1 WHERE jobId = currentJob</code>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note"><strong>Dev:</strong> Follow existing model patterns: extend <code>BaseAuditableModel</code>, add <code>permissionName = "pco"</code>. GraphQL resolver in <code>apps/api/src/graphql/models/PotentialChangeOrder.ts</code>. Register in <code>schema.ts</code>. Add relations to Job model. Create migration for both models + enums.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: PERMISSION MATRIX                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="permissions">
+    <div class="section-tag purple">System</div>
+    <h2>Permission Matrix</h2>
+    <p class="desc">Follows the existing permission system pattern. <code>permissionName = "pco"</code> on the PotentialChangeOrder model. Scoping: ALL, OWN, PROJECT_BASED, NONE.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Permission Configuration</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <table class="perm-table">
+                <thead>
+                    <tr><th>Permission</th><th>Description</th><th>Field Worker</th><th>Supervisor</th><th>PM</th><th>Finance</th><th>Admin</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="perm-name">pco___view</td>
+                        <td>View PCO list and detail</td>
+                        <td>OWN</td>
+                        <td>PROJECT</td>
+                        <td>ALL</td>
+                        <td>ALL</td>
+                        <td>ALL</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___create</td>
+                        <td>Create new PCOs</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___edit</td>
+                        <td>Edit PCO details and line items</td>
+                        <td>OWN (draft)</td>
+                        <td>—</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___approve</td>
+                        <td>Approve or reject PCOs</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___delete</td>
+                        <td>Soft-delete PCOs</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>✓</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___invoice</td>
+                        <td>Link PCO to invoice, mark as invoiced</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                    </tr>
+                    <tr>
+                        <td class="perm-name">pco___exportPdf</td>
+                        <td>Export T&M worksheet as PDF</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                        <td>✓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3 style="margin-top:1.5rem;">Scope Rules</h3>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:8px;">
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--accent);">OWN Scope</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                <code style="font-size:0.65rem;">createdById = currentUser.id</code><br>
+                Field workers can only see and edit their own draft PCOs
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--orange);">PROJECT Scope</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                <code style="font-size:0.65rem;">PCO.Job.projectId IN user.projectIds</code><br>
+                Supervisors see PCOs on jobs within their assigned projects
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:1px solid var(--border); border-radius:8px; padding:14px;">
+            <h4 style="color:var(--success);">ALL Scope</h4>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                No filter applied<br>
+                PM, Finance, and Admin see all PCOs across all jobs
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note"><strong>Dev:</strong> Add to PermissionMap in <code>apps/api/src/models/Permission.ts</code>. Scope field: <code>getScopeTargetField() = "createdById"</code> for OWN scope. Same pattern as RFI/EstimateChangeOrder permissions. Field worker edit restriction (draft only) enforced in model layer transition logic.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: IMPLEMENTATION PHASES                                 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section" id="implementation">
+    <div class="section-tag red">Implementation</div>
+    <h2>Implementation Phases</h2>
+    <p class="desc">4-6 week build broken into 4 phases. Each phase is independently shippable with increasing capability.</p>
+
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:1rem;">
+        <div style="background:var(--bg-white); border:2px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; border-left:4px solid var(--accent);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge blue">Phase 1</span>
+                <span style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted);">Week 1-2</span>
+            </div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Data Model & CRUD</h3>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                ✓ Prisma models + migration<br>
+                ✓ GraphQL resolvers (CRUD)<br>
+                ✓ PCO List View on Job Detail<br>
+                ✓ Create/Edit flyout with line items<br>
+                ✓ Basic status transitions (Draft → Submitted)
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:2px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; border-left:4px solid var(--success);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge green">Phase 2</span>
+                <span style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted);">Week 2-3</span>
+            </div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Approval Workflow & Detail Page</h3>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                ✓ PCO Detail Page with tabs<br>
+                ✓ Full status workflow (all transitions)<br>
+                ✓ Approval/rejection with amounts<br>
+                ✓ Permission enforcement<br>
+                ✓ Notifications on status change
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:2px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; border-left:4px solid var(--orange);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge orange">Phase 3</span>
+                <span style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted);">Week 3-4</span>
+            </div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">T&M Worksheet & PDF Export</h3>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                ✓ T&M worksheet view (categorized)<br>
+                ✓ Labor entries with workers/hours/rates<br>
+                ✓ Markup/overhead calculation<br>
+                ✓ PDF export — customer-ready T&M sheet<br>
+                ✓ File attachments (AssetReference)
+            </div>
+        </div>
+        <div style="background:var(--bg-white); border:2px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; border-left:4px solid var(--purple);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="badge purple">Phase 4</span>
+                <span style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted);">Week 4-6</span>
+            </div>
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">WIP Integration & Polish</h3>
+            <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.8;">
+                ✓ Job Financial Overview integration<br>
+                ✓ WIP calculation (Prisma view)<br>
+                ✓ Invoice linking flow<br>
+                ✓ CO conversion (Pending Quote → CO)<br>
+                ✓ Mobile (PWA) support<br>
+                ✓ E2E testing & QA
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">Files to Create / Modify</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Implementation Checklist</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>Layer</th><th>File</th><th>Action</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge blue" style="font-size:0.55rem;">DB</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/prisma/schema.prisma</td>
+                        <td>Modify</td>
+                        <td>Add PotentialChangeOrder + PCOLineItem models + enums</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue" style="font-size:0.55rem;">DB</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/prisma/migrations/</td>
+                        <td>Create</td>
+                        <td>Migration file for new tables + enums</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green" style="font-size:0.55rem;">API</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/models/PotentialChangeOrder.ts</td>
+                        <td>Create</td>
+                        <td>Model with CRUD, status transitions, auto-numbering</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green" style="font-size:0.55rem;">API</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/models/PCOLineItem.ts</td>
+                        <td>Create</td>
+                        <td>Line item CRUD with total calculation</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green" style="font-size:0.55rem;">API</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/graphql/models/PotentialChangeOrder.ts</td>
+                        <td>Create</td>
+                        <td>GraphQL resolver — types, queries, mutations</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green" style="font-size:0.55rem;">API</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/graphql/schema.ts</td>
+                        <td>Modify</td>
+                        <td>Register new resolver</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green" style="font-size:0.55rem;">API</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/models/Permission.ts</td>
+                        <td>Modify</td>
+                        <td>Add pco permissions to PermissionMap</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange" style="font-size:0.55rem;">FE</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/frontend/src/graphql/queries/pco.graphql</td>
+                        <td>Create</td>
+                        <td>GetPCOs, GetPCOById queries</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange" style="font-size:0.55rem;">FE</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/frontend/src/graphql/mutations/pco.graphql</td>
+                        <td>Create</td>
+                        <td>CreatePCO, UpdatePCO, DeletePCO mutations</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange" style="font-size:0.55rem;">FE</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/frontend/src/components/PCO/</td>
+                        <td>Create</td>
+                        <td>PCOList, PCODetail, PCOForm, PCOLineItems, TMWorksheet</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange" style="font-size:0.55rem;">FE</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/frontend/src/components/Jobs/JobDetail/</td>
+                        <td>Modify</td>
+                        <td>Add PCOs tab to job detail page</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange" style="font-size:0.55rem;">FE</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/frontend/src/components/Jobs/FinancialOverview/</td>
+                        <td>Modify</td>
+                        <td>Add PCO aggregates and WIP calculation</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge purple" style="font-size:0.55rem;">PDF</span></td>
+                        <td class="mono" style="font-size:0.65rem;">apps/api/src/pdf/</td>
+                        <td>Create</td>
+                        <td>T&M worksheet PDF template (PSPDFKit)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">PCO / WIP Tracking — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Confidential · March 2026 · For customer sign-off and developer reference</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>

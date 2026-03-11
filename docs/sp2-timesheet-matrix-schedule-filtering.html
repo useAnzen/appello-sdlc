@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Timesheet Matrix &amp; Schedule Filtering — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.file { border-style: dashed; justify-content: center; min-height: 64px; }
+.wf-field .input.person { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-node.warning { border-color: var(--warning); }
+.flow-node.danger { border-color: var(--danger); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* HORIZONTAL FLOW */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.filter-chip {
+    font-size: 0.7rem; padding: 5px 10px; min-height: 28px;
+    border: 1px solid var(--border); border-radius: 5px;
+    background: var(--bg); color: var(--text-muted);
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.filter-chip::after { content: "▾"; font-size: 0.6rem; }
+.filter-chip.new {
+    border-color: var(--accent); background: var(--accent-light);
+    color: var(--accent); font-weight: 600; position: relative;
+}
+.filter-chip.new::before {
+    content: "NEW"; font-size: 0.45rem; font-weight: 800;
+    background: var(--accent); color: white;
+    padding: 1px 4px; border-radius: 3px;
+    position: absolute; top: -6px; right: -4px;
+    letter-spacing: 0.06em;
+}
+.filter-chip.active {
+    border-color: var(--accent); background: var(--accent-light);
+    color: var(--accent); font-weight: 600;
+}
+
+/* MATRIX GRID */
+.matrix-grid { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.matrix-grid th {
+    background: var(--bg-panel); font-weight: 600; color: var(--text-secondary);
+    text-align: center; padding: 6px 8px; border: 1px solid var(--border);
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.matrix-grid th:first-child { text-align: left; min-width: 160px; }
+.matrix-grid td {
+    padding: 6px 8px; border: 1px solid var(--border);
+    text-align: center; font-family: var(--mono); font-size: 0.72rem;
+}
+.matrix-grid td:first-child { text-align: left; font-family: var(--font); font-weight: 500; }
+.matrix-grid tr:hover td { background: var(--bg); }
+.matrix-grid .hrs { color: var(--accent); font-weight: 600; }
+.matrix-grid .hrs-warn { color: var(--orange); font-weight: 600; }
+.matrix-grid .total-row td { background: var(--bg-panel); font-weight: 700; border-top: 2px solid var(--border-strong); }
+.matrix-grid .status-approved { color: var(--success); font-weight: 600; }
+.matrix-grid .status-pending { color: var(--orange); font-weight: 600; }
+
+/* GANTT MOCK */
+.gantt-row { display: flex; align-items: center; gap: 0; margin-bottom: 4px; }
+.gantt-label { width: 160px; flex-shrink: 0; font-size: 0.72rem; font-weight: 500; padding: 4px 8px; }
+.gantt-track { flex: 1; height: 24px; position: relative; background: var(--bg-panel); border-radius: 4px; }
+.gantt-bar {
+    position: absolute; top: 3px; height: 18px; border-radius: 4px;
+    font-size: 0.58rem; font-weight: 600; color: white;
+    display: flex; align-items: center; padding: 0 6px;
+    white-space: nowrap; overflow: hidden;
+}
+
+/* COMPARISON CARD */
+.comparison-card {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden; box-shadow: var(--shadow);
+}
+.comparison-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+}
+.comparison-header .side {
+    padding: 10px 16px; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; text-align: center;
+}
+.comparison-header .side.before { background: var(--bg-panel); color: var(--text-muted); border-right: 1px solid var(--border); }
+.comparison-header .side.after { background: var(--accent-light); color: var(--accent); }
+.comparison-body { display: grid; grid-template-columns: 1fr 1fr; }
+.comparison-body .col { padding: 16px; }
+.comparison-body .col:first-child { border-right: 1px solid var(--border); }
+
+/* DATA FLOW DIAGRAM */
+.data-flow { display: flex; flex-direction: column; gap: 0; align-items: stretch; margin: 1rem 0; }
+.data-flow-row { display: flex; align-items: center; gap: 8px; }
+.data-flow-box {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: 6px;
+    padding: 8px 14px; text-align: center; font-size: 0.72rem; font-weight: 600;
+    min-width: 100px;
+}
+.data-flow-box.db { border-color: var(--purple); background: var(--purple-light); color: #5b21b6; }
+.data-flow-box.api { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.data-flow-box.join { border-color: var(--orange); background: var(--orange-light); color: #92400e; font-family: var(--mono); font-size: 0.65rem; }
+.data-flow-connector { font-size: 0.75rem; color: var(--border-strong); }
+
+/* SECURITY CARD */
+.security-card {
+    background: var(--danger-light); border: 2px solid var(--danger);
+    border-radius: var(--radius-lg); padding: 1.25rem; margin-top: 1rem;
+}
+.security-card h3 { color: #991b1b; font-size: 1rem; margin-bottom: 0.5rem; }
+.security-card .rule {
+    display: flex; align-items: flex-start; gap: 8px; padding: 8px 0;
+    border-bottom: 1px solid rgba(239,68,68,0.2); font-size: 0.82rem;
+}
+.security-card .rule:last-child { border-bottom: none; }
+.security-card .rule .icon { font-size: 1rem; flex-shrink: 0; }
+.security-card .rule code {
+    background: rgba(255,255,255,0.7); padding: 1px 6px;
+    border-radius: 4px; font-family: var(--mono); font-size: 0.72rem;
+}
+
+/* QUOTE CARD */
+.quote-card {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px; margin-bottom: 1.5rem;
+}
+.quote-card blockquote {
+    font-size: 0.92rem; font-style: italic; color: var(--text-primary);
+    line-height: 1.6; margin-bottom: 8px;
+}
+.quote-card .attribution {
+    font-size: 0.72rem; font-weight: 600; color: var(--accent);
+    font-family: var(--mono);
+}
+
+/* PERF CALLOUT */
+.perf-callout {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--orange-light); border: 1px solid var(--orange);
+    border-radius: var(--radius); padding: 12px 16px; margin: 1rem 0;
+    font-size: 0.78rem; color: #92400e;
+}
+.perf-callout .icon { font-size: 1.4rem; flex-shrink: 0; }
+.perf-callout strong { font-weight: 700; }
+
+/* SIDEBAR CARD (reused) */
+.sidebar-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.sidebar-card h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+.sidebar-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.sidebar-field:last-child { border-bottom: none; }
+.sidebar-field .fk { color: var(--text-muted); }
+.sidebar-field .fv { font-weight: 600; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col { grid-template-columns: 1fr; }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4 { grid-template-columns: 1fr; }
+    .comparison-header, .comparison-body { grid-template-columns: 1fr; }
+    .comparison-body .col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div style="margin-bottom: 2.5rem;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+        <span class="badge blue">Q21030-8458</span>
+        <span class="badge blue">Q21030-8796</span>
+        <span class="badge blue">Q21030-8220</span>
+        <span class="badge purple">Release 1.32.0-RC1</span>
+        <span class="badge orange">SP2 — Workstream B</span>
+        <span class="badge gray">2-3 weeks</span>
+    </div>
+    <h2 style="font-size: 2rem; margin-bottom: 0.25rem;">Timesheet Matrix &amp; Schedule Filtering</h2>
+    <p class="desc" style="max-width: 800px;">Add User Group and Project Lead filters to the Timesheet Matrix and Job Schedule views. Move Job Schedule filtering from client-side to server-side for performance. Deliver faster approvals for project managers handling large crews.</p>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1rem;">
+        <div class="sidebar-card" style="flex: 1; min-width: 200px;">
+            <h4>Customer</h4>
+            <div class="sidebar-field"><span class="fk">Company</span><span class="fv">Rival Insulation</span></div>
+            <div class="sidebar-field"><span class="fk">Stakeholders</span><span class="fv">Eric Krekelberg, John Miller, Ian Haase</span></div>
+        </div>
+        <div class="sidebar-card" style="flex: 1; min-width: 200px;">
+            <h4>Scope</h4>
+            <div class="sidebar-field"><span class="fk">Interfaces</span><span class="fv">2 (Matrix + Schedule)</span></div>
+            <div class="sidebar-field"><span class="fk">Backend</span><span class="fv">SQL views + GraphQL</span></div>
+            <div class="sidebar-field"><span class="fk">Blocker?</span><span class="fv" style="color: var(--success);">No — direct relationships</span></div>
+        </div>
+    </div>
+
+    <div class="quote-card" style="margin-top: 1.5rem;">
+        <blockquote>"If I'm only looking at the people that worked on one of my projects, not all to approve, might save me and Eric some time."</blockquote>
+        <div class="attribution">— John Miller, Rival Insulation</div>
+    </div>
+
+    <div class="dev-note" style="margin-top: 0.5rem;">
+        <strong>[CORRECTED]</strong> The property management refactor is NOT a blocker. User Groups and Project Lead are direct model relationships (<code>User_UserGroup</code> join table, <code>Project.projectLeadId</code> FK), not PropertyValues. Filters can be implemented today without any refactor.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: TIMESHEET MATRIX -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="timesheet-matrix">
+    <div class="section-tag">Interface 1</div>
+    <h2>Timesheet Matrix — Current vs. Enhanced Filters</h2>
+    <p class="desc">Route: <code>/timesheets</code> — The Timesheet Matrix is the primary approval interface. Adding User Group and Project Lead filters allows managers to slice the matrix to only the workers relevant to their scope.</p>
+
+    <h3>Before &amp; After</h3>
+    <div class="comparison-card" style="margin-bottom: 2rem;">
+        <div class="comparison-header">
+            <div class="side before">Current Filters (7)</div>
+            <div class="side after">Enhanced Filters (9) — 2 New</div>
+        </div>
+        <div class="comparison-body">
+            <div class="col">
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div class="filter-chip">User</div>
+                    <div class="filter-chip">Employee Agreement</div>
+                    <div class="filter-chip">Trade Level</div>
+                    <div class="filter-chip">Date</div>
+                    <div class="filter-chip">Status</div>
+                    <div class="filter-chip">Job</div>
+                    <div class="filter-chip">Project</div>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 12px; padding: 8px; background: var(--bg-panel); border-radius: 6px;">
+                    John Miller must scroll through <strong>75+ workers</strong> to find his project's crew. No way to filter by group or lead assignment.
+                </div>
+            </div>
+            <div class="col">
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div class="filter-chip">User</div>
+                    <div class="filter-chip">Employee Agreement</div>
+                    <div class="filter-chip">Trade Level</div>
+                    <div class="filter-chip">Date</div>
+                    <div class="filter-chip">Status</div>
+                    <div class="filter-chip">Job</div>
+                    <div class="filter-chip">Project</div>
+                    <div class="filter-chip new">User Group</div>
+                    <div class="filter-chip new">Project Lead</div>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--success); margin-top: 12px; padding: 8px; background: var(--success-light); border-radius: 6px; font-weight: 600;">
+                    John selects "User Group: Field Crew A" → matrix shows only his 12 crew members. Approval time drops from ~15 min to ~3 min.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Enhanced Timesheet Matrix — Wireframe</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/timesheets — User Group: "Field Crew A" selected</div></div>
+        <div class="wireframe-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1rem;">Timesheet Matrix</h3>
+                <div style="display: flex; gap: 6px;">
+                    <div class="wf-btn secondary" style="font-size: 0.7rem;">Export CSV</div>
+                    <div class="wf-btn primary" style="font-size: 0.7rem;">Approve Selected</div>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-chip">User: All</div>
+                <div class="filter-chip">Emp Agreement: All</div>
+                <div class="filter-chip">Trade Level: All</div>
+                <div class="filter-chip">Date: Mar 3 – Mar 9</div>
+                <div class="filter-chip">Status: All</div>
+                <div class="filter-chip">Job: All</div>
+                <div class="filter-chip">Project: All</div>
+                <div class="filter-chip active new" style="position: relative;">User Group: Field Crew A</div>
+                <div class="filter-chip new">Project Lead: All</div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="matrix-grid">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">
+                                <input type="checkbox" style="margin-right: 4px;" checked> Worker
+                            </th>
+                            <th>Mon 3</th>
+                            <th>Tue 4</th>
+                            <th>Wed 5</th>
+                            <th>Thu 6</th>
+                            <th>Fri 7</th>
+                            <th>Sat 8</th>
+                            <th>Sun 9</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="checkbox" style="margin-right: 4px;" checked> <strong>Ben Fenske</strong></td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td><strong>40.0</strong></td>
+                            <td><span class="status-pending">Pending</span></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" style="margin-right: 4px;" checked> <strong>Jared Crotwell</strong></td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">10.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">4.0</td>
+                            <td>—</td>
+                            <td><strong class="hrs-warn">46.0</strong></td>
+                            <td><span class="status-pending">Pending</span></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" style="margin-right: 4px;" checked> <strong>Nick Newman</strong></td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">6.0</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td><strong>38.0</strong></td>
+                            <td><span class="status-approved">Approved</span></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" style="margin-right: 4px;"> <strong>Mike Thompson</strong></td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td><strong>40.0</strong></td>
+                            <td><span class="status-pending">Pending</span></td>
+                        </tr>
+                        <tr>
+                            <td><input type="checkbox" style="margin-right: 4px;"> <strong>Jake Rodriguez</strong></td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td>—</td>
+                            <td class="hrs">8.0</td>
+                            <td class="hrs">8.0</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td><strong>32.0</strong></td>
+                            <td><span class="status-pending">Pending</span></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td style="font-weight: 700;">Total (5 of 5 workers)</td>
+                            <td>40.0</td>
+                            <td>40.0</td>
+                            <td>34.0</td>
+                            <td>40.0</td>
+                            <td>38.0</td>
+                            <td>4.0</td>
+                            <td>0.0</td>
+                            <td><strong>196.0</strong></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dev-note">
+                <strong>Dev:</strong> Filter bar uses existing <code>TimesheetApprovalGrid</code> filter infrastructure. New dropdowns populate from <code>timeSheetMatrixViewFacets</code> queries. Matrix data from <code>timesheetMatrixView.ts</code> with new <code>userGroupId</code> and <code>projectLeadId</code> WHERE clause parameters.
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">User Group Filter — Data Model</h3>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 1rem 0;">
+        <div class="data-flow-box db">User</div>
+        <div class="data-flow-connector">→</div>
+        <div class="data-flow-box join">_User_UserGroup</div>
+        <div class="data-flow-connector">→</div>
+        <div class="data-flow-box db">UserGroup</div>
+        <div class="data-flow-connector" style="margin-left: 12px;">||</div>
+        <div class="data-flow-box api">TimeSheetMatrixView WHERE userGroupId = ?</div>
+    </div>
+    <div class="dev-note">
+        <strong>Relationship:</strong> <code>User</code> has many-to-many with <code>UserGroup</code> via <code>_User_UserGroup</code> join table. Filter: <code>EXISTS (SELECT 1 FROM _User_UserGroup WHERE A = User.id AND B = :userGroupId)</code>. Use <code>Prisma.sql</code> for parameterized query.
+    </div>
+
+    <h3 style="margin-top: 2rem;">Project Lead Filter — Data Model</h3>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 1rem 0;">
+        <div class="data-flow-box api">TimeSheetDetailRecord</div>
+        <div class="data-flow-connector">→</div>
+        <div class="data-flow-box db">Job</div>
+        <div class="data-flow-connector">→</div>
+        <div class="data-flow-box db">Project</div>
+        <div class="data-flow-connector">→</div>
+        <div class="data-flow-box join">projectLeadId = :userId</div>
+    </div>
+    <div class="dev-note">
+        <strong>Relationship:</strong> <code>TimeSheetDetailRecord.jobId</code> → <code>Job.projectId</code> → <code>Project.projectLeadId</code>. Use existing <code>buildJobProjectExistsClause</code> pattern at line ~885 in <code>timesheetMatrixView.ts</code>.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: JOB SCHEDULE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="job-schedule">
+    <div class="section-tag green">Interface 2</div>
+    <h2>Job Schedule — Current vs. Enhanced Filters</h2>
+    <p class="desc">Route: <code>/scheduling</code> — The Job Schedule currently applies User Group and Project Lead filters client-side, loading ALL data first. Moving to server-side filtering dramatically reduces payload and improves load time.</p>
+
+    <div class="perf-callout">
+        <div class="icon">⚡</div>
+        <div>
+            <strong>Performance Impact:</strong> Client-side filtering loads ALL schedule data (~2-4 MB for 75+ users), then filters in JavaScript. Server-side filtering queries only matching records (~200-400 KB). Expected improvement: <strong>3-5× faster load</strong> on filtered views.
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div>
+            <h3>Current State (Client-side)</h3>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/scheduling — current</div></div>
+                <div class="wireframe-body">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Filter Panel</div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div class="filter-chip" style="width: fit-content;">Workers: All</div>
+                            <div class="filter-chip" style="width: fit-content; border-color: var(--orange); color: var(--orange);">User Group: All <span class="badge orange" style="font-size: 0.5rem; margin-left: 4px;">CLIENT-SIDE</span></div>
+                            <div class="filter-chip" style="width: fit-content; border-color: var(--orange); color: var(--orange);">Project Lead: All <span class="badge orange" style="font-size: 0.5rem; margin-left: 4px;">CLIENT-SIDE</span></div>
+                            <div class="filter-chip" style="width: fit-content;">Jobs: All</div>
+                            <div class="filter-chip" style="width: fit-content;">Date Range</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Gantt View</div>
+                    <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+                        <div style="background: var(--bg-panel); padding: 4px 8px; display: flex; border-bottom: 1px solid var(--border);">
+                            <div style="width: 160px; font-size: 0.6rem; font-weight: 600; color: var(--text-muted);">JOB</div>
+                            <div style="flex: 1; display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-muted);">
+                                <span>Mar 3</span><span>Mar 10</span><span>Mar 17</span><span>Mar 24</span><span>Mar 31</span>
+                            </div>
+                        </div>
+                        <div style="padding: 4px 0;">
+                            <div class="gantt-row">
+                                <div class="gantt-label">Sarnia Refinery</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 0%; width: 80%; background: var(--accent);">Unit 4 Turnaround</div></div>
+                            </div>
+                            <div class="gantt-row">
+                                <div class="gantt-label">Dow Chemical</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 10%; width: 60%; background: var(--success);">Bay 7 Insulation</div></div>
+                            </div>
+                            <div class="gantt-row">
+                                <div class="gantt-label">NOVA Chemicals</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 20%; width: 70%; background: var(--purple);">Coker Maintenance</div></div>
+                            </div>
+                            <div class="gantt-row">
+                                <div class="gantt-label" style="color: var(--text-muted); font-size: 0.62rem;">(72 more rows loaded...)</div>
+                                <div class="gantt-track" style="opacity: 0.3;"><div class="gantt-bar" style="left: 5%; width: 40%; background: var(--text-muted);"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--danger-light); border: 1px solid var(--danger); border-radius: 6px; padding: 8px 12px; margin-top: 12px; font-size: 0.72rem; color: #991b1b;">
+                        <strong>Problem:</strong> useMemo filters in <code>SchedulingContext.tsx</code> run on every render. All 75 users' schedule data is fetched regardless of filter selection. Slow on mobile.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>Enhanced State (Server-side)</h3>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">/scheduling — enhanced</div></div>
+                <div class="wireframe-body">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Filter Panel</div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div class="filter-chip" style="width: fit-content;">Workers: All</div>
+                            <div class="filter-chip active new" style="width: fit-content; position: relative;">User Group: Field Crew A <span class="badge green" style="font-size: 0.5rem; margin-left: 4px;">SERVER-SIDE</span></div>
+                            <div class="filter-chip new" style="width: fit-content; position: relative;">Project Lead: All <span class="badge green" style="font-size: 0.5rem; margin-left: 4px;">SERVER-SIDE</span></div>
+                            <div class="filter-chip" style="width: fit-content;">Jobs: All</div>
+                            <div class="filter-chip" style="width: fit-content;">Date Range</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Gantt View (filtered)</div>
+                    <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+                        <div style="background: var(--bg-panel); padding: 4px 8px; display: flex; border-bottom: 1px solid var(--border);">
+                            <div style="width: 160px; font-size: 0.6rem; font-weight: 600; color: var(--text-muted);">JOB</div>
+                            <div style="flex: 1; display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-muted);">
+                                <span>Mar 3</span><span>Mar 10</span><span>Mar 17</span><span>Mar 24</span><span>Mar 31</span>
+                            </div>
+                        </div>
+                        <div style="padding: 4px 0;">
+                            <div class="gantt-row">
+                                <div class="gantt-label">Sarnia Refinery</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 0%; width: 80%; background: var(--accent);">Unit 4 — Fenske, Crotwell</div></div>
+                            </div>
+                            <div class="gantt-row">
+                                <div class="gantt-label">Dow Chemical</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 10%; width: 60%; background: var(--success);">Bay 7 — Thompson, Rodriguez</div></div>
+                            </div>
+                            <div class="gantt-row">
+                                <div class="gantt-label">NOVA Chemicals</div>
+                                <div class="gantt-track"><div class="gantt-bar" style="left: 20%; width: 70%; background: var(--purple);">Coker — Newman</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--success-light); border: 1px solid var(--success); border-radius: 6px; padding: 8px 12px; margin-top: 12px; font-size: 0.72rem; color: #065f46;">
+                        <strong>Result:</strong> Only 5 workers' data fetched from server. Payload reduced by ~93%. Filter changes trigger new query instead of re-rendering all data.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note" style="margin-top: 1rem;">
+        <strong>Dev:</strong> In <code>SchedulingContext.tsx</code>, replace <code>useMemo</code>-based client-side filtering with query variables passed to the <code>jobScheduleList</code> GraphQL query. Remove the <code>useMemo</code> filter logic and wire filter state directly to query variables. Filter selection triggers refetch, not re-render.
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: BACKEND ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="backend">
+    <div class="section-tag orange">Architecture</div>
+    <h2>Backend Architecture</h2>
+    <p class="desc">Both filters leverage direct model relationships — no schema changes needed. The implementation adds WHERE clause parameters to existing SQL view builders and extends GraphQL input types.</p>
+
+    <h3>Data Flow Diagram</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Filter Data Flow — User Group &amp; Project Lead</div></div>
+        <div class="wireframe-body">
+            <div class="two-col">
+                <div>
+                    <h4 style="color: var(--accent); margin-bottom: 1rem;">User Group Filtering Path</h4>
+                    <div class="flow">
+                        <div class="flow-node" style="border-color: var(--accent);">
+                            <h4>1. Frontend sends filter</h4>
+                            <p><code>userGroupId: "clk..."</code> in query vars</p>
+                        </div>
+                        <div class="flow-arrow"><span class="label">GraphQL</span></div>
+                        <div class="flow-node">
+                            <h4>2. GraphQL Input</h4>
+                            <p><code>TimeSheetMatrixViewWhere.userGroupId</code></p>
+                            <span class="who">TimeSheetHoursFeed.ts</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">Resolver</span></div>
+                        <div class="flow-node">
+                            <h4>3. WHERE clause builder</h4>
+                            <p><code>timesheetMatrixView.ts</code> adds JOIN + WHERE</p>
+                            <span class="who">~line 885</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">SQL</span></div>
+                        <div class="flow-node" style="border-color: var(--purple);">
+                            <h4>4. Parameterized SQL</h4>
+                            <p><code>EXISTS (SELECT 1 FROM _User_UserGroup<br>WHERE A = User.id AND B = ${Prisma.join(ids)})</code></p>
+                            <span class="who">Prisma.sql tagged template</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="color: var(--purple); margin-bottom: 1rem;">Project Lead Filtering Path</h4>
+                    <div class="flow">
+                        <div class="flow-node" style="border-color: var(--purple);">
+                            <h4>1. Frontend sends filter</h4>
+                            <p><code>projectLeadId: "usr..."</code> in query vars</p>
+                        </div>
+                        <div class="flow-arrow"><span class="label">GraphQL</span></div>
+                        <div class="flow-node">
+                            <h4>2. GraphQL Input</h4>
+                            <p><code>TimeSheetMatrixViewWhere.projectLeadId</code></p>
+                            <span class="who">TimeSheetHoursFeed.ts</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">Resolver</span></div>
+                        <div class="flow-node">
+                            <h4>3. Reuse existing pattern</h4>
+                            <p><code>buildJobProjectExistsClause()</code></p>
+                            <span class="who">timesheetMatrixView.ts ~line 885</span>
+                        </div>
+                        <div class="flow-arrow"><span class="label">SQL</span></div>
+                        <div class="flow-node" style="border-color: var(--purple);">
+                            <h4>4. Parameterized SQL</h4>
+                            <p><code>EXISTS (SELECT 1 FROM Job j<br>JOIN Project p ON j.projectId = p.id<br>WHERE j.id = tdr.jobId<br>AND p.projectLeadId = ${Prisma.sql`${id}`})</code></p>
+                            <span class="who">Prisma.sql tagged template</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Code Architecture — Change Map</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Implementation Files</div></div>
+        <div class="wireframe-body" style="overflow-x: auto;">
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>File</th>
+                        <th>Change</th>
+                        <th>Effort</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge purple">Backend WHERE</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/api/src/dataview/timesheetMatrixView.ts</code></td>
+                        <td>Add <code>userGroupId</code>, <code>projectLeadId</code> to <code>timeSheetMatrixViewWhereKeys</code>. Build JOIN clauses for <code>_User_UserGroup</code> and <code>Project.projectLeadId</code>.</td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge purple">Backend Facets</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/api/src/dataview/timesheetMatrixView.ts</code></td>
+                        <td>Add <code>userGroups</code> and <code>projectLeads</code> facet queries to <code>timeSheetMatrixViewFacets</code> for dropdown population.</td>
+                        <td><span class="badge green">Small</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">GraphQL Input</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/api/src/graphql/models/TimeSheetHoursFeed.ts</code></td>
+                        <td>Extend <code>TimeSheetMatrixViewWhere</code> input type with <code>userGroupId: [String]</code> and <code>projectLeadId: [String]</code>.</td>
+                        <td><span class="badge green">Small</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Frontend Filters</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/frontend/src/components/.../TimesheetApprovalGrid.tsx</code></td>
+                        <td>Add two filter dropdown components for User Group and Project Lead. Wire to query variables.</td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge purple">Schedule Backend</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/api/src/graphql/models/JobScheduleModel.ts</code></td>
+                        <td>Add <code>userGroupId</code> and <code>projectLeadId</code> to <code>IJobScheduleWhere</code> and <code>buildJobScheduleListWhereBlock</code>. Server-side SQL filters.</td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge orange">Schedule Frontend</span></td>
+                        <td><code style="font-family: var(--mono); font-size: 0.72rem;">apps/frontend/src/context/SchedulingContext.tsx</code></td>
+                        <td>Wire filter state to GraphQL query variables. Remove <code>useMemo</code> client-side filtering. Filter change triggers refetch.</td>
+                        <td><span class="badge orange">Medium</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Facet Queries for Dropdown Population</h3>
+    <div class="two-col">
+        <div>
+            <h4>User Groups Facet</h4>
+            <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary);">
+                <span style="color: var(--purple);">SELECT DISTINCT</span> ug.id, ug.name<br>
+                <span style="color: var(--purple);">FROM</span> UserGroup ug<br>
+                <span style="color: var(--purple);">INNER JOIN</span> _User_UserGroup uug <span style="color: var(--purple);">ON</span> uug.B = ug.id<br>
+                <span style="color: var(--purple);">INNER JOIN</span> User u <span style="color: var(--purple);">ON</span> u.id = uug.A<br>
+                <span style="color: var(--purple);">WHERE</span> u.companyId = <span style="color: var(--accent);">${companyId}</span><br>
+                <span style="color: var(--purple);">AND</span> u.isArchived = <span style="color: var(--success);">false</span><br>
+                <span style="color: var(--purple);">ORDER BY</span> ug.name
+            </div>
+        </div>
+        <div>
+            <h4>Project Leads Facet</h4>
+            <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary);">
+                <span style="color: var(--purple);">SELECT DISTINCT</span> u.id, u.firstName, u.lastName<br>
+                <span style="color: var(--purple);">FROM</span> User u<br>
+                <span style="color: var(--purple);">INNER JOIN</span> Project p <span style="color: var(--purple);">ON</span> p.projectLeadId = u.id<br>
+                <span style="color: var(--purple);">WHERE</span> p.companyId = <span style="color: var(--accent);">${companyId}</span><br>
+                <span style="color: var(--purple);">AND</span> p.isArchived = <span style="color: var(--success);">false</span><br>
+                <span style="color: var(--purple);">AND</span> p.isDeleted = <span style="color: var(--success);">false</span><br>
+                <span style="color: var(--purple);">ORDER BY</span> u.firstName, u.lastName
+            </div>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top: 0.75rem;">
+        <strong>Dev:</strong> Facet queries follow the existing pattern in <code>timesheetMatrixView.ts</code> (see <code>timeSheetMatrixViewFacets</code>). Return <code>{id, name}</code> pairs for dropdown options. Both queries are scoped to the current company (<code>companyId</code> from context).
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: SQL SECURITY -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="sql-security">
+    <div class="section-tag red">Security</div>
+    <h2>SQL Injection Prevention</h2>
+    <p class="desc">Both filters involve dynamic SQL construction. All values MUST be parameterized using Prisma's tagged template system. This is non-negotiable.</p>
+
+    <div class="security-card">
+        <h3>🛡 Mandatory SQL Security Rules</h3>
+        <div class="rule">
+            <div class="icon">✅</div>
+            <div>
+                <strong>ALWAYS use <code>Prisma.sql</code> tagged templates</strong> for all dynamic SQL values. This ensures automatic parameterization and escaping.
+                <div style="margin-top: 6px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem;">
+                    <span style="color: var(--success);">✅ Good:</span> Prisma.sql`WHERE userId = ${userId}`
+                </div>
+            </div>
+        </div>
+        <div class="rule">
+            <div class="icon">✅</div>
+            <div>
+                <strong>ALWAYS use <code>Prisma.join()</code></strong> for array parameters (e.g., multi-select filter values).
+                <div style="margin-top: 6px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem;">
+                    <span style="color: var(--success);">✅ Good:</span> Prisma.sql`WHERE id IN (${Prisma.join(groupIds)})`
+                </div>
+            </div>
+        </div>
+        <div class="rule">
+            <div class="icon">❌</div>
+            <div>
+                <strong>NEVER use string interpolation</strong> for SQL values. No template literals, no <code>.concat()</code>, no manual escaping.
+                <div style="margin-top: 6px; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem;">
+                    <span style="color: var(--danger);">❌ Bad:</span> Prisma.sql`WHERE userId = '${userId}'`<br>
+                    <span style="color: var(--danger);">❌ Bad:</span> `WHERE userId = '` + userId + `'`
+                </div>
+            </div>
+        </div>
+        <div class="rule">
+            <div class="icon">📋</div>
+            <div>
+                <strong>Reference the existing <code>buildJobProjectExistsClause</code> pattern</strong> at line ~885 in <code>timesheetMatrixView.ts</code>. This function demonstrates the correct approach for building EXISTS subqueries with Prisma's tagged templates.
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Correct Implementation Pattern</h3>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">timesheetMatrixView.ts — parameterized filter pattern</div></div>
+        <div class="wireframe-body">
+            <div style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 0.72rem; line-height: 2; color: var(--text-secondary); overflow-x: auto;">
+                <span style="color: var(--text-muted);">// User Group filter — correct parameterized approach</span><br>
+                <span style="color: var(--purple);">if</span> (where.userGroupId?.length) {<br>
+                &nbsp;&nbsp;clauses.push(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;Prisma.<span style="color: var(--accent);">sql</span>`<span style="color: var(--success);">EXISTS (</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">SELECT 1 FROM \`_User_UserGroup\`</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">WHERE \`A\` = \`User\`.\`id\`</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">AND \`B\` IN (</span>${Prisma.<span style="color: var(--accent);">join</span>(where.userGroupId)}<span style="color: var(--success);">)</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">)</span>`<br>
+                &nbsp;&nbsp;);<br>
+                }<br><br>
+                <span style="color: var(--text-muted);">// Project Lead filter — reuses buildJobProjectExistsClause pattern</span><br>
+                <span style="color: var(--purple);">if</span> (where.projectLeadId?.length) {<br>
+                &nbsp;&nbsp;clauses.push(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;Prisma.<span style="color: var(--accent);">sql</span>`<span style="color: var(--success);">EXISTS (</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">SELECT 1 FROM \`Job\` j</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">INNER JOIN \`Project\` p ON j.\`projectId\` = p.\`id\`</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">WHERE j.\`id\` = tdr.\`jobId\`</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">AND p.\`projectLeadId\` IN (</span>${Prisma.<span style="color: var(--accent);">join</span>(where.projectLeadId)}<span style="color: var(--success);">)</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--success);">)</span>`<br>
+                &nbsp;&nbsp;);<br>
+                }
+            </div>
+            <div class="dev-note">
+                <strong>Dev:</strong> Both filters support multi-select (array of IDs). <code>Prisma.join()</code> correctly handles parameterization of array values. Empty arrays should skip the clause entirely (guard with <code>?.length</code>).
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Timesheet Matrix &amp; Schedule Filtering — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Confidential · March 2026 · SP2 — Release 1.32.0-RC1</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>

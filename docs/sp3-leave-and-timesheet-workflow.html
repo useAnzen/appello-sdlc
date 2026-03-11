@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appello — Leave &amp; Timesheet Workflow — Design Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../detail.css">
+<style>
+:root {
+    --bg-white: #ffffff;
+    --bg-panel: #f1f3f7;
+    --bg-dark: #1e293b;
+    --accent-dark: #1d4ed8;
+    --orange: #f59e0b;
+    --orange-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --text: var(--text-primary);
+    --border-strong: #cbd5e1;
+    --font: "Inter", -apple-system, sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+.topnav { display: none; }
+
+/* LAYOUT */
+.page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.section { margin-bottom: 4rem; }
+.section-divider { border: none; border-top: 2px solid var(--border); margin: 4rem 0; }
+
+/* TYPOGRAPHY */
+.section-tag { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 3px 10px; border-radius: 4px; margin-bottom: 0.75rem; }
+.section-tag.orange { color: #92400e; background: var(--orange-light); }
+.section-tag.green { color: #065f46; background: var(--success-light); }
+.section-tag.red { color: #991b1b; background: var(--danger-light); }
+.section-tag.purple { color: #5b21b6; background: var(--purple-light); }
+h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; margin-bottom: 1.5rem; }
+.dev-note { font-size: 0.72rem; font-family: var(--mono); color: var(--text-muted); background: var(--bg-panel); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 0.75rem; }
+
+/* CUSTOMER QUOTE */
+.customer-quote {
+    background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+    padding: 14px 18px; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-primary);
+}
+.customer-quote .quote-text { font-style: italic; margin-bottom: 6px; line-height: 1.6; }
+.customer-quote .quote-attr { font-size: 0.72rem; font-weight: 600; color: var(--accent); font-style: normal; }
+
+/* WIREFRAME CONTAINER */
+.wireframe {
+    background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 1rem;
+}
+.wireframe-header {
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+}
+.wireframe-header .dots { display: flex; gap: 5px; }
+.wireframe-header .dot { width: 8px; height: 8px; border-radius: 50%; }
+.wireframe-header .dot.r { background: #ef4444; } .wireframe-header .dot.y { background: #f59e0b; } .wireframe-header .dot.g { background: #10b981; }
+.wireframe-header .title { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: auto; font-family: var(--mono); }
+.wireframe-body { padding: 1.5rem; }
+
+/* FORM WIREFRAME */
+.wf-form { display: flex; flex-direction: column; gap: 1rem; }
+.wf-form-row { display: grid; gap: 1rem; }
+.wf-form-row.col2 { grid-template-columns: 1fr 1fr; }
+.wf-form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.wf-form-row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.wf-field { display: flex; flex-direction: column; gap: 4px; }
+.wf-field label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wf-field label .req { color: var(--danger); }
+.wf-field .input {
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px;
+    font-size: 0.82rem; color: var(--text-muted); background: var(--bg);
+    min-height: 36px; display: flex; align-items: center;
+}
+.wf-field .input.textarea { min-height: 72px; align-items: flex-start; }
+.wf-field .input.select::after { content: "▾"; margin-left: auto; font-size: 0.7rem; }
+.wf-field .input.file { border-style: dashed; justify-content: center; min-height: 64px; }
+.wf-field .input.person { background: var(--accent-light); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.wf-field .field-hint { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+.wf-section-title { font-size: 0.78rem; font-weight: 700; color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.wf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: none; cursor: pointer; }
+.wf-btn.primary { background: var(--accent); color: white; }
+.wf-btn.secondary { background: var(--bg-panel); color: var(--text-secondary); border: 1px solid var(--border); }
+.wf-btn.danger { background: var(--danger); color: white; }
+.wf-btn.success { background: var(--success); color: white; }
+.wf-btn.disabled { background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); opacity: 0.6; cursor: not-allowed; }
+.wf-btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* TABLE WIREFRAME */
+.wf-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.wf-table th { background: var(--bg-panel); font-weight: 600; color: var(--text-secondary); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.wf-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.wf-table tr:hover td { background: var(--bg); }
+.wf-table .mono { font-family: var(--mono); font-size: 0.72rem; }
+
+/* BADGES & CHIPS */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.badge.blue { background: var(--info-light); color: #1d4ed8; }
+.badge.green { background: var(--success-light); color: #065f46; }
+.badge.orange { background: var(--orange-light); color: #92400e; }
+.badge.red { background: var(--danger-light); color: #991b1b; }
+.badge.purple { background: var(--purple-light); color: #5b21b6; }
+.badge.gray { background: var(--bg-panel); color: var(--text-muted); }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 12px 20px; text-align: center; min-width: 220px; position: relative;
+    box-shadow: var(--shadow);
+}
+.flow-node h4 { font-size: 0.82rem; margin-bottom: 2px; }
+.flow-node p { font-size: 0.7rem; color: var(--text-muted); }
+.flow-node .who { font-size: 0.62rem; font-family: var(--mono); color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.flow-node.active { border-color: var(--accent); background: var(--accent-light); }
+.flow-node.success { border-color: var(--success); }
+.flow-node.warning { border-color: var(--warning); }
+.flow-node.danger { border-color: var(--danger); }
+.flow-arrow { width: 2px; height: 28px; background: var(--border-strong); position: relative; }
+.flow-arrow::after { content: "▼"; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: var(--border-strong); }
+.flow-arrow .label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; font-family: var(--mono); color: var(--text-muted); white-space: nowrap; }
+
+/* HORIZONTAL FLOW */
+.hflow { display: flex; align-items: center; gap: 0; margin: 1.5rem 0; overflow-x: auto; padding-bottom: 0.5rem; }
+.hflow-node {
+    background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; text-align: center; min-width: 120px; flex-shrink: 0;
+    box-shadow: var(--shadow);
+}
+.hflow-node h4 { font-size: 0.72rem; margin-bottom: 2px; }
+.hflow-node p { font-size: 0.62rem; color: var(--text-muted); }
+.hflow-arrow { width: 32px; height: 2px; background: var(--border-strong); position: relative; flex-shrink: 0; }
+.hflow-arrow::after { content: "▶"; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--border-strong); }
+
+/* DATA MODEL */
+.data-model { display: flex; flex-direction: column; gap: 0; }
+.dm-table { background: var(--bg-white); border: 2px solid var(--border-strong); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+.dm-table-header { background: var(--bg-dark); color: white; padding: 8px 14px; font-size: 0.78rem; font-weight: 700; font-family: var(--mono); display: flex; align-items: center; gap: 8px; }
+.dm-table-header .model-badge { font-size: 0.58rem; background: rgba(255,255,255,0.2); padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+.dm-row { display: flex; align-items: center; padding: 5px 14px; border-bottom: 1px solid var(--border); font-size: 0.72rem; }
+.dm-row:last-child { border-bottom: none; }
+.dm-row .col-name { font-family: var(--mono); font-weight: 500; color: var(--text-primary); min-width: 180px; }
+.dm-row .col-type { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); min-width: 140px; }
+.dm-row .col-desc { color: var(--text-muted); font-size: 0.65rem; }
+.dm-row .pk { color: var(--orange); font-weight: 700; }
+.dm-row .fk { color: var(--purple); font-weight: 600; }
+.dm-connector { width: 2px; height: 20px; background: var(--border-strong); margin-left: 40px; position: relative; }
+.dm-connector::after { content: "FK ↓"; position: absolute; left: 10px; top: 0; font-size: 0.58rem; font-family: var(--mono); color: var(--purple); white-space: nowrap; }
+
+/* BEFORE / AFTER */
+.before-after { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: stretch; }
+.before-after .ba-panel { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.before-after .ba-label { padding: 8px 14px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; text-align: center; }
+.before-after .ba-label.before { background: var(--danger-light); color: #991b1b; }
+.before-after .ba-label.after { background: var(--success-light); color: #065f46; }
+.before-after .ba-body { padding: 14px; }
+.before-after .ba-arrow { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--text-muted); padding: 0 12px; }
+
+/* DASHBOARD MOCK */
+.dash-mock { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
+.dash-toolbar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.dash-toolbar h3 { font-size: 0.9rem; margin: 0; }
+
+/* KPI */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+.kpi { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.kpi .kpi-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.kpi .kpi-value { font-size: 1.6rem; font-weight: 800; font-family: var(--mono); }
+.kpi .kpi-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 4px; }
+.kpi.green .kpi-value { color: var(--success); }
+.kpi.amber .kpi-value { color: var(--orange); }
+.kpi.blue .kpi-value { color: var(--accent); }
+.kpi.red .kpi-value { color: var(--danger); }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+/* SIDEBAR CARD */
+.sidebar-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.sidebar-card h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+.sidebar-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.sidebar-field:last-child { border-bottom: none; }
+.sidebar-field .fk { color: var(--text-muted); }
+.sidebar-field .fv { font-weight: 600; }
+
+/* FORMULA BOX */
+.formula-box {
+    background: var(--bg-dark); color: #e2e8f0; border-radius: 8px; padding: 16px 20px;
+    font-family: var(--mono); font-size: 0.82rem; margin: 1rem 0; text-align: center;
+    letter-spacing: 0.02em; line-height: 1.8;
+}
+.formula-box .var { color: #93c5fd; }
+.formula-box .op { color: #fbbf24; }
+.formula-box .eq { color: #34d399; }
+
+/* DRAG HANDLE */
+.drag-handle { color: var(--text-muted); cursor: grab; font-size: 0.9rem; user-select: none; }
+
+/* TOGGLE */
+.toggle { width: 36px; height: 20px; border-radius: 10px; position: relative; display: inline-block; }
+.toggle.on { background: var(--success); }
+.toggle.off { background: var(--border-strong); }
+.toggle::after { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: white; top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.toggle.on::after { right: 2px; }
+.toggle.off::after { left: 2px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .two-col, .before-after { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .wf-form-row.col2, .wf-form-row.col3, .wf-form-row.col4 { grid-template-columns: 1fr; }
+    .before-after .ba-arrow { transform: rotate(90deg); padding: 8px 0; justify-self: center; }
+}
+@media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app-header"></div>
+
+<div class="detail-layout">
+    <div id="detail-sidebar"></div>
+    <div class="detail-main">
+        <div id="spec-content">
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div style="margin-bottom: 3rem;">
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="badge blue" style="font-size:0.7rem; padding:4px 10px;">SP3</span>
+        <span class="badge purple" style="font-size:0.7rem; padding:4px 10px;">Release 1.32.0-RC1</span>
+        <span class="badge orange" style="font-size:0.7rem; padding:4px 10px;">3-4 Weeks</span>
+    </div>
+    <h1 style="font-size:2.2rem; font-weight:800; letter-spacing:-0.03em; margin-bottom:0.25rem; line-height:1.1;">Leave &amp; Timesheet Workflow</h1>
+    <p style="font-size:1rem; color:var(--text-secondary); margin-bottom:1.5rem; max-width:680px;">Three features touching the timesheet/leave codebase — Michigan compliance, pre-submission questions, and union subsidy accrual — sequenced to avoid conflicts.</p>
+
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:1.5rem;">
+        <div class="sidebar-card">
+            <h4>Jira Tickets</h4>
+            <div class="sidebar-field"><span class="fk">Leave Hours</span><span class="fv mono" style="font-size:0.7rem; color:var(--accent);">Q21030-9996</span></div>
+            <div class="sidebar-field"><span class="fk">Timesheet Questions</span><span class="fv mono" style="font-size:0.7rem; color:var(--accent);">Q21030-10100</span></div>
+            <div class="sidebar-field"><span class="fk">Union Subsidy</span><span class="fv mono" style="font-size:0.7rem; color:var(--accent);">Q21030-10099</span></div>
+        </div>
+        <div class="sidebar-card">
+            <h4>Customer</h4>
+            <div class="sidebar-field"><span class="fk">Company</span><span class="fv">Rival Insulation</span></div>
+            <div class="sidebar-field"><span class="fk">CEO</span><span class="fv">Chris Tremberth</span></div>
+            <div class="sidebar-field"><span class="fk">Office Admin</span><span class="fv">Kate Hallett</span></div>
+            <div class="sidebar-field"><span class="fk">Operations</span><span class="fv">Ben Fenske</span></div>
+        </div>
+        <div class="sidebar-card">
+            <h4>Effort Breakdown</h4>
+            <div class="sidebar-field"><span class="fk">C1: Leave Hours</span><span class="fv">3-5 days</span></div>
+            <div class="sidebar-field"><span class="fk">C2: Timesheet Qs</span><span class="fv">5-7 days</span></div>
+            <div class="sidebar-field"><span class="fk">C3: Subsidy</span><span class="fv">5-7 days</span></div>
+            <div class="sidebar-field" style="border-top:2px solid var(--accent); padding-top:8px;"><span class="fk" style="font-weight:700; color:var(--text);">Total</span><span class="fv" style="color:var(--accent);">3-4 weeks</span></div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: LEAVE HOURS CONVERSION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="leave-hours">
+    <div class="section-tag">C1 — Q21030-9996</div>
+    <h2>Leave Hours Conversion — Michigan Compliance</h2>
+    <p class="desc">Michigan state law requires leave to be reported in hours, not days. The system must convert full-day leave into hours using a configurable hours-per-day setting that already exists on the Instance model.</p>
+
+    <div class="customer-quote">
+        <div class="quote-text">"It's probably going to need to be hours because that's how the state of Michigan's law is read."</div>
+        <div class="quote-attr">— Chris Tremberth, CEO, Rival Insulation</div>
+    </div>
+    <div class="customer-quote">
+        <div class="quote-text">"Yeah, so then eight hours were generated on the CSV."</div>
+        <div class="quote-attr">— Kate Hallett, Office Admin, Rival Insulation</div>
+    </div>
+
+    <h3>1.1 Leave Report — Before vs After</h3>
+    <p class="desc">Reports and CSV exports currently show leave in calendar days. After the change, all leave values display in hours using the instance's <code>fullDayLeaveDuration</code> setting.</p>
+
+    <div class="before-after">
+        <div class="ba-panel">
+            <div class="ba-label before">Before — Days</div>
+            <div class="ba-body">
+                <div class="wireframe" style="margin-top:0;">
+                    <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">employee-leave-report.tsx</div></div>
+                    <div class="wireframe-body" style="padding:1rem;">
+                        <table class="wf-table">
+                            <thead><tr><th>Employee</th><th>Leave Type</th><th>Start</th><th>End</th><th>Duration</th></tr></thead>
+                            <tbody>
+                                <tr><td>Mike Brennan</td><td><span class="badge blue">Vacation</span></td><td class="mono">Mar 3</td><td class="mono">Mar 5</td><td><strong style="color:var(--danger);">3 days</strong></td></tr>
+                                <tr><td>Sarah Collins</td><td><span class="badge orange">Sick</span></td><td class="mono">Mar 7</td><td class="mono">Mar 7</td><td><strong style="color:var(--danger);">1 day</strong></td></tr>
+                                <tr><td>Jake Torres</td><td><span class="badge purple">Personal</span></td><td class="mono">Mar 10</td><td class="mono">Mar 11</td><td><strong style="color:var(--danger);">2 days</strong></td></tr>
+                            </tbody>
+                        </table>
+                        <div class="dev-note"><strong>Bug:</strong> <code>handleHoursToDate()</code> hardcodes <code>hours / 8</code> — ignores instance setting.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ba-arrow">→</div>
+        <div class="ba-panel">
+            <div class="ba-label after">After — Hours</div>
+            <div class="ba-body">
+                <div class="wireframe" style="margin-top:0;">
+                    <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">employee-leave-report.tsx (updated)</div></div>
+                    <div class="wireframe-body" style="padding:1rem;">
+                        <table class="wf-table">
+                            <thead><tr><th>Employee</th><th>Leave Type</th><th>Start</th><th>End</th><th>Hours</th></tr></thead>
+                            <tbody>
+                                <tr><td>Mike Brennan</td><td><span class="badge blue">Vacation</span></td><td class="mono">Mar 3</td><td class="mono">Mar 5</td><td><strong style="color:var(--success);">24.0 hrs</strong></td></tr>
+                                <tr><td>Sarah Collins</td><td><span class="badge orange">Sick</span></td><td class="mono">Mar 7</td><td class="mono">Mar 7</td><td><strong style="color:var(--success);">8.0 hrs</strong></td></tr>
+                                <tr><td>Jake Torres</td><td><span class="badge purple">Personal</span></td><td class="mono">Mar 10</td><td class="mono">Mar 11</td><td><strong style="color:var(--success);">16.0 hrs</strong></td></tr>
+                            </tbody>
+                        </table>
+                        <div style="text-align:right; font-size:0.68rem; color:var(--text-muted); margin-top:6px;">Based on <strong>8 hrs/day</strong> (Instance setting)</div>
+                        <div class="dev-note"><strong>Fix:</strong> <code>hours / (fullDayLeaveDuration / 3600)</code> — respects configurable day length.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.5rem; padding:12px 16px; background:var(--info-light); border-radius:8px; font-size:0.78rem; color:#1d4ed8;">
+        <strong>Note:</strong> For instances with <code>fullDayLeaveDuration = 27000</code> (7.5 hrs), a 3-day leave = <strong>22.5 hours</strong>, not 24. The conversion must always use the instance-specific setting, never hardcode 8.
+    </div>
+
+    <h3 style="margin-top:2rem;">1.2 Settings Panel — fullDayLeaveDuration</h3>
+    <p class="desc">The setting already exists on the Instance model (<code>fullDayLeaveDuration Int @default(28800)</code>). This shows where it surfaces in the admin UI.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Settings → Leave Type Settings</div></div>
+        <div class="wireframe-body">
+            <div class="wf-form">
+                <div class="wf-section-title">Leave Configuration</div>
+                <div class="wf-form-row col2">
+                    <div class="wf-field">
+                        <label>Full Day Leave Duration <span class="req">*</span></label>
+                        <div class="input select">8 hours (28800 seconds)</div>
+                        <div class="field-hint">Options: 7.5 hours (27000s) | 8 hours (28800s) | 10 hours (36000s) | Custom</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Leave Display Unit</label>
+                        <div class="input select">Hours</div>
+                        <div class="field-hint">How leave is displayed in reports and CSV exports</div>
+                    </div>
+                </div>
+                <div style="background:var(--success-light); border:1px solid var(--success); border-radius:6px; padding:10px 14px; font-size:0.75rem; color:#065f46; display:flex; align-items:center; gap:8px;">
+                    <strong>✓ Michigan Compliant:</strong> Leave will be reported in hours on all reports and CSV exports, using 8 hours per full day.
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Setting already exists: <code>Instance.fullDayLeaveDuration Int @default(28800)</code>. No schema changes needed — just wire it through to <code>handleHoursToDate()</code> and report views.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">1.3 CSV Export Preview</h3>
+    <p class="desc">The employee leave CSV export must reflect hours. Michigan state auditors expect hours-based reporting in payroll submissions.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">CSV Export — employee-leave-report.csv</div></div>
+        <div class="wireframe-body" style="overflow-x:auto;">
+            <div style="font-family:var(--mono); font-size:0.72rem; background:var(--bg-dark); color:#e2e8f0; border-radius:6px; padding:14px; line-height:1.8; overflow-x:auto;">
+                <div style="color:#94a3b8;">// Header row</div>
+                <div><span style="color:#93c5fd;">Employee</span>, <span style="color:#93c5fd;">Leave Type</span>, <span style="color:#93c5fd;">Start Date</span>, <span style="color:#93c5fd;">End Date</span>, <span style="color:#34d399;">Hours</span>, <span style="color:#93c5fd;">Status</span></div>
+                <div style="color:#94a3b8;">// Data rows</div>
+                <div>"Mike Brennan", "Vacation", "2026-03-03", "2026-03-05", <span style="color:#34d399; font-weight:700;">24.0</span>, "Approved"</div>
+                <div>"Sarah Collins", "Sick Leave", "2026-03-07", "2026-03-07", <span style="color:#34d399; font-weight:700;">8.0</span>, "Approved"</div>
+                <div>"Jake Torres", "Personal", "2026-03-10", "2026-03-11", <span style="color:#34d399; font-weight:700;">16.0</span>, "Approved"</div>
+                <div>"Lisa Park", "Vacation", "2026-03-14", "2026-03-14", <span style="color:#34d399; font-weight:700;">4.0</span>, "Approved"</div>
+                <div style="color:#94a3b8;">// ^ Half-day leave = 4.0 hours at 8hr/day</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">1.4 Files to Modify</h3>
+    <table class="wf-table">
+        <thead><tr><th>File</th><th>Change</th><th>Effort</th></tr></thead>
+        <tbody>
+            <tr><td class="mono" style="font-size:0.7rem;">apps/frontend/src/lib/utils.ts</td><td><code>handleHoursToDate()</code> — replace <code>hours / 8</code> with <code>hours / (fullDayLeaveDuration / 3600)</code></td><td><span class="badge green">Small</span></td></tr>
+            <tr><td class="mono" style="font-size:0.7rem;">apps/frontend/src/pages/reports/employee-leave-report.tsx</td><td>Convert full-day leave to hours using <code>fullDayLeaveDuration</code></td><td><span class="badge green">Small</span></td></tr>
+            <tr><td class="mono" style="font-size:0.7rem;">apps/frontend/src/pages/reports/all-employee-leave.tsx</td><td>Same conversion logic</td><td><span class="badge green">Small</span></td></tr>
+            <tr><td class="mono" style="font-size:0.7rem;">apps/api/src/graphql/models/employeeLeaveReport.ts</td><td>CSV export: same hours-based logic server-side</td><td><span class="badge green">Small</span></td></tr>
+        </tbody>
+    </table>
+    <div class="dev-note"><strong>Architecture:</strong> Use <code>fullDayLeaveDuration</code> from Instance settings (already exists at 28800 = 8hrs). Pass via <code>useSettings()</code> hook in frontend. No new settings, no new migrations. Just wire the existing value to the 3 places that hardcode 8.</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: PRE-SUBMISSION TIMESHEET QUESTIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="timesheet-questions">
+    <div class="section-tag orange">C2 — Q21030-10100</div>
+    <h2>Pre-Submission Timesheet Questions</h2>
+    <p class="desc">Rival Insulation wants mandatory questions at timesheet submission — safety incidents, equipment issues, toolbox talks — replacing a separate end-of-day paper form. Questions are configurable per instance by admins.</p>
+
+    <div class="customer-quote">
+        <div class="quote-text">"We need to be able to ask things like 'Was there a safety incident today?' right when they submit their timesheet. It replaces our current end-of-day paper form."</div>
+        <div class="quote-attr">— Chris Tremberth, CEO, Rival Insulation (via Atlas meeting transcript)</div>
+    </div>
+
+    <h3>2.1 Admin Configuration Page</h3>
+    <p class="desc">Instance admins can add, reorder, and toggle pre-submission questions. Questions support Yes/No, free text, and multiple-choice types.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Settings → Timesheet → Pre-Submission Questions</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <h3 style="margin:0;">Pre-Submission Questions</h3>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 0;">These questions will appear when workers submit their daily timesheet.</p>
+                </div>
+                <div class="wf-btn primary" style="font-size:0.72rem;">+ Add Question</div>
+            </div>
+
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"></th>
+                        <th>Question</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Order</th>
+                        <th>Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="drag-handle">⠿</span></td>
+                        <td><strong>Was there a safety incident today?</strong></td>
+                        <td><span class="badge red">Yes / No</span></td>
+                        <td><span class="badge green">Required</span></td>
+                        <td class="mono">1</td>
+                        <td><span class="toggle on"></span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.62rem;">Edit</div></td>
+                    </tr>
+                    <tr>
+                        <td><span class="drag-handle">⠿</span></td>
+                        <td><strong>Any equipment issues to report?</strong></td>
+                        <td><span class="badge blue">Text</span></td>
+                        <td><span class="badge gray">Optional</span></td>
+                        <td class="mono">2</td>
+                        <td><span class="toggle on"></span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.62rem;">Edit</div></td>
+                    </tr>
+                    <tr>
+                        <td><span class="drag-handle">⠿</span></td>
+                        <td><strong>Did you complete your toolbox talk?</strong></td>
+                        <td><span class="badge red">Yes / No</span></td>
+                        <td><span class="badge green">Required</span></td>
+                        <td class="mono">3</td>
+                        <td><span class="toggle on"></span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.62rem;">Edit</div></td>
+                    </tr>
+                    <tr style="opacity:0.5;">
+                        <td><span class="drag-handle">⠿</span></td>
+                        <td>Rate your job site cleanliness (1-5)</td>
+                        <td><span class="badge purple">Multiple Choice</span></td>
+                        <td><span class="badge gray">Optional</span></td>
+                        <td class="mono">4</td>
+                        <td><span class="toggle off"></span></td>
+                        <td><div class="wf-btn secondary" style="font-size:0.62rem;">Edit</div></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="dev-note"><strong>Dev:</strong> Admin route: <code>/settings/timesheet-questions</code>. Permission: <code>settings___edit</code>. Drag-reorder updates <code>sortOrder</code> field. Inactive questions are hidden from workers but retained in DB. Follows same admin pattern as leave type configuration.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">2.2 Timesheet Submission Modal — Desktop</h3>
+    <p class="desc">When a worker clicks "Submit Timesheet", a modal appears BEFORE the submission completes. All required questions must be answered to proceed.</p>
+
+    <div class="two-col">
+        <div>
+            <div class="wireframe">
+                <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Modal — Pre-Submission Questions</div></div>
+                <div class="wireframe-body">
+                    <div style="text-align:center; margin-bottom:16px;">
+                        <h3 style="margin-bottom:4px;">Before You Submit</h3>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Please answer the following questions for <strong>Tuesday, March 10, 2026</strong></p>
+                    </div>
+
+                    <div class="wf-form">
+                        <div class="wf-field">
+                            <label>1. Was there a safety incident today? <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <div style="flex:1; text-align:center; padding:10px; border-radius:6px; border:2px solid var(--border); font-size:0.82rem; font-weight:600; cursor:pointer;">Yes</div>
+                                <div style="flex:1; text-align:center; padding:10px; border-radius:6px; border:2px solid var(--success); background:var(--success-light); font-size:0.82rem; font-weight:600; color:#065f46; cursor:pointer;">No ✓</div>
+                            </div>
+                        </div>
+
+                        <div class="wf-field">
+                            <label>2. Any equipment issues to report?</label>
+                            <div class="input textarea" style="min-height:56px;">Loader hydraulic hose showing wear on unit #247...</div>
+                            <div class="field-hint">Optional — Leave blank if nothing to report</div>
+                        </div>
+
+                        <div class="wf-field">
+                            <label>3. Did you complete your toolbox talk? <span class="req">*</span></label>
+                            <div style="display:flex; gap:8px;">
+                                <div style="flex:1; text-align:center; padding:10px; border-radius:6px; border:2px solid var(--success); background:var(--success-light); font-size:0.82rem; font-weight:600; color:#065f46; cursor:pointer;">Yes ✓</div>
+                                <div style="flex:1; text-align:center; padding:10px; border-radius:6px; border:2px solid var(--border); font-size:0.82rem; font-weight:600; cursor:pointer;">No</div>
+                            </div>
+                        </div>
+
+                        <div style="border-top:1px solid var(--border); padding-top:12px;">
+                            <div class="wf-btn-row">
+                                <div class="wf-btn secondary">Cancel</div>
+                                <div class="wf-btn primary">Submit Timesheet</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dev-note"><strong>Dev:</strong> Modal appears BEFORE timesheet mutation fires. On submit: save <code>TimesheetQuestionResponse</code> records, then proceed with normal timesheet submission. If required questions unanswered, submit button stays disabled.</div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4>Submit Button States</h4>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+                <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+                    <div class="wf-btn disabled" style="font-size:0.72rem; pointer-events:none;">Submit Timesheet</div>
+                    <span style="font-size:0.72rem; color:var(--danger);">Required questions not answered</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--success); border-radius:8px; background:var(--success-light);">
+                    <div class="wf-btn primary" style="font-size:0.72rem;">Submit Timesheet</div>
+                    <span style="font-size:0.72rem; color:#065f46;">All required questions answered ✓</span>
+                </div>
+            </div>
+
+            <h4 style="margin-top:1.5rem;">When "Yes" to Safety Incident</h4>
+            <div style="background:var(--danger-light); border:1px solid var(--danger); border-radius:8px; padding:12px 14px; margin-top:8px;">
+                <div style="font-size:0.78rem; font-weight:600; color:#991b1b; margin-bottom:6px;">⚠ Safety Incident Reported</div>
+                <div style="font-size:0.72rem; color:#991b1b; line-height:1.6;">
+                    Worker answered "Yes" to safety incident. A notification is sent to the Safety Manager. Consider linking to the incident report form post-submission.
+                </div>
+            </div>
+
+            <h4 style="margin-top:1.5rem;">Response Visibility</h4>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;"><span class="badge blue">Admin</span> Can view all responses in reports</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;"><span class="badge green">Supervisor</span> Can view responses for their crew</div>
+                <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;"><span class="badge gray">Worker</span> Can review their own responses</div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">2.3 Mobile View</h3>
+    <p class="desc">Same questions appear in a full-screen single-column layout on mobile PWA. Segmented controls for Yes/No for easy thumb tapping.</p>
+
+    <div style="display:flex; gap:2rem; align-items:flex-start;">
+        <div class="wireframe" style="max-width:360px; flex-shrink:0;">
+            <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">mobile — 375px</div></div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <div style="background:var(--accent); color:white; padding:12px; border-radius:8px; text-align:center; font-weight:700; font-size:0.85rem; margin-bottom:14px;">📋 Pre-Submission Questions</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-align:center; margin-bottom:14px;">Tuesday, March 10, 2026</div>
+
+                <div class="wf-form" style="gap:12px;">
+                    <div class="wf-field">
+                        <label style="font-size:0.75rem;">1. Safety incident today? <span class="req">*</span></label>
+                        <div style="display:flex; gap:6px;">
+                            <div style="flex:1; text-align:center; padding:12px 8px; border-radius:8px; border:2px solid var(--border); font-size:0.82rem; font-weight:600;">Yes</div>
+                            <div style="flex:1; text-align:center; padding:12px 8px; border-radius:8px; border:2px solid var(--success); background:var(--success-light); font-size:0.82rem; font-weight:600; color:#065f46;">No ✓</div>
+                        </div>
+                    </div>
+
+                    <div class="wf-field">
+                        <label style="font-size:0.75rem;">2. Equipment issues?</label>
+                        <div class="input textarea" style="min-height:48px; font-size:0.78rem;">Loader hose on #247...</div>
+                    </div>
+
+                    <div class="wf-field">
+                        <label style="font-size:0.75rem;">3. Toolbox talk completed? <span class="req">*</span></label>
+                        <div style="display:flex; gap:6px;">
+                            <div style="flex:1; text-align:center; padding:12px 8px; border-radius:8px; border:2px solid var(--success); background:var(--success-light); font-size:0.82rem; font-weight:600; color:#065f46;">Yes ✓</div>
+                            <div style="flex:1; text-align:center; padding:12px 8px; border-radius:8px; border:2px solid var(--border); font-size:0.82rem; font-weight:600;">No</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <div class="wf-btn secondary" style="flex:1; justify-content:center;">Back</div>
+                        <div class="wf-btn primary" style="flex:1; justify-content:center;">Submit ✓</div>
+                    </div>
+                </div>
+                <div class="dev-note" style="margin-top:10px;"><strong>Mobile:</strong> Full-screen overlay, same data model. Yes/No = large segmented control for easy thumb tap. Text fields expand on focus.</div>
+            </div>
+        </div>
+
+        <div style="flex:1;">
+            <h4>Submission Flow</h4>
+            <div class="flow">
+                <div class="flow-node">
+                    <h4>Worker taps "Submit Timesheet"</h4>
+                    <p>Desktop or Mobile</p>
+                </div>
+                <div class="flow-arrow"><span class="label">Questions configured?</span></div>
+                <div class="flow-node active">
+                    <h4>Pre-Submission Modal</h4>
+                    <p>Active questions appear in sort order</p>
+                    <span class="who">TimesheetQuestion[]</span>
+                </div>
+                <div class="flow-arrow"><span class="label">All required answered</span></div>
+                <div class="flow-node">
+                    <h4>Save Responses</h4>
+                    <p>TimesheetQuestionResponse records created</p>
+                    <span class="who">mutation</span>
+                </div>
+                <div class="flow-arrow"><span class="label">Then proceed</span></div>
+                <div class="flow-node success">
+                    <h4>Timesheet Submitted</h4>
+                    <p>Normal submission flow continues</p>
+                    <span class="who">existing mutation</span>
+                </div>
+            </div>
+
+            <div style="background:var(--info-light); border:1px solid var(--info); border-radius:8px; padding:12px 14px; margin-top:12px;">
+                <div style="font-size:0.75rem; color:#1d4ed8; line-height:1.6;">
+                    <strong>No questions configured?</strong> The modal is skipped entirely — timesheet submits immediately as it does today. This is opt-in per instance.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">2.4 Data Model</h3>
+    <p class="desc">Two new Prisma models store the question definitions and worker responses.</p>
+
+    <div class="two-col">
+        <div>
+            <div class="dm-table">
+                <div class="dm-table-header">TimesheetQuestion <span class="model-badge">NEW MODEL</span></div>
+                <div class="dm-row"><span class="col-name"><span class="pk">id</span></span><span class="col-type">String @id @db.VarChar(21)</span><span class="col-desc">nanoid</span></div>
+                <div class="dm-row"><span class="col-name"><span class="fk">instanceId</span></span><span class="col-type">String @db.VarChar(21)</span><span class="col-desc">FK → Instance</span></div>
+                <div class="dm-row"><span class="col-name">question</span><span class="col-type">String @db.VarChar(500)</span><span class="col-desc">Question text</span></div>
+                <div class="dm-row"><span class="col-name">type</span><span class="col-type">Enum (YES_NO, TEXT, MULTI)</span><span class="col-desc">Answer type</span></div>
+                <div class="dm-row"><span class="col-name">isRequired</span><span class="col-type">Boolean @default(false)</span><span class="col-desc">Must answer to submit</span></div>
+                <div class="dm-row"><span class="col-name">sortOrder</span><span class="col-type">Int @default(0)</span><span class="col-desc">Display order</span></div>
+                <div class="dm-row"><span class="col-name">isActive</span><span class="col-type">Boolean @default(true)</span><span class="col-desc">Show to workers</span></div>
+                <div class="dm-row"><span class="col-name">options</span><span class="col-type">Json?</span><span class="col-desc">For MULTI type: ["Option A", ...]</span></div>
+                <div class="dm-row"><span class="col-name">createdAt</span><span class="col-type">DateTime @default(now())</span><span class="col-desc"></span></div>
+                <div class="dm-row"><span class="col-name">updatedAt</span><span class="col-type">DateTime @updatedAt</span><span class="col-desc"></span></div>
+                <div class="dm-row"><span class="col-name">isDeleted</span><span class="col-type">Boolean @default(false)</span><span class="col-desc">Soft delete</span></div>
+            </div>
+        </div>
+        <div>
+            <div class="dm-table">
+                <div class="dm-table-header">TimesheetQuestionResponse <span class="model-badge">NEW MODEL</span></div>
+                <div class="dm-row"><span class="col-name"><span class="pk">id</span></span><span class="col-type">String @id @db.VarChar(21)</span><span class="col-desc">nanoid</span></div>
+                <div class="dm-row"><span class="col-name"><span class="fk">timesheetQuestionId</span></span><span class="col-type">String @db.VarChar(21)</span><span class="col-desc">FK → TimesheetQuestion</span></div>
+                <div class="dm-row"><span class="col-name"><span class="fk">timeSheetRecordId</span></span><span class="col-type">String @db.VarChar(21)</span><span class="col-desc">FK → TimeSheetRecord</span></div>
+                <div class="dm-row"><span class="col-name"><span class="fk">userId</span></span><span class="col-type">String @db.VarChar(21)</span><span class="col-desc">FK → User (responder)</span></div>
+                <div class="dm-row"><span class="col-name">response</span><span class="col-type">String @db.Text</span><span class="col-desc">Answer value</span></div>
+                <div class="dm-row"><span class="col-name">createdAt</span><span class="col-type">DateTime @default(now())</span><span class="col-desc"></span></div>
+            </div>
+
+            <div style="margin-top:1rem; background:var(--purple-light); border-radius:8px; padding:12px 14px;">
+                <h4 style="color:#5b21b6; margin-bottom:6px; font-size:0.72rem;">Relationships</h4>
+                <div style="font-size:0.72rem; color:#5b21b6; font-family:var(--mono); line-height:2;">
+                    TimesheetQuestion.Instance → Instance<br>
+                    TimesheetQuestionResponse.TimesheetQuestion → TimesheetQuestion<br>
+                    TimesheetQuestionResponse.TimeSheetRecord → TimeSheetRecord<br>
+                    TimesheetQuestionResponse.User → User
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top:12px;"><strong>Dev:</strong> Migration creates both tables. <code>TimesheetQuestion</code> is instance-scoped (multi-tenant). Unique constraint on <code>[timesheetQuestionId, timeSheetRecordId]</code> prevents duplicate responses. GraphQL: new query <code>getTimesheetQuestions</code> (by instanceId, isActive: true, sorted) and mutation <code>createTimesheetQuestionResponses</code> (batch insert). Consider extending the existing Question/Answer pattern from the SafetyForm engine for consistency with Q21030-10542 (forms PDF export).</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: UNION SUBSIDY ACCRUAL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="union-subsidy">
+    <div class="section-tag green">C3 — Q21030-10099</div>
+    <h2>Union Subsidy Accrual</h2>
+    <p class="desc">Rival Insulation needs automatic accrual of union subsidies based on approved timesheet hours. One flat rate per hour regardless of trade classification. The budgeted amount comes from the estimate; accrued amount is calculated in real-time.</p>
+
+    <div class="customer-quote">
+        <div class="quote-text">"It needs to accrue the billable subsidy."</div>
+        <div class="quote-attr">— Chris Tremberth, CEO, Rival Insulation (June 2025 onboarding)</div>
+    </div>
+    <div class="customer-quote">
+        <div class="quote-text">"Eventually we would need a form that's turned in so we could submit for the money."</div>
+        <div class="quote-attr">— Chris Tremberth, CEO, Rival Insulation (regarding union submission reports)</div>
+    </div>
+
+    <div style="background:var(--info-light); border:1px solid var(--info); border-radius:8px; padding:12px 14px; margin-bottom:1.5rem; font-size:0.78rem; color:#1d4ed8;">
+        <strong>What already exists:</strong> Subsidy field in estimates (Q21030-5777, In Prod), subsidy invoicing to union halls, manual entry of budgeted subsidy amount. <strong>What's missing:</strong> Automatic accrual calculation from timesheet hours and a report for union submission.
+    </div>
+
+    <h3>3.1 Job Financial Summary — Subsidy Section</h3>
+    <p class="desc">The subsidy accrual appears within the existing Job Financial Overview, showing budget vs actual at a glance.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Job Detail → Financial Overview → Subsidy</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                <h3 style="margin:0;">Rival Insulation — Lansing Community College HVAC</h3>
+                <span class="badge green">Active</span>
+                <span class="badge purple">Union Job</span>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi blue">
+                    <div class="kpi-label">Budgeted Subsidy</div>
+                    <div class="kpi-value" style="font-size:1.4rem;">$5,000<span style="font-size:0.9rem;">.00</span></div>
+                    <div class="kpi-sub">From estimate line item</div>
+                </div>
+                <div class="kpi green">
+                    <div class="kpi-label">Accrued Subsidy</div>
+                    <div class="kpi-value" style="font-size:1.4rem;">$3,200<span style="font-size:0.9rem;">.00</span></div>
+                    <div class="kpi-sub">rate × approved hours</div>
+                </div>
+                <div class="kpi amber">
+                    <div class="kpi-label">Variance (Remaining)</div>
+                    <div class="kpi-value" style="font-size:1.4rem;">$1,800<span style="font-size:0.9rem;">.00</span></div>
+                    <div class="kpi-sub">budget − accrued</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">Accrual Details</div>
+                    <div style="text-align:center; padding:4px 0;">
+                        <div style="font-size:1.1rem; font-weight:800; font-family:var(--mono); color:var(--accent);">$2.50<span style="font-size:0.7rem; color:var(--text-muted);">/hr</span></div>
+                        <div style="font-size:0.85rem; font-weight:700; font-family:var(--mono); margin-top:2px;">1,280 <span style="font-size:0.65rem; color:var(--text-muted);">approved hrs</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--bg-panel); border-radius:6px; font-size:0.75rem;">
+                <span style="font-weight:600; color:var(--text-secondary);">Subsidy Progress:</span>
+                <div style="flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden;">
+                    <div style="width:64%; height:100%; background:var(--success); border-radius:4px;"></div>
+                </div>
+                <span class="mono" style="font-size:0.72rem; color:var(--text-muted);">64% accrued</span>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> Accrued subsidy is a computed value, not stored. Query: <code>Job.subsidyRatePerHour × SUM(approved TimeSheetRecord hours for this job) / 3600</code>. Display in existing financial overview component alongside contract value, invoiced, etc.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">3.2 Data Flow</h3>
+
+    <div class="formula-box">
+        <span class="var">Job.subsidyRatePerHour</span> <span class="op">×</span> <span class="var">SUM(TimeSheetRecord.approvedDuration)</span> <span class="op">/</span> <span class="var">3600</span> <span class="eq">= accruedSubsidy</span>
+    </div>
+
+    <div class="hflow">
+        <div class="hflow-node" style="border-color:var(--purple);">
+            <h4>Estimate</h4>
+            <p>Budgeted subsidy $</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--accent);">
+            <h4>Job Created</h4>
+            <p>subsidyRatePerHour set</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--orange);">
+            <h4>Timesheets Approved</h4>
+            <p>Hours accumulate</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--success);">
+            <h4>Accrual Calculated</h4>
+            <p>rate × hours = $</p>
+        </div>
+        <div class="hflow-arrow"></div>
+        <div class="hflow-node" style="border-color:var(--success); background:var(--success-light);">
+            <h4>Report Exported</h4>
+            <p>CSV for union hall</p>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">3.3 Subsidy Rate Configuration</h3>
+    <p class="desc">A new field on the Job edit form for the per-hour subsidy rate. One flat rate regardless of worker trade classification.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Job Edit → Financial Settings</div></div>
+        <div class="wireframe-body">
+            <div class="wf-form">
+                <div class="wf-section-title">Union Subsidy</div>
+                <div class="wf-form-row col3">
+                    <div class="wf-field">
+                        <label>Subsidy Rate Per Hour</label>
+                        <div class="input">$2.50</div>
+                        <div class="field-hint">Flat rate — same for all trades on this job</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Budgeted Subsidy Total</label>
+                        <div class="input" style="color:var(--text-muted); background:var(--bg-panel);">$5,000.00</div>
+                        <div class="field-hint">Read-only — pulled from estimate</div>
+                    </div>
+                    <div class="wf-field">
+                        <label>Union Hall</label>
+                        <div class="input select">Local 47 — Michigan Insulators</div>
+                        <div class="field-hint">For report submission header</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--orange-light); border:1px solid var(--orange); border-radius:6px; font-size:0.72rem; color:#92400e;">
+                    <strong>Chris Tremberth:</strong> "One flat rate regardless of trade classification" — do not break down by insulator vs pipe fitter vs scaffold builder.
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> New field on Job model: <code>subsidyRatePerHour Decimal? @db.Decimal(10, 2)</code>. Show this section only when job has subsidy (rate > 0 or estimate has subsidy line). GraphQL: add to Job type and editJob mutation.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">3.4 Subsidy Accrual Report</h3>
+    <p class="desc">A dedicated report for union submission, showing accrual by payroll period. Exportable to CSV for union hall filing.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Reports → Union Subsidy Accrual</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <h3 style="margin:0;">Union Subsidy Accrual Report</h3>
+                    <p style="font-size:0.72rem; color:var(--text-muted); margin:4px 0 0;">Rival Insulation — Local 47 Submission</p>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <div class="wf-field" style="gap:2px;">
+                        <label style="font-size:0.6rem;">Period</label>
+                        <div class="input select" style="min-height:30px; font-size:0.72rem; padding:4px 8px;">Feb 1 – Feb 28, 2026</div>
+                    </div>
+                    <div class="wf-btn success" style="font-size:0.72rem;">⬇ Export CSV</div>
+                </div>
+            </div>
+
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>Job Name</th>
+                        <th>Job #</th>
+                        <th>Period Hours</th>
+                        <th>Rate</th>
+                        <th>Period Amount</th>
+                        <th>Cumulative Hours</th>
+                        <th>Cumulative Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lansing Community College HVAC</strong></td>
+                        <td class="mono">J-2026-041</td>
+                        <td class="mono" style="text-align:right;">320.0</td>
+                        <td class="mono" style="text-align:right;">$2.50</td>
+                        <td style="text-align:right; font-weight:600;">$800.00</td>
+                        <td class="mono" style="text-align:right;">1,280.0</td>
+                        <td style="text-align:right; font-weight:600;">$3,200.00</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Michigan State Capitol Renovation</strong></td>
+                        <td class="mono">J-2026-038</td>
+                        <td class="mono" style="text-align:right;">185.5</td>
+                        <td class="mono" style="text-align:right;">$2.50</td>
+                        <td style="text-align:right; font-weight:600;">$463.75</td>
+                        <td class="mono" style="text-align:right;">742.0</td>
+                        <td style="text-align:right; font-weight:600;">$1,855.00</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Grand Rapids Medical Center</strong></td>
+                        <td class="mono">J-2026-029</td>
+                        <td class="mono" style="text-align:right;">96.0</td>
+                        <td class="mono" style="text-align:right;">$2.50</td>
+                        <td style="text-align:right; font-weight:600;">$240.00</td>
+                        <td class="mono" style="text-align:right;">480.0</td>
+                        <td style="text-align:right; font-weight:600;">$1,200.00</td>
+                    </tr>
+                    <tr style="background:var(--bg-panel); font-weight:700;">
+                        <td colspan="2" style="text-align:right;">TOTALS</td>
+                        <td class="mono" style="text-align:right;">601.5</td>
+                        <td></td>
+                        <td style="text-align:right;">$1,503.75</td>
+                        <td class="mono" style="text-align:right;">2,502.0</td>
+                        <td style="text-align:right; color:var(--accent);">$6,255.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+                <div class="sidebar-card">
+                    <h4>Period Summary</h4>
+                    <div class="sidebar-field"><span class="fk">Period</span><span class="fv">Feb 1 – Feb 28, 2026</span></div>
+                    <div class="sidebar-field"><span class="fk">Total Hours</span><span class="fv mono">601.5</span></div>
+                    <div class="sidebar-field"><span class="fk">Total Subsidy</span><span class="fv" style="color:var(--accent);">$1,503.75</span></div>
+                    <div class="sidebar-field"><span class="fk">Active Jobs</span><span class="fv">3</span></div>
+                </div>
+                <div class="sidebar-card">
+                    <h4>CSV Export Columns</h4>
+                    <div style="font-family:var(--mono); font-size:0.65rem; color:var(--text-muted); line-height:2;">
+                        Job Name, Job Number, Period Start,<br>
+                        Period End, Period Hours, Rate,<br>
+                        Period Amount, Cumulative Hours,<br>
+                        Cumulative Amount, Union Hall
+                    </div>
+                </div>
+            </div>
+            <div class="dev-note"><strong>Dev:</strong> New report page at <code>/reports/union-subsidy-accrual</code>. Query: join Job (where subsidyRatePerHour > 0) with SUM(TimeSheetRecord.approvedDuration) grouped by job and period. Period selector = date range picker (existing component). Use existing PivotTable or standard report table. Add to <code>reportsStructure.ts</code>.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">3.5 Subsidy Budget vs Accrual — Per Job</h3>
+    <p class="desc">Visual comparison of budgeted vs accrued subsidy for each active union job, surfaced in a dashboard-style card.</p>
+
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Subsidy Overview (all union jobs)</div></div>
+        <div class="wireframe-body">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:8px;">
+                    <div style="min-width:200px;"><strong style="font-size:0.82rem;">Lansing CC HVAC</strong><br><span class="mono" style="font-size:0.65rem; color:var(--text-muted);">J-2026-041</span></div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-bottom:3px;">
+                            <span>$3,200 accrued</span><span>$5,000 budgeted</span>
+                        </div>
+                        <div style="height:10px; background:var(--border); border-radius:5px; overflow:hidden;">
+                            <div style="width:64%; height:100%; background:var(--success); border-radius:5px;"></div>
+                        </div>
+                    </div>
+                    <div style="min-width:60px; text-align:right;"><span class="badge green">64%</span></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:8px;">
+                    <div style="min-width:200px;"><strong style="font-size:0.82rem;">MI State Capitol</strong><br><span class="mono" style="font-size:0.65rem; color:var(--text-muted);">J-2026-038</span></div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-bottom:3px;">
+                            <span>$1,855 accrued</span><span>$3,200 budgeted</span>
+                        </div>
+                        <div style="height:10px; background:var(--border); border-radius:5px; overflow:hidden;">
+                            <div style="width:58%; height:100%; background:var(--success); border-radius:5px;"></div>
+                        </div>
+                    </div>
+                    <div style="min-width:60px; text-align:right;"><span class="badge green">58%</span></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--danger); border-radius:8px; background:var(--danger-light);">
+                    <div style="min-width:200px;"><strong style="font-size:0.82rem;">Grand Rapids Medical</strong><br><span class="mono" style="font-size:0.65rem; color:var(--text-muted);">J-2026-029</span></div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-bottom:3px;">
+                            <span>$1,200 accrued</span><span>$1,000 budgeted</span>
+                        </div>
+                        <div style="height:10px; background:var(--border); border-radius:5px; overflow:hidden;">
+                            <div style="width:100%; height:100%; background:var(--danger); border-radius:5px;"></div>
+                        </div>
+                    </div>
+                    <div style="min-width:60px; text-align:right;"><span class="badge red">120%</span></div>
+                </div>
+            </div>
+            <div class="dev-note" style="margin-top:12px;"><strong>Dev:</strong> Highlight jobs where accrued > budgeted (over-budget). This is a computed view — no separate table. Could be a widget on the main dashboard for users with job financial permissions.</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:2rem;">3.6 Schema Changes</h3>
+    <table class="wf-table">
+        <thead><tr><th>Model</th><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>Job</strong></td>
+                <td class="mono" style="font-size:0.7rem;">subsidyRatePerHour</td>
+                <td class="mono" style="font-size:0.7rem;">Decimal? @db.Decimal(10, 2)</td>
+                <td>New field — flat rate per approved hour</td>
+            </tr>
+            <tr>
+                <td><strong>Job</strong></td>
+                <td class="mono" style="font-size:0.7rem;">unionHall</td>
+                <td class="mono" style="font-size:0.7rem;">String? @db.VarChar(191)</td>
+                <td>Optional — for report header/identification</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="dev-note"><strong>Dev:</strong> <code>accruedSubsidy</code> is NOT stored — it's a computed field resolved in GraphQL: <code>SELECT SUM(approvedDuration) FROM TimeSheetRecord WHERE jobId = ? AND status = 'APPROVED'</code>, then multiply by <code>subsidyRatePerHour</code>. Use <code>Decimal</code> (not Float) per codebase convention. Migration: <code>ALTER TABLE Job ADD COLUMN subsidyRatePerHour DECIMAL(10,2) NULL, ADD COLUMN unionHall VARCHAR(191) NULL;</code></div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
+    <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
+    <div style="font-size:0.82rem; color:var(--text-secondary);">Leave &amp; Timesheet Workflow — Design Specification</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">Confidential · March 2026 · SP3 — Release 1.32.0-RC1</div>
+    <div style="font-size:0.65rem; color:var(--text-muted); margin-top:6px;">Customer: Rival Insulation (Chris Tremberth, Kate Hallett, Ben Fenske)</div>
+</div>
+
+</div><!-- /page -->
+        </div><!-- end spec-content -->
+        <div id="dynamic-content"></div>
+    </div><!-- end detail-main -->
+</div><!-- end detail-layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="../feedback-config.js"></script>
+<script src="../shared.js"></script>
+<script src="../detail.js"></script>
+<script src="../feedback.js"></script>
+<script src="../manage.js"></script>
+
+</body>
+</html>
