@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appello — Approval Documents</title>
+    <title>Appello — Work Packages</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -236,10 +236,10 @@
             <div class="header-inner">
                 <div class="brand">
                     <div class="brand-icon">A</div>
-                    <h1>Appello <span>Approval Documents</span></h1>
+                    <h1>Appello <span>Work Packages</span></h1>
                 </div>
                 <nav class="nav-links">
-                    <a href="./" class="nav-link active">Documents</a>
+                    <a href="./" class="nav-link active">Work Packages</a>
                     <a href="./pipeline.html" class="nav-link">Pipeline</a>
                 </nav>
             </div>
@@ -249,12 +249,12 @@
     <main class="content">
         <div class="container">
             <div class="intro">
-                <h2>Documents</h2>
-                <p>Review and approve project documents shared by your Appello team.</p>
+                <h2>Work Packages</h2>
+                <p>Review and approve work packages shared by your Appello team.</p>
             </div>
 
             <div class="doc-grid" id="doc-list">
-                <div class="loading-spinner">Loading documents...</div>
+                <div class="loading-spinner">Loading work packages...</div>
             </div>
         </div>
     </main>
@@ -303,7 +303,7 @@
         function renderCards(packages) {
             var grid = document.getElementById("doc-list");
             if (!packages.length) {
-                grid.innerHTML = '<div class="empty-state"><h3>No documents yet</h3><p>Work packages will appear here once created.</p></div>';
+                grid.innerHTML = '<div class="empty-state"><h3>No work packages yet</h3><p>Work packages will appear here once created.</p></div>';
                 return;
             }
             grid.innerHTML = packages.map(function (wp) {

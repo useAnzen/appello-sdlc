@@ -68,10 +68,31 @@ async function main() {
     }
     console.log(`Found ${tickets.length} linked ticket(s).`);
 
-    // 3. For each ticket, trigger the AgentC2 SDLC Triage workflow
+    // 3. Build rich description with all linked context
+    const allTicketKeys = tickets.map(t => t.jira_key).join(", ");
+    function buildDescription(ticket) {
+        let desc = `## Work Package: ${wp.title}\n\n`;
+        desc += `${wp.description}\n\n`;
+        desc += `### Linked Artifacts\n\n`;
+        desc += `- **Design Spec:** ${wp.spec_url}\n`;
+        if (wp.implementation_plan_url) desc += `- **Implementation Plan:** ${wp.implementation_plan_url}\n`;
+        if (wp.canvas_url) desc += `- **Canvas / Visualization:** ${wp.canvas_url}\n`;
+        desc += `- **Pipeline Board:** https://useanzen.github.io/appello-approvals/pipeline.html\n\n`;
+        desc += `### Jira Tickets in this Work Package\n\n`;
+        tickets.forEach(t => {
+            const current = t.jira_key === ticket.jira_key ? " ← (this ticket)" : "";
+            desc += `- [${t.jira_key}](${t.jira_url}) ${t.jira_summary || ""}${current}\n`;
+        });
+        if (wp.approved_at) desc += `\n### Approved: ${new Date(wp.approved_at).toLocaleDateString()}\n`;
+        desc += `\n---\n_Dispatched from Appello Work Packages_`;
+        return desc;
+    }
+
+    // 4. For each ticket, trigger the AgentC2 SDLC Triage workflow
     for (const ticket of tickets) {
         console.log(`\nDispatching ${ticket.jira_key}...`);
         try {
+            const richDescription = buildDescription(ticket);
             const runRes = await fetch(`https://agentc2.ai/api/v1/workflows/${AGENTC2_WORKFLOW_SLUG}/execute`, {
                 method: "POST",
                 headers: {
@@ -81,9 +102,10 @@ async function main() {
                 body: JSON.stringify({
                     input: {
                         title: `${ticket.jira_key} - ${ticket.jira_summary || wp.title}`,
-                        description: wp.description + (wp.implementation_plan_url ? `\n\nImplementation Plan: ${wp.implementation_plan_url}` : ""),
+                        description: richDescription,
                         repository: TARGET_REPO,
-                        sourceTicketId: ticket.jira_key
+                        sourceTicketId: ticket.jira_key,
+                        labels: ["work-package", wp.slug]
                     }
                 })
             });
@@ -117,7 +139,7 @@ async function main() {
         }
     }
 
-    // 4. Update work package status
+    // 5. Update work package status
     await fetch(`${SUPABASE_URL}/rest/v1/work_packages?id=eq.${wp.id}`, {
         method: "PATCH",
         headers: supaHeaders,
