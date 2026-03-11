@@ -906,6 +906,263 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     </div>
 </div>
 
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-plan">
+    <div class="section-tag purple">Execution</div>
+    <h2>Implementation Plan</h2>
+    <p class="desc">Step-by-step implementation across backend, GraphQL, and frontend layers — split into two parallel workstreams covering the Timesheet Matrix and Job Schedule views.</p>
+
+    <!-- ── PART 1: TIMESHEET MATRIX ── -->
+    <h3>Part 1: Timesheet Matrix Filtering <span class="badge blue">Q21030-8458</span> <span class="badge blue">Q21030-8796</span></h3>
+
+    <h4 style="margin-top: 1.5rem;">Step 1: Backend — Add WHERE keys <code style="font-family: var(--mono); font-size: 0.78rem;">timesheetMatrixView.ts</code></h4>
+    <p class="desc">Add <code>userGroupId</code> and <code>projectLeadId</code> to <code>timeSheetMatrixViewWhereKeys</code> and extend the <code>TimeSheetMatrixViewWhere</code> interface.</p>
+
+    <div class="perf-callout" style="background: var(--danger-light); border-color: var(--danger); color: #991b1b;">
+        <div class="icon">🔒</div>
+        <div>
+            <strong>CRITICAL:</strong> Use <code>Prisma.sql</code> tagged templates and <code>Prisma.join()</code> for parameterized values. Follow the <code>buildJobProjectExistsClause</code> pattern at line ~885.
+        </div>
+    </div>
+
+    <div class="wireframe" style="margin-top: 1rem;">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">timesheetMatrixView.ts — new WHERE clause builders</div></div>
+        <div class="wireframe-body">
+            <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.7; color: var(--text-secondary); overflow-x: auto; margin: 0;"><code><span style="color: var(--text-muted);">// Skip direct mapping — handled by correlated subqueries</span>
+<span style="color: var(--purple);">case</span> <span style="color: var(--success);">"userGroupId"</span>:
+<span style="color: var(--purple);">case</span> <span style="color: var(--success);">"projectLeadId"</span>:
+    <span style="color: var(--purple);">return</span> acc;
+
+<span style="color: var(--purple);">function</span> <span style="color: var(--accent);">buildUserGroupExistsClause</span>(where, tsrAlias = <span style="color: var(--success);">"tsr"</span>) {
+    <span style="color: var(--purple);">const</span> { userGroupId } = where;
+    <span style="color: var(--purple);">const</span> ids = Array.isArray(userGroupId) ? userGroupId
+        : userGroupId ? [userGroupId] : [];
+    <span style="color: var(--purple);">if</span> (ids.length === 0) <span style="color: var(--purple);">return</span> Prisma.empty;
+    <span style="color: var(--purple);">return</span> Prisma.<span style="color: var(--accent);">sql</span>`
+        AND ${Prisma.raw(tsrAlias)}.userId IN (
+            SELECT _ug.A FROM _User_UserGroup _ug
+            WHERE _ug.B IN (${Prisma.<span style="color: var(--accent);">join</span>(ids)})
+        )`;
+}
+
+<span style="color: var(--purple);">function</span> <span style="color: var(--accent);">buildProjectLeadExistsClause</span>(where, tsrAlias = <span style="color: var(--success);">"tsr"</span>) {
+    <span style="color: var(--purple);">const</span> { projectLeadId } = where;
+    <span style="color: var(--purple);">const</span> ids = Array.isArray(projectLeadId) ? projectLeadId
+        : projectLeadId ? [projectLeadId] : [];
+    <span style="color: var(--purple);">if</span> (ids.length === 0) <span style="color: var(--purple);">return</span> Prisma.empty;
+    <span style="color: var(--purple);">return</span> Prisma.<span style="color: var(--accent);">sql</span>`
+        AND EXISTS (
+            SELECT 1 FROM TimeSheetDetailRecord _tsdr
+            INNER JOIN Job _j ON _j.id = _tsdr.jobId AND _j.isDeleted = FALSE
+            INNER JOIN Project _p ON _p.id = _j.projectId
+            WHERE _tsdr.timeSheetRecordId = ${Prisma.raw(tsrAlias)}.id
+            AND _tsdr.isDeleted = FALSE AND _tsdr.isApplied = TRUE
+            AND _p.projectLeadId IN (${Prisma.<span style="color: var(--accent);">join</span>(ids)})
+        )`;
+}</code></pre>
+            <div class="dev-note">
+                <strong>Dev:</strong> Inject these clauses alongside the existing <code>${jobProjectClause}</code> and <code>${scopeClause}</code> lines (~line 817-819).
+            </div>
+        </div>
+    </div>
+
+    <h4 style="margin-top: 2rem;">Step 2: Backend — Add facets <code style="font-family: var(--mono); font-size: 0.78rem;">timesheetMatrixView.ts</code></h4>
+    <p class="desc">Add facet queries for dropdown population.</p>
+
+    <div class="two-col" style="margin-top: 1rem;">
+        <div>
+            <h4>User Groups facet</h4>
+            <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary); overflow-x: auto; margin: 0;"><code><span style="color: var(--purple);">SELECT</span> ug."id", ug."name" <span style="color: var(--purple);">as</span> "label"
+<span style="color: var(--purple);">FROM</span> "UserGroup" ug
+<span style="color: var(--purple);">WHERE</span> ug."instanceId" = <span style="color: var(--accent);">$1</span>
+  <span style="color: var(--purple);">AND</span> ug."isDeleted" = <span style="color: var(--success);">false</span>
+<span style="color: var(--purple);">ORDER BY</span> ug."name"</code></pre>
+        </div>
+        <div>
+            <h4>Project Leads facet</h4>
+            <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary); overflow-x: auto; margin: 0;"><code><span style="color: var(--purple);">SELECT DISTINCT</span> u."id",
+  <span style="color: var(--purple);">CONCAT</span>(u."firstName", ' ', u."lastName") <span style="color: var(--purple);">as</span> "label"
+<span style="color: var(--purple);">FROM</span> "User" u
+<span style="color: var(--purple);">JOIN</span> "Project" p <span style="color: var(--purple);">ON</span> p."projectLeadId" = u."id"
+<span style="color: var(--purple);">WHERE</span> p."instanceId" = <span style="color: var(--accent);">$1</span>
+  <span style="color: var(--purple);">AND</span> p."isDeleted" = <span style="color: var(--success);">false</span>
+  <span style="color: var(--purple);">AND</span> p."isArchived" = <span style="color: var(--success);">false</span>
+<span style="color: var(--purple);">ORDER BY</span> "label"</code></pre>
+        </div>
+    </div>
+
+    <h4 style="margin-top: 2rem;">Step 3: GraphQL — Extend input type <code style="font-family: var(--mono); font-size: 0.78rem;">TimeSheetHoursFeed.ts</code></h4>
+    <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary); overflow-x: auto; margin-top: 0.75rem;"><code><span style="color: var(--purple);">input</span> <span style="color: var(--accent);">TimeSheetMatrixViewWhere</span> {
+    <span style="color: var(--text-muted);"># ... existing fields ...</span>
+    userGroupId: [String]
+    projectLeadId: [String]
+}</code></pre>
+
+    <h4 style="margin-top: 2rem;">Step 4: Frontend — Add filter dropdowns <code style="font-family: var(--mono); font-size: 0.78rem;">TimesheetApprovalGrid.tsx</code></h4>
+    <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.8; color: var(--text-secondary); overflow-x: auto; margin-top: 0.75rem;"><code>{
+    columnName: <span style="color: var(--success);">"userGroupId"</span>,
+    label: <span style="color: var(--success);">"User Group"</span>,
+    filterOptions: facets?.userGroups || []
+},
+{
+    columnName: <span style="color: var(--success);">"projectLeadId"</span>,
+    label: <span style="color: var(--success);">"Project Lead"</span>,
+    filterOptions: facets?.projectLeads || []
+}</code></pre>
+
+    <h4 style="margin-top: 2rem;">Code Architecture — Part 1</h4>
+    <div style="overflow-x: auto; margin-top: 0.75rem;">
+        <table class="wf-table">
+            <thead>
+                <tr>
+                    <th>Layer</th>
+                    <th>File</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge purple">Backend WHERE</span></td>
+                    <td><code style="font-family: var(--mono); font-size: 0.72rem;">timesheetMatrixView.ts</code></td>
+                    <td>Add userGroupId, projectLeadId to whereKeys + correlated subqueries</td>
+                </tr>
+                <tr>
+                    <td><span class="badge purple">Backend Facets</span></td>
+                    <td><code style="font-family: var(--mono); font-size: 0.72rem;">timesheetMatrixView.ts</code></td>
+                    <td>Add userGroups, projectLeads facet queries</td>
+                </tr>
+                <tr>
+                    <td><span class="badge blue">GraphQL Input</span></td>
+                    <td><code style="font-family: var(--mono); font-size: 0.72rem;">TimeSheetHoursFeed.ts</code></td>
+                    <td>Extend TimeSheetMatrixViewWhere</td>
+                </tr>
+                <tr>
+                    <td><span class="badge orange">Frontend Filters</span></td>
+                    <td><code style="font-family: var(--mono); font-size: 0.72rem;">TimesheetApprovalGrid.tsx</code></td>
+                    <td>Add filter dropdown configs</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="section-divider" style="margin: 3rem 0;">
+
+    <!-- ── PART 2: JOB SCHEDULE ── -->
+    <h3>Part 2: Job Schedule Filtering <span class="badge blue">Q21030-8220</span></h3>
+
+    <h4 style="margin-top: 1.5rem;">Step 1: Backend — Add server-side filters <code style="font-family: var(--mono); font-size: 0.78rem;">JobScheduleModel.ts</code></h4>
+    <p class="desc">Add <code>projectLeadId</code> and <code>userGroupId</code> to <code>IJobScheduleWhere</code> and implement in <code>buildJobScheduleListWhereBlock</code>.</p>
+
+    <div class="wireframe" style="margin-top: 1rem;">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">JobScheduleModel.ts — new SQL filter clauses</div></div>
+        <div class="wireframe-body">
+            <pre style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.7; color: var(--text-secondary); overflow-x: auto; margin: 0;"><code><span style="color: var(--text-muted);">-- Project Lead filter (direct join via Project)</span>
+<span style="color: var(--purple);">AND</span> p."projectLeadId" <span style="color: var(--purple);">IN</span> (...)
+
+<span style="color: var(--text-muted);">-- User Group filter (subquery on worker assignments)</span>
+<span style="color: var(--purple);">AND EXISTS</span> (
+    <span style="color: var(--purple);">SELECT</span> 1 <span style="color: var(--purple);">FROM</span> "_User_UserGroup" ug
+    <span style="color: var(--purple);">WHERE</span> ug."A" = sw."userId"
+    <span style="color: var(--purple);">AND</span> ug."B" <span style="color: var(--purple);">IN</span> (...)
+)</code></pre>
+        </div>
+    </div>
+
+    <h4 style="margin-top: 2rem;">Step 2: GraphQL — Extend schedule query</h4>
+    <p class="desc">Extend <code>getProjectsAndSchedule</code> and <code>getScheduledProjectFacets</code> to accept the new <code>userGroupId</code> and <code>projectLeadId</code> filter parameters.</p>
+
+    <h4 style="margin-top: 2rem;">Step 3: Frontend — Wire filters to query <code style="font-family: var(--mono); font-size: 0.78rem;">SchedulingContext.tsx</code></h4>
+    <div style="margin-top: 0.75rem;">
+        <table class="wf-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge blue">1</span></td>
+                    <td>Pass <code>userGroupId</code> and <code>projectLeadId</code> as query variables</td>
+                </tr>
+                <tr>
+                    <td><span class="badge blue">2</span></td>
+                    <td>Remove client-side filtering for these fields (currently in <code>filteredProjects</code> and <code>filteredWorkers</code> useMemos)</td>
+                </tr>
+                <tr>
+                    <td><span class="badge blue">3</span></td>
+                    <td>Keep any UI-specific filtering that cannot be done server-side</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4 style="margin-top: 2rem;">Step 4: Frontend — Update filter components <code style="font-family: var(--mono); font-size: 0.78rem;">UserScheduleFilters.tsx</code></h4>
+    <p class="desc">Ensure filter dropdowns pass values up to <code>SchedulingContext</code> which passes them to the query.</p>
+
+    <hr class="section-divider" style="margin: 3rem 0;">
+
+    <!-- ── TESTING STRATEGY ── -->
+    <h3>Testing Strategy</h3>
+
+    <div class="two-col" style="margin-top: 1rem;">
+        <div>
+            <h4>Timesheet Matrix</h4>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">1</span> Navigate to Timesheets page</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">2</span> Verify "User Group" and "Project Lead" appear as filter options</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">3</span> Select a User Group — verify only users in that group appear</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">4</span> Select a Project Lead — verify only entries for that lead's projects appear</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">5</span> Combine both filters — verify AND logic works</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">6</span> Clear filters — verify full dataset returns</div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4>Job Schedule</h4>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">1</span> Navigate to Job Schedule</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">2</span> Filter by User Group — verify only matching workers appear</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">3</span> Filter by Project Lead — verify only matching projects appear</div>
+                    <div style="display: flex; align-items: flex-start; gap: 8px;"><span class="badge green" style="flex-shrink: 0;">4</span> Verify performance improvement vs. previous client-side filtering</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 style="margin-top: 2rem;">Edge Cases</h4>
+    <div style="overflow-x: auto; margin-top: 0.75rem;">
+        <table class="wf-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Expected Behavior</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>User Group with no members</td>
+                    <td>Should show empty state</td>
+                </tr>
+                <tr>
+                    <td>Project with no Project Lead</td>
+                    <td>Should not appear when filtering by Project Lead</td>
+                </tr>
+                <tr>
+                    <td>User in multiple groups</td>
+                    <td>Should appear when any group is selected</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>

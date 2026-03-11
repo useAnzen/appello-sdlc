@@ -1318,6 +1318,329 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8: IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-plan">
+    <div class="section-tag red">Engineering</div>
+    <h2>Implementation Plan</h2>
+    <p class="desc">Step-by-step engineering execution plan across backend (migration, model, GraphQL) and frontend (forms, timesheet integration, hours log). Phase 1 establishes data foundations; Phase 2 wires equipment hours into the timesheet workflow.</p>
+
+    <!-- ── PHASE 1 ── -->
+    <h3 style="margin-top:2rem; display:flex; align-items:center; gap:8px;">
+        <span class="badge blue">Phase 1</span>
+        Data Model and Rate Configuration
+    </h3>
+
+    <!-- Step 1 -->
+    <h4 style="margin-top:1.5rem;">Step 1: DB Migration — Equipment Rate Fields</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">Add three new columns to the existing <code>Equipment</code> model:</p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">schema.prisma — Equipment additions</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.72rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.8; margin:0;">costRatePerHour      Decimal?  @db.Decimal(10, 2)
+billableRatePerHour  Decimal?  @db.Decimal(10, 2)
+runningHours         Decimal   @db.Decimal(10, 2) @default(0)</pre>
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <h4 style="margin-top:2rem;">Step 2: DB Migration — EquipmentTimeEntry Model</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">Full model definition for the new <code>EquipmentTimeEntry</code> table:</p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">schema.prisma — EquipmentTimeEntry model</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;"><span style="color:var(--purple);">model</span> <span style="color:var(--accent);">EquipmentTimeEntry</span> {
+    id                      String    @id @db.VarChar(21)
+    equipmentId             String    @db.VarChar(21)
+    jobId                   String    @db.VarChar(21)
+    userId                  String    @db.VarChar(21)
+    costCodeId              String?   @db.VarChar(21)
+    date                    DateTime  @db.Date
+    hours                   Decimal   @db.Decimal(10, 2)
+    meterReadingStart       Decimal?  @db.Decimal(10, 2)
+    meterReadingEnd         Decimal?  @db.Decimal(10, 2)
+    isBillable              Boolean   @default(true)
+    costRateSnapshot        Decimal?  @db.Decimal(10, 2)
+    billableRateSnapshot    Decimal?  @db.Decimal(10, 2)
+    calculatedCost          Decimal?  @db.Decimal(10, 2)
+    calculatedRevenue       Decimal?  @db.Decimal(10, 2)
+    timeSheetRecordValueId  String?   @db.VarChar(21)
+    status                  EquipmentTimeEntryStatus @default(PENDING)
+    isDeleted               Boolean   @default(false)
+    createdAt               DateTime  @default(now())
+    updatedAt               DateTime  @default(now()) @updatedAt
+    instanceId              String    @db.VarChar(21)
+
+    Equipment               Equipment @relation(...)
+    Job                     Job       @relation(...)
+    User                    User      @relation(...)
+    CostCode                CostCode? @relation(...)
+    Instance                Instance  @relation(...)
+
+    @@index([equipmentId])
+    @@index([jobId])
+    @@index([userId])
+    @@index([instanceId])
+    @@index([timeSheetRecordValueId])
+    @@index([date])
+}
+
+<span style="color:var(--purple);">enum</span> <span style="color:var(--accent);">EquipmentTimeEntryStatus</span> { PENDING  APPROVED  REJECTED }</pre>
+        </div>
+    </div>
+
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.75rem;">Also add reverse relations to: <code>Equipment</code>, <code>Job</code>, <code>User</code>, <code>Instance</code> &rarr; <code>EquipmentTimeEntries EquipmentTimeEntry[]</code></p>
+
+    <div class="snapshot-callout" style="margin-top:1rem;">
+        <div class="sc-icon">&#x1F4A1;</div>
+        <div class="sc-text">
+            <strong>Key Design Decisions:</strong><br>
+            &bull; Rate snapshots capture rate at entry time &rarr; historical accuracy even if rates change<br>
+            &bull; <code>calculatedCost = hours &times; costRateSnapshot</code>, <code>calculatedRevenue = hours &times; billableRateSnapshot</code><br>
+            &bull; Optional FK to <code>TimeSheetRecordValue</code> for Phase 2 timesheet integration
+        </div>
+    </div>
+
+    <!-- Step 3 -->
+    <h4 style="margin-top:2rem;">Step 3: Model Layer Class</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+        Create <code>apps/api/src/models/EquipmentTimeEntry.ts</code> following the <code>BaseModel</code> pattern. All GraphQL resolvers <strong>MUST</strong> call model methods, never <code>prisma.*</code> directly.
+    </p>
+    <div class="dev-note">
+        <strong>Hierarchy:</strong> Prisma &rarr; Models &rarr; GraphQL. Models must NOT import from GraphQL. Rate snapshot logic lives in <code>createItem()</code>.
+    </div>
+
+    <!-- Step 4 -->
+    <h4 style="margin-top:2rem;">Step 4: GraphQL CRUD</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        Create <code>apps/api/src/graphql/models/EquipmentTimeEntry.ts</code>:
+    </p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">EquipmentTimeEntry — GraphQL CRUD</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;"><span style="color:var(--purple);">type</span> <span style="color:var(--accent);">EquipmentTimeEntry</span> {
+    id: ID!, equipment: Equipment!, job: Job!, user: User!, costCode: CostCode,
+    date: LocalDate!, hours: Float!, meterReadingStart: Float, meterReadingEnd: Float,
+    isBillable: Boolean!, costRateSnapshot: Float, billableRateSnapshot: Float,
+    calculatedCost: Float, calculatedRevenue: Float, status: EquipmentTimeEntryStatus!,
+    createdAt: DateTime!
+}
+
+<span style="color:var(--purple);">type</span> <span style="color:var(--accent);">Query</span> {
+    equipmentTimeEntries(equipmentId: String, jobId: String,
+                         options: GetListOptions): [EquipmentTimeEntry!]!
+    equipmentTimeEntry(id: ID!): EquipmentTimeEntry
+}
+
+<span style="color:var(--purple);">type</span> <span style="color:var(--accent);">Mutation</span> {
+    createEquipmentTimeEntry(data: CreateEquipmentTimeEntryInput!): EquipmentTimeEntry!
+    editEquipmentTimeEntry(id: ID!, data: EditEquipmentTimeEntryInput!): EquipmentTimeEntry!
+    approveEquipmentTimeEntry(id: ID!): EquipmentTimeEntry!
+    deleteEquipmentTimeEntry(id: ID!): EquipmentTimeEntry!
+}</pre>
+        </div>
+    </div>
+
+    <div class="dev-note" style="margin-top:0.75rem;">
+        <strong>Schema Registration (5 places):</strong> Import, typeDef, Query spread, Mutation spread, Type resolvers in <code>apps/api/src/graphql/schema.ts</code>.
+    </div>
+
+    <!-- Step 5 -->
+    <h4 style="margin-top:2rem;">Step 5: Update Equipment GraphQL Type</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+        Extend the existing Equipment type with new fields:
+    </p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:0.5rem;">
+        <div style="background:var(--success-light); border:1px solid var(--success); border-radius:6px; padding:6px 12px; font-family:var(--mono); font-size:0.72rem; color:#065f46; font-weight:600;">costRatePerHour: Float</div>
+        <div style="background:var(--success-light); border:1px solid var(--success); border-radius:6px; padding:6px 12px; font-family:var(--mono); font-size:0.72rem; color:#065f46; font-weight:600;">billableRatePerHour: Float</div>
+        <div style="background:var(--success-light); border:1px solid var(--success); border-radius:6px; padding:6px 12px; font-family:var(--mono); font-size:0.72rem; color:#065f46; font-weight:600;">runningHours: Float!</div>
+    </div>
+
+    <!-- Step 6 -->
+    <h4 style="margin-top:2rem;">Step 6: Frontend — Rate Input on Equipment Forms</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+        Add <code>costRatePerHour</code> and <code>billableRatePerHour</code> to the Equipment add/edit form. Decimal inputs with currency formatting.
+    </p>
+
+    <!-- Step 7 -->
+    <h4 style="margin-top:2rem;">Step 7: Rate Snapshot Logic</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        On <code>EquipmentTimeEntry</code> creation:
+    </p>
+    <div class="flow" style="margin-top:0.5rem; margin-bottom:1rem;">
+        <div class="flow-node active">
+            <h4>1. Look Up Equipment</h4>
+            <p>Read current rate fields from Equipment record</p>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node" style="border-color:var(--purple);">
+            <h4>2. Snapshot Rates</h4>
+            <p>Copy costRatePerHour &rarr; costRateSnapshot<br>Copy billableRatePerHour &rarr; billableRateSnapshot</p>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node success">
+            <h4>3. Calculate Cost &amp; Revenue</h4>
+            <p>calculatedCost = hours &times; costRateSnapshot<br>calculatedRevenue = hours &times; billableRateSnapshot</p>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node" style="border-color:var(--warning);">
+            <h4>4. Null Handling</h4>
+            <p>If rates are null, calculated fields are null</p>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ── PHASE 2 ── -->
+    <h3 style="margin-top:2rem; display:flex; align-items:center; gap:8px;">
+        <span class="badge purple">Phase 2</span>
+        Equipment Hours Logging in Timesheets
+    </h3>
+
+    <!-- Step 1 -->
+    <h4 style="margin-top:1.5rem;">Step 1: Timesheet UI — Equipment Selector</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        In the timesheet entry form (desktop: <code>apps/frontend/src/components/Timesheets/</code>, mobile: <code>apps/mobile/src/components/</code>):
+    </p>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:0.5rem;">
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0;">1</span>
+            <span>Add optional "Equipment" section below the existing labor entry</span>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0;">2</span>
+            <span>Equipment list filtered by job assignment (via <code>EquipmentAssignment</code>)</span>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0;">3</span>
+            <span>Inputs per entry: Equipment dropdown, Hours, Meter readings (optional), Billable toggle</span>
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <h4 style="margin-top:2rem;">Step 2: Backend Integration</h4>
+    <div class="two-col" style="margin-top:0.75rem;">
+        <div>
+            <h4 style="color:var(--accent);">On Timesheet Submit</h4>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:0.5rem;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
+                    <span class="badge blue" style="font-size:0.55rem;">1</span>
+                    Create <code>EquipmentTimeEntry</code> records linked to <code>TimeSheetRecordValue</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
+                    <span class="badge blue" style="font-size:0.55rem;">2</span>
+                    Snapshot rates, calculate cost/revenue
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
+                    <span class="badge blue" style="font-size:0.55rem;">3</span>
+                    Set status to <code>PENDING</code>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4 style="color:var(--success);">On Timesheet Approve</h4>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:0.5rem;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
+                    <span class="badge green" style="font-size:0.55rem;">1</span>
+                    Transition <code>EquipmentTimeEntry</code> status to <code>APPROVED</code>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px;">
+                    <span class="badge green" style="font-size:0.55rem;">2</span>
+                    Increment <code>Equipment.runningHours</code> by approved hours
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3 -->
+    <h4 style="margin-top:2rem;">Step 3: Equipment Detail — Hours Log Tab</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        Add tab to <code>apps/frontend/src/components/DetailsPage/EquipmentDetailPage/index.tsx</code>:
+    </p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">EquipmentDetailPage — Tab registration</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.72rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.8; margin:0;">{ label: "Hours Log",
+  component: &lt;EquipmentHoursLog /&gt;,
+  param: "hours-log",
+  permission: hasPermissions({ equipment: { view: true } }, permissions) }</pre>
+        </div>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.75rem;">
+        Create <code>EquipmentHoursLog</code> component with table columns: Date, Job, User, Hours, Meter Start, Meter End, Billable, Cost, Revenue, Status. Running total row at bottom.
+    </p>
+
+    <!-- Step 4 -->
+    <h4 style="margin-top:2rem;">Step 4: Running Hours Display</h4>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+        Show <code>runningHours</code> on Equipment detail header:
+    </p>
+    <div style="display:inline-flex; align-items:center; gap:8px; background:var(--accent-light); border:2px solid var(--accent); border-radius:8px; padding:10px 18px;">
+        <span style="font-size:0.68rem; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.04em;">Total Operating Hours</span>
+        <span style="font-size:1.4rem; font-weight:800; font-family:var(--mono); color:var(--accent);">1,247.5</span>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ── TESTING ── -->
+    <h3 style="margin-top:2rem; display:flex; align-items:center; gap:8px;">
+        <span class="badge orange">QA</span>
+        Testing Checklist
+    </h3>
+
+    <div class="two-col" style="margin-top:1rem;">
+        <div>
+            <h4 style="color:var(--accent); margin-bottom:0.75rem;">Phase 1 Tests</h4>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Create/edit equipment and set rates. Verify save.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Create an equipment time entry. Verify rate snapshots captured.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Verify calculated cost/revenue correct.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Change rates. Create new entry. Verify new entry has updated rates, old entries retain snapshots.
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4 style="color:var(--purple); margin-bottom:0.75rem;">Phase 2 Tests</h4>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Submit timesheet with equipment hours. Verify EquipmentTimeEntry created.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Approve timesheet. Verify status changes to APPROVED, runningHours increases.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    View Hours Log tab. Verify entries appear.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Test on mobile.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:6px; font-size:0.75rem;">
+                    <span style="font-size:0.7rem; flex-shrink:0;">&#9744;</span>
+                    Reject timesheet. Verify status is REJECTED, runningHours unaffected.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="section-divider">
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>

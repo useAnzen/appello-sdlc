@@ -944,6 +944,313 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     </div>
 </div>
 
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-plan">
+    <span class="section-tag purple">Developer Reference</span>
+    <h2>Implementation Plan</h2>
+    <p class="desc">Step-by-step implementation guide for each item in this sprint. Includes file paths, code samples, architecture notes, and testing checklists.</p>
+
+    <!-- ─── 1A. TIME-OFF NOTIFICATION BUG ─── -->
+    <h3 style="margin-top:2rem;">1A. Time-Off Notification Bug <span class="badge red">Q21030-11099</span></h3>
+
+    <h4 style="margin-top:1rem;">Files to Modify</h4>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">1A — File Change Map</div></div>
+        <div class="wireframe-body" style="padding:0;">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>File</th><th>Change</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">apps/api/src/graphql/models/NotificationStatus.ts</td>
+                        <td>Add ownership check before update</td>
+                    </tr>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">apps/api/src/graphql/models/LeaveRequests.ts</td>
+                        <td>Call <code style="font-size:0.68rem;">cascadeSetAsRead</code> when leave request is fetched</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 1</span>
+        <h4>Add ownership guard (NotificationStatus.ts)</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">In the <code style="font-size:0.75rem;">editNotificationStatus</code> mutation resolver (line ~48), before calling <code style="font-size:0.75rem;">editItem</code>, use the <code style="font-size:0.75rem;">NotificationStatus</code> model class to fetch the record and verify <code style="font-size:0.75rem;">userId === context.userId()</code>.</p>
+        <div style="padding:10px 14px; background:var(--info-light); border:1px solid var(--info); border-radius:6px; font-size:0.75rem; color:#1d4ed8; margin-bottom:0.75rem;">
+            <strong>Architecture rule:</strong> All data access in GraphQL resolvers MUST go through the model layer (<code style="font-size:0.68rem;">apps/api/src/models/</code>), never directly through <code style="font-size:0.68rem;">prisma.*</code>.
+        </div>
+        <div class="dev-note" style="margin-top:0;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">editNotificationStatus: async (_, args, context) => {
+    const model = new NotificationStatus();
+    const status = await model.getItem(args.id);
+    if (!status || status.userId !== context.userId()) {
+        throw new Error("Unauthorized: Cannot modify another user's notification status");
+    }
+    return model.editItem(args.id, args.data, context.userId());
+}</code></pre>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 2</span>
+        <h4>Mark notification on leave request view (LeaveRequests.ts)</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">In the query resolver that returns a single leave request, add a call to <code style="font-size:0.75rem;">cascadeSetAsRead</code>:</p>
+        <div class="dev-note" style="margin-top:0;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">await new Notification().cascadeSetAsRead(
+    "LeaveRequest",
+    leaveRequestId,
+    context.userId()
+);</code></pre>
+        </div>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">The <code style="font-size:0.72rem;">cascadeSetAsRead</code> method (in <code style="font-size:0.72rem;">apps/api/src/models/Notification.ts</code> line ~439) already finds all <code style="font-size:0.72rem;">Notification</code> records matching <code style="font-size:0.72rem;">referenceModel</code> and <code style="font-size:0.72rem;">referenceId</code>, and only updates statuses where <code style="font-size:0.72rem;">status.userId === currentUserId</code>.</p>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag green">Testing</span>
+        <h4>Test Checklist</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num blue">1</div><div class="seq-text">Log in as <strong>Manager A</strong>. Submit a leave request from a worker account.</div></div>
+                <div class="seq-step"><div class="seq-num blue">2</div><div class="seq-text">Verify both <strong>Manager A</strong> and <strong>Manager B</strong> see the notification.</div></div>
+                <div class="seq-step"><div class="seq-num blue">3</div><div class="seq-text">Have <strong>Manager A</strong> view the leave request (via list page, not bell icon).</div></div>
+                <div class="seq-step"><div class="seq-num green">4</div><div class="seq-text">Verify <strong>Manager A's</strong> notification is marked as seen.</div></div>
+                <div class="seq-step"><div class="seq-num green">5</div><div class="seq-text">Verify <strong>Manager B's</strong> notification is still <strong>unseen</strong>.</div></div>
+                <div class="seq-step"><div class="seq-num red">6</div><div class="seq-text">Try passing a crafted <code style="font-size:0.68rem;">NotificationStatus</code> ID belonging to another user — verify it's <strong>rejected</strong>.</div></div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 1B. DASHBOARD METRIC BUG ─── -->
+    <h3>1B. Dashboard Metric Bug <span class="badge red">Q21030-11103</span></h3>
+
+    <h4 style="margin-top:1rem;">Files to Modify</h4>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">1B — File Change Map</div></div>
+        <div class="wireframe-body" style="padding:0;">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>File</th><th>Change</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">apps/api/src/models/MetricOption.ts</td>
+                        <td>Add <code style="font-size:0.68rem;">AND j.isArchived = 0</code> to the raw SQL WHERE clause (function <code style="font-size:0.68rem;">getTotalValueOfAllJobsInProgress</code>, lines ~226-242)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Implementation</span>
+        <h4>Fix the SQL WHERE clause</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">The <code style="font-size:0.75rem;">getTotalValueOfAllJobsInProgress()</code> runs a raw SQL query against <code style="font-size:0.75rem;">JobListFeed</code>. The current WHERE clause filters by <code style="font-size:0.75rem;">pv.workflowState = 'inprogress'</code> but does not filter out archived jobs.</p>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;"><strong>Fix:</strong> add <code style="font-size:0.75rem;">AND j.isArchived = 0</code> to the WHERE clause, matching the pattern used by <code style="font-size:0.75rem;">getActiveJobsCount()</code> (lines ~214-224) which already has this filter.</p>
+        <div style="padding:10px 14px; background:var(--orange-light); border:1px solid var(--orange); border-radius:6px; font-size:0.75rem; color:#92400e;">
+            <strong>Note:</strong> The <code style="font-size:0.68rem;">JobListFeed</code> view itself (<code style="font-size:0.68rem;">apps/api/prisma/views/JobListFeed.sql</code>) filters <code style="font-size:0.68rem;">j.isDeleted = 0</code> and <code style="font-size:0.68rem;">p.internalProject = 0</code> but intentionally does NOT filter <code style="font-size:0.68rem;">j.isArchived</code>. The filter must be applied at the query level.
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag green">Testing</span>
+        <h4>Test Checklist</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num blue">1</div><div class="seq-text">Archive a job with <strong>"In Progress"</strong> status.</div></div>
+                <div class="seq-step"><div class="seq-num green">2</div><div class="seq-text">Verify the metric does <strong>NOT</strong> include the archived job's value.</div></div>
+                <div class="seq-step"><div class="seq-num green">3</div><div class="seq-text">Un-archive the job. Verify the metric <strong>includes</strong> it again.</div></div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 1C. LIST PAGINATION & SEARCH STATE ─── -->
+    <h3>1C. List Pagination &amp; Search State <span class="badge orange">Q21030-11011</span></h3>
+
+    <h4 style="margin-top:1rem;">Files to Modify</h4>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">1C — File Change Map</div></div>
+        <div class="wireframe-body" style="padding:0;">
+            <table class="wf-table">
+                <thead>
+                    <tr><th>File</th><th>Change</th><th>Est. Lines</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">packages/ui/src/components/ListTable/Table.tsx</td>
+                        <td>Persist <code style="font-size:0.68rem;">currentPageNo</code> to sessionStorage on change</td>
+                        <td class="mono">~4</td>
+                    </tr>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">packages/ui/src/components/ListTable/ListTable.tsx</td>
+                        <td>Restore <code style="font-size:0.68rem;">currentPageNo</code> on mount; skip first-run reset</td>
+                        <td class="mono">~12</td>
+                    </tr>
+                    <tr>
+                        <td class="mono" style="font-size:0.68rem;">packages/ui/src/context/ListTableContext.tsx</td>
+                        <td>Persist and restore <code style="font-size:0.68rem;">searchText</code> via sessionStorage</td>
+                        <td class="mono">~12</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 1</span>
+        <h4>Persist currentPageNo (Table.tsx ~line 808)</h4>
+        <div class="dev-note" style="margin-top:0.5rem;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">setPaginationValues={(newValues) => {
+    setPaginationValues(newValues);
+    sessionStorage.setItem(
+        `${viewId}-itemsPerPage`,
+        newValues.itemsPerPage.toString()
+    );
+    sessionStorage.setItem(
+        `${viewId}-currentPageNo`,
+        newValues.currentPageNo.toString()
+    );
+}}</code></pre>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 2</span>
+        <h4>Restore currentPageNo on mount (ListTable.tsx ~line 370)</h4>
+        <div class="dev-note" style="margin-top:0.5rem;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">const savedPageNo = sessionStorage.getItem(`${viewId}-currentPageNo`);
+if (savedPageNo) {
+    const pageNo = parseInt(savedPageNo, 10);
+    if (!isNaN(pageNo) && pageNo > 0) {
+        setPaginationValues((current) => ({
+            ...current,
+            currentPageNo: pageNo
+        }));
+    }
+}</code></pre>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 3</span>
+        <h4>Skip first-run reset (ListTable.tsx ~line 436)</h4>
+        <div class="dev-note" style="margin-top:0.5rem;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">const hasFilterMounted = useRef(false);
+useEffect(() => {
+    if (!hasFilterMounted.current) {
+        hasFilterMounted.current = true;
+        return;
+    }
+    setPaginationValues((current) => ({
+        ...current,
+        currentPageNo: 1
+    }));
+}, [selectedFilters]);</code></pre>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Step 4</span>
+        <h4>Persist searchText (ListTableContext.tsx ~line 275)</h4>
+        <div class="dev-note" style="margin-top:0.5rem;">
+<pre><code style="font-size:0.72rem; font-family:var(--mono); line-height:1.7;">const storageKey = `${viewId ?? sessionFilterName}-searchText`;
+const [searchText, setSearchText] = useState&lt;string&gt;(() => {
+    if (typeof window !== "undefined") {
+        return sessionStorage.getItem(storageKey) || "";
+    }
+    return "";
+});
+useEffect(() => {
+    if (typeof window !== "undefined") {
+        searchText
+            ? sessionStorage.setItem(storageKey, searchText)
+            : sessionStorage.removeItem(storageKey);
+    }
+}, [searchText, storageKey]);</code></pre>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag orange">Edge Cases</span>
+        <h4>Edge Case Handling</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num gray">1</div><div class="seq-text">If <code style="font-size:0.68rem;">totalRecords</code> changes and saved page exceeds <code style="font-size:0.68rem;">maxPageNo</code>, <code style="font-size:0.68rem;">usePagination</code> already clamps.</div></div>
+                <div class="seq-step"><div class="seq-num gray">2</div><div class="seq-text">Tables without <code style="font-size:0.68rem;">viewId</code>: use <code style="font-size:0.68rem;">viewId ?? sessionFilterName</code> as storage key prefix.</div></div>
+                <div class="seq-step"><div class="seq-num gray">3</div><div class="seq-text">Clear storage on explicit filter changes (the existing reset effect handles this after first mount).</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag green">Testing</span>
+        <h4>Test Checklist</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num blue">1</div><div class="seq-text">Navigate to Projects list. Search for a term. Go to page 3. Click into a project detail. Press <strong>Back</strong>.</div></div>
+                <div class="seq-step"><div class="seq-num green">2</div><div class="seq-text">Verify: <strong>page 3 restored</strong>, search text restored, filters restored.</div></div>
+                <div class="seq-step"><div class="seq-num blue">3</div><div class="seq-text">Change a filter. Verify page resets to <strong>1</strong> (normal behavior).</div></div>
+                <div class="seq-step"><div class="seq-num green">4</div><div class="seq-text">Close browser tab. Reopen. Verify state is <strong>cleared</strong> (sessionStorage, not localStorage).</div></div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 1D. NOTES ↔ EQUIPMENT ASSOCIATION ─── -->
+    <h3>1D. Notes ↔ Equipment Association <span class="badge orange">Q21030-11199</span></h3>
+
+    <div style="margin-top:1rem;">
+        <span class="section-tag purple">Architecture</span>
+        <h4>Existing Infrastructure</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">Notes-to-Equipment already works at the data and infrastructure level. The only gap is the note creation UX from a Job context.</p>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num green">✓</div><div class="seq-text"><code style="font-size:0.68rem;">NoteReferences</code> is a polymorphic join table: <code style="font-size:0.68rem;">{noteId, referenceModel, referenceId}</code></div></div>
+                <div class="seq-step"><div class="seq-num green">✓</div><div class="seq-text"><code style="font-size:0.68rem;">ReferenceModel</code> already includes <code style="font-size:0.68rem;">'Equipment'</code> (seeded in migration)</div></div>
+                <div class="seq-step"><div class="seq-num green">✓</div><div class="seq-text"><code style="font-size:0.68rem;">NoteFeed.sql</code> joins through <code style="font-size:0.68rem;">NoteReferences</code> for Equipment</div></div>
+                <div class="seq-step"><div class="seq-num green">✓</div><div class="seq-text"><code style="font-size:0.68rem;">noteView.ts</code> has <code style="font-size:0.68rem;">equipmentId</code> in <code style="font-size:0.68rem;">noteViewWhereKeys</code> and <code style="font-size:0.68rem;">INoteFeedWhere</code></div></div>
+                <div class="seq-step"><div class="seq-num green">✓</div><div class="seq-text">Equipment detail Overview tab already renders notes via <code style="font-size:0.68rem;">CollapsableNoteFeed</code></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag">Implementation Steps</span>
+        <h4>Steps</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num blue">1</div><div class="seq-text">Find the note creation form used in the Job context.</div></div>
+                <div class="seq-step"><div class="seq-num blue">2</div><div class="seq-text">Add an optional <strong>Equipment dropdown</strong> (filtered to equipment assigned to the job via <code style="font-size:0.68rem;">EquipmentAssignment</code>).</div></div>
+                <div class="seq-step"><div class="seq-num blue">3</div><div class="seq-text">When saving, create <strong>TWO</strong> <code style="font-size:0.68rem;">NoteReferences</code> entries: one for the Job and one for the selected Equipment.</div></div>
+                <div class="seq-step"><div class="seq-num green">4</div><div class="seq-text">The note will then appear on both the Job detail and Equipment detail pages.</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:1.25rem;">
+        <span class="section-tag green">Testing</span>
+        <h4>Test Checklist</h4>
+        <div class="wireframe" style="margin-top:0.5rem;">
+            <div class="wireframe-body" style="padding:12px 16px;">
+                <div class="seq-step"><div class="seq-num blue">1</div><div class="seq-text">Create a note from a Job context <strong>with</strong> an equipment association.</div></div>
+                <div class="seq-step"><div class="seq-num green">2</div><div class="seq-text">Verify the note appears on <strong>both</strong> Job and Equipment detail pages.</div></div>
+                <div class="seq-step"><div class="seq-num green">3</div><div class="seq-text">Verify notes created <strong>without</strong> equipment association still work normally.</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>

@@ -991,6 +991,355 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     <div class="dev-note"><strong>Dev:</strong> <code>accruedSubsidy</code> is NOT stored — it's a computed field resolved in GraphQL: <code>SELECT SUM(approvedDuration) FROM TimeSheetRecord WHERE jobId = ? AND status = 'APPROVED'</code>, then multiply by <code>subsidyRatePerHour</code>. Use <code>Decimal</code> (not Float) per codebase convention. Migration: <code>ALTER TABLE Job ADD COLUMN subsidyRatePerHour DECIMAL(10,2) NULL, ADD COLUMN unionHall VARCHAR(191) NULL;</code></div>
 </div>
 
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-plan">
+    <div class="section-tag purple">Engineering</div>
+    <h2 id="implementation-plan">Implementation Plan</h2>
+    <p class="desc">Step-by-step engineering breakdown for each component — current state audit, code changes, data model additions, and testing criteria.</p>
+
+    <!-- ─── 3A: LEAVE HOURS CONVERSION ─── -->
+    <div style="margin-bottom:3rem;">
+        <h3>3A. Leave Hours Conversion — Michigan Compliance (Q21030-9996)</h3>
+
+        <h4 style="margin-top:1.25rem;">Current State</h4>
+        <p class="desc" style="margin-bottom:0.75rem;">What already works:</p>
+        <ul style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem; padding-left:1.5rem; line-height:1.8;">
+            <li><code>Instance.fullDayLeaveDuration</code> (Int, default 28800 seconds = 8 hours) exists in Prisma schema</li>
+            <li><code>LeaveRequest.ts</code> uses <code>instance?.fullDayLeaveDuration ?? EIGHT_HOURS_AS_SEC</code> when syncing leave to timesheets</li>
+            <li>Partial leave is already tracked in hours</li>
+        </ul>
+
+        <p class="desc" style="margin-bottom:0.75rem;">What is hardcoded:</p>
+        <table class="wf-table">
+            <thead>
+                <tr><th>Location</th><th>Hardcoded Value</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="mono" style="font-size:0.7rem;">apps/api/src/models/LeaveRequest.ts <span class="badge gray">line 17</span></td>
+                    <td><code>EIGHT_HOURS_AS_SEC = 28800</code></td>
+                    <td>Fallback constant</td>
+                </tr>
+                <tr>
+                    <td class="mono" style="font-size:0.7rem;">apps/frontend/src/lib/utils.ts <span class="badge gray">line ~101</span></td>
+                    <td><code>const days = hours / 8</code></td>
+                    <td><code>handleHoursToDate()</code> function</td>
+                </tr>
+                <tr>
+                    <td class="mono" style="font-size:0.7rem;">apps/frontend/src/pages/reports/employee-leave-report.tsx</td>
+                    <td>Calendar day diff</td>
+                    <td>Full-day leave counted as days</td>
+                </tr>
+                <tr>
+                    <td class="mono" style="font-size:0.7rem;">apps/frontend/src/pages/reports/all-employee-leave.tsx</td>
+                    <td>Calendar day diff</td>
+                    <td>Same pattern</td>
+                </tr>
+                <tr>
+                    <td class="mono" style="font-size:0.7rem;">apps/api/src/graphql/models/employeeLeaveReport.ts</td>
+                    <td>Calendar day diff</td>
+                    <td>CSV export</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4 style="margin-top:1.5rem;">Step 1: Fix handleHoursToDate() (utils.ts)</h4>
+        <div style="font-family:var(--mono); font-size:0.72rem; background:var(--bg-dark); color:#e2e8f0; border-radius:6px; padding:14px; line-height:1.8; margin:0.75rem 0;">
+            <div><span style="color:#c084fc;">export function</span> <span style="color:#93c5fd;">handleHoursToDate</span>(totalHours: <span style="color:#fbbf24;">number</span>, hoursPerDay: <span style="color:#fbbf24;">number</span> = 8) {</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c084fc;">const</span> days = totalHours / hoursPerDay;</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#94a3b8;">// ... rest of function</span></div>
+            <div>}</div>
+        </div>
+        <div class="dev-note">All callers pass the instance setting via <code>useSettings()</code> → <code>activeInstance</code>.</div>
+
+        <h4 style="margin-top:1.5rem;">Step 2: Update leave reports</h4>
+        <div style="display:flex; flex-direction:column; gap:6px; margin:0.75rem 0;">
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:0.82rem;">
+                <span class="badge red" style="flex-shrink:0; margin-top:2px;">From</span>
+                <code style="font-size:0.78rem;">dayjs(endDate).diff(startDate, "day") + 1</code> <span style="color:var(--text-muted);">(calendar days)</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px; font-size:0.82rem;">
+                <span class="badge green" style="flex-shrink:0; margin-top:2px;">To</span>
+                <code style="font-size:0.78rem;">calendarDays * (fullDayLeaveDuration / 3600)</code> <span style="color:var(--text-muted);">(hours)</span>
+            </div>
+        </div>
+        <div style="padding:8px 12px; background:var(--info-light); border-radius:6px; font-size:0.75rem; color:#1d4ed8; margin-top:0.5rem;">
+            Update column headers: <strong>"Days" → "Hours"</strong>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 3: Update CSV export (employeeLeaveReport.ts)</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Query the Instance setting and apply the same hours calculation server-side.</p>
+
+        <h4 style="margin-top:1.5rem;">Testing</h4>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.78rem;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Set <code>fullDayLeaveDuration</code> to 28800 (8 hrs). Create a 3-day leave. Verify report shows <strong>24 hours</strong>.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Change to 27000 (7.5 hrs). Verify same leave shows <strong>22.5 hours</strong>.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Verify partial leave still shows actual hours (unchanged).
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Verify CSV export matches frontend values.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 3B: PRE-SUBMISSION TIMESHEET QUESTIONS ─── -->
+    <div style="margin-bottom:3rem;">
+        <h3>3B. Pre-Submission Timesheet Questions (Q21030-10100)</h3>
+
+        <h4 style="margin-top:1.25rem;">Data Model (New Prisma Models)</h4>
+
+        <div class="two-col" style="margin-top:0.75rem;">
+            <div>
+                <div class="dm-table">
+                    <div class="dm-table-header">TimesheetQuestion <span class="model-badge">NEW MODEL</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="pk">id</span></span><span class="col-type">String @id @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="fk">instanceId</span></span><span class="col-type">String @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name">question</span><span class="col-type">String @db.Text</span></div>
+                    <div class="dm-row"><span class="col-name">type</span><span class="col-type">TimesheetQuestionType</span><span class="col-desc">@default(YES_NO)</span></div>
+                    <div class="dm-row"><span class="col-name">isRequired</span><span class="col-type">Boolean @default(true)</span></div>
+                    <div class="dm-row"><span class="col-name">sortOrder</span><span class="col-type">Int @default(0)</span></div>
+                    <div class="dm-row"><span class="col-name">isActive</span><span class="col-type">Boolean @default(true)</span></div>
+                    <div class="dm-row"><span class="col-name">isDeleted</span><span class="col-type">Boolean @default(false)</span></div>
+                    <div class="dm-row"><span class="col-name">createdAt</span><span class="col-type">DateTime @default(now())</span></div>
+                    <div class="dm-row"><span class="col-name">updatedAt</span><span class="col-type">DateTime @updatedAt</span></div>
+                </div>
+
+                <div style="margin-top:0.75rem; background:var(--bg-dark); border-radius:6px; padding:10px 14px;">
+                    <div style="font-family:var(--mono); font-size:0.68rem; color:#94a3b8; margin-bottom:4px;">// Enum</div>
+                    <div style="font-family:var(--mono); font-size:0.72rem; color:#e2e8f0;">
+                        <span style="color:#c084fc;">enum</span> <span style="color:#93c5fd;">TimesheetQuestionType</span> {<br>
+                        &nbsp;&nbsp;<span style="color:#34d399;">YES_NO</span><br>
+                        &nbsp;&nbsp;<span style="color:#34d399;">TEXT</span><br>
+                        &nbsp;&nbsp;<span style="color:#34d399;">MULTIPLE_CHOICE</span><br>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="dm-table">
+                    <div class="dm-table-header">TimesheetQuestionResponse <span class="model-badge">NEW MODEL</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="pk">id</span></span><span class="col-type">String @id @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="fk">timesheetQuestionId</span></span><span class="col-type">String @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="fk">timeSheetRecordId</span></span><span class="col-type">String @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name"><span class="fk">userId</span></span><span class="col-type">String @db.VarChar(21)</span></div>
+                    <div class="dm-row"><span class="col-name">response</span><span class="col-type">String @db.Text</span></div>
+                    <div class="dm-row"><span class="col-name">createdAt</span><span class="col-type">DateTime @default(now())</span></div>
+                </div>
+
+                <div style="margin-top:0.75rem; background:var(--purple-light); border-radius:8px; padding:10px 14px;">
+                    <h4 style="color:#5b21b6; margin-bottom:4px; font-size:0.68rem;">Unique Constraint</h4>
+                    <div style="font-family:var(--mono); font-size:0.68rem; color:#5b21b6; line-height:1.8;">
+                        @@unique([timesheetQuestionId, timeSheetRecordId, userId])<br>
+                        @@index([timesheetQuestionId])<br>
+                        @@index([timeSheetRecordId])<br>
+                        @@index([userId])
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dev-note" style="margin-top:0.75rem;">Also add reverse relation on <code>TimeSheetRecord</code>: <code>TimesheetQuestionResponses TimesheetQuestionResponse[]</code></div>
+
+        <h4 style="margin-top:1.5rem;">Step 1: DB Migration</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Create migration with the two new tables. Run <code>pnpm --filter api prisma:migrate</code>.</p>
+
+        <h4 style="margin-top:1.5rem;">Step 2: Model Layer Classes</h4>
+        <div style="display:flex; flex-direction:column; gap:6px; margin:0.5rem 0;">
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.78rem;">
+                <span class="badge blue">Create</span>
+                <code style="font-size:0.72rem;">apps/api/src/models/TimesheetQuestion.ts</code>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.78rem;">
+                <span class="badge blue">Create</span>
+                <code style="font-size:0.72rem;">apps/api/src/models/TimesheetQuestionResponse.ts</code>
+            </div>
+        </div>
+        <div class="dev-note">Follow the <code>BaseModel</code> pattern. All GraphQL resolvers MUST call model methods, never <code>prisma.*</code> directly.</div>
+
+        <h4 style="margin-top:1.5rem;">Step 3: GraphQL CRUD</h4>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.78rem; margin-bottom:0.5rem;">
+            <span class="badge blue">Create</span>
+            <code style="font-size:0.72rem;">apps/api/src/graphql/models/TimesheetQuestion.ts</code>
+        </div>
+
+        <div class="two-col" style="margin-top:0.75rem;">
+            <div class="sidebar-card">
+                <h4>Queries</h4>
+                <div class="sidebar-field"><span class="fk">List</span><span class="fv mono" style="font-size:0.68rem;">timesheetQuestions(instanceId)</span></div>
+                <div class="sidebar-field"><span class="fk">Responses</span><span class="fv mono" style="font-size:0.68rem;">timesheetQuestionResponses(timeSheetRecordId)</span></div>
+            </div>
+            <div class="sidebar-card">
+                <h4>Mutations</h4>
+                <div class="sidebar-field"><span class="fk">Create</span><span class="fv mono" style="font-size:0.68rem;">createTimesheetQuestion</span></div>
+                <div class="sidebar-field"><span class="fk">Edit</span><span class="fv mono" style="font-size:0.68rem;">editTimesheetQuestion</span></div>
+                <div class="sidebar-field"><span class="fk">Delete</span><span class="fv mono" style="font-size:0.68rem;">deleteTimesheetQuestion</span></div>
+                <div class="sidebar-field"><span class="fk">Submit</span><span class="fv mono" style="font-size:0.68rem;">submitTimesheetQuestionResponses</span></div>
+            </div>
+        </div>
+
+        <div style="background:var(--warning-light); border:1px solid var(--warning); border-radius:6px; padding:10px 14px; font-size:0.75rem; color:#92400e; margin-top:0.75rem;">
+            <strong>Register in <code>schema.ts</code> (4 places):</strong> Import, typeDef, Query, Mutation.
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 4: Admin Configuration UI</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Settings page where admins configure questions: add/edit/delete/reorder, set type, toggle active/required.</p>
+
+        <h4 style="margin-top:1.5rem;">Step 5: Timesheet Submission Flow — Desktop</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Intercept the submit action: show a modal with configured questions BEFORE the submission mutation fires. Required questions must be answered.</p>
+        <div class="flow" style="margin:1rem 0;">
+            <div class="flow-node">
+                <h4>User Answers Questions</h4>
+                <p>Modal with all active questions</p>
+            </div>
+            <div class="flow-arrow"><span class="label">Confirms</span></div>
+            <div class="flow-node active">
+                <h4>Submit Timesheet Mutation</h4>
+                <p>Normal submission fires</p>
+                <span class="who">existing mutation</span>
+            </div>
+            <div class="flow-arrow"><span class="label">On success</span></div>
+            <div class="flow-node success">
+                <h4>Submit Responses</h4>
+                <p>Save question responses</p>
+                <span class="who">submitTimesheetQuestionResponses</span>
+            </div>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 6: Timesheet Submission Flow — Mobile</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Same flow adapted for mobile UI. Components in <code>apps/mobile/src/components/</code>.</p>
+
+        <h4 style="margin-top:1.5rem;">Testing</h4>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.78rem;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Configure 3 questions (1 yes/no required, 1 text required, 1 text optional).
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Submit a timesheet. Verify questions appear before submission.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Try to submit without required answers. Verify blocked.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Answer all and submit. Verify responses saved.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Disable a question as admin. Verify it no longer appears.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Test on mobile.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── 3C: UNION SUBSIDY ACCRUAL ─── -->
+    <div style="margin-bottom:2rem;">
+        <h3>3C. Union Subsidy Accrual (Q21030-10099)</h3>
+
+        <h4 style="margin-top:1.25rem;">Architecture</h4>
+        <div style="font-family:var(--mono); font-size:0.72rem; background:var(--bg-dark); color:#e2e8f0; border-radius:6px; padding:14px; line-height:1.8; margin:0.75rem 0;">
+            <div><span style="color:#93c5fd;">Job</span></div>
+            <div>&nbsp;&nbsp;+-- <span style="color:#34d399;">subsidyRatePerHour</span> <span style="color:#94a3b8;">(NEW: Decimal, nullable)</span></div>
+            <div>&nbsp;&nbsp;+-- <span style="color:#fbbf24;">budgetedSubsidy</span> <span style="color:#94a3b8;">(EXISTS: from estimate)</span></div>
+            <div>&nbsp;&nbsp;+-- <span style="color:#34d399;">accruedSubsidy</span> <span style="color:#94a3b8;">(NEW: computed field)</span></div>
+            <div>&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= subsidyRatePerHour × totalApprovedHours</div>
+            <div>&nbsp;&nbsp;+-- <span style="color:#c084fc;">TimeSheetRecords</span> → totalApprovedHours = SUM(approvedDuration) / 3600</div>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 1: Data Model</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Add to Job model: <code>subsidyRatePerHour Decimal? @db.Decimal(10, 2)</code></p>
+
+        <h4 style="margin-top:1.5rem;">Step 2: Computed Accrual</h4>
+        <div class="two-col" style="margin-top:0.75rem;">
+            <div style="padding:12px 14px; background:var(--success-light); border:1px solid var(--success); border-radius:8px;">
+                <div style="font-size:0.72rem; font-weight:700; color:#065f46; margin-bottom:6px;">Option A — Recommended for v1</div>
+                <div style="font-size:0.78rem; color:#065f46;">Computed in GraphQL resolver (query-time from approved timesheet hours). Simpler, always accurate.</div>
+            </div>
+            <div style="padding:12px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px;">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">Option B — Future Optimization</div>
+                <div style="font-size:0.78rem; color:var(--text-secondary);">Denormalized field updated on timesheet approval.</div>
+            </div>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 3: Job Financial Summary Integration</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Display alongside budgeted subsidy:</p>
+        <div style="display:flex; gap:12px; margin:0.75rem 0;">
+            <div class="kpi blue" style="flex:1;">
+                <div class="kpi-label">Budgeted Subsidy</div>
+                <div class="kpi-value" style="font-size:1.1rem;">$5,000.00</div>
+            </div>
+            <div class="kpi green" style="flex:1;">
+                <div class="kpi-label">Accrued Subsidy</div>
+                <div class="kpi-value" style="font-size:1.1rem;">$3,200.00</div>
+            </div>
+            <div class="kpi amber" style="flex:1;">
+                <div class="kpi-label">Variance</div>
+                <div class="kpi-value" style="font-size:1.1rem;">$1,800.00</div>
+            </div>
+        </div>
+
+        <h4 style="margin-top:1.5rem;">Step 4: Subsidy Accrual Report</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Report for union submission:</p>
+        <ul style="font-size:0.82rem; color:var(--text-secondary); padding-left:1.5rem; line-height:1.8; margin-bottom:0.5rem;">
+            <li>Filter by date range</li>
+            <li>Group by job</li>
+            <li>Show hours / rate / amount / cumulative</li>
+            <li>CSV export</li>
+        </ul>
+
+        <h4 style="margin-top:1.5rem;">Step 5: Subsidy Invoice Enhancement</h4>
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.5rem;">Default invoice amount to uninvoiced accrued subsidy. Track what's been invoiced to prevent double-billing.</p>
+
+        <h4 style="margin-top:1.5rem;">Testing</h4>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.78rem;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Set <code>subsidyRatePerHour</code> to $2.50. Approve 100 hours. Verify accrual shows <strong>$250.00</strong>.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Approve another 50 hours. Verify updates to <strong>$375.00</strong>.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Run accrual report. Verify hours and amounts match.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Create subsidy invoice. Verify default amount is uninvoiced accrued.
+                </div>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <span style="color:var(--text-muted); font-family:var(--mono); font-size:0.65rem; min-width:16px;">☐</span>
+                    Jobs without subsidy rate show no subsidy data.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>

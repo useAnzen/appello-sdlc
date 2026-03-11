@@ -1748,6 +1748,733 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<hr class="section-divider">
+<div class="section" id="implementation-plan">
+    <div class="section-tag purple">ENGINEERING</div>
+    <h2 id="implementation-plan">Implementation Plan</h2>
+    <p class="desc">Nine-step build plan — from database migration through financial integration and testing. This is the most complex spec in the package; each step is broken down with schema definitions, code paths, and acceptance criteria.</p>
+
+    <!-- ── STEP 1 ── -->
+    <h3>Step 1 — DB Migration</h3>
+    <p class="desc">Create <code>PotentialChangeOrder</code> and <code>PCOLineItem</code> models with <code>PCOType</code> and <code>PCOStatus</code> enums.</p>
+
+    <div class="two-col" style="gap:1.25rem; margin-bottom:1.5rem;">
+        <!-- Enums -->
+        <div>
+            <h4>Enums</h4>
+            <div class="wireframe" style="margin-top:0.5rem;">
+                <div class="wireframe-header">
+                    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                    <div class="title">schema.prisma — enums</div>
+                </div>
+                <div class="wireframe-body" style="padding:1rem;">
+                    <pre style="font-family:var(--mono); font-size:0.68rem; line-height:1.7; margin:0; color:var(--text);">enum PCOType {
+  T_AND_M
+  PENDING_QUOTE
+}
+
+enum PCOStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  INVOICED
+}</pre>
+                </div>
+            </div>
+        </div>
+        <!-- Auto-numbering -->
+        <div>
+            <h4>Auto-Numbering</h4>
+            <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-top:0.5rem;">
+                <div style="font-size:0.78rem; margin-bottom:8px;">PCOs are numbered <strong>per job</strong>:</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <span class="badge blue">PCO-001</span>
+                    <span class="badge blue">PCO-002</span>
+                    <span class="badge blue">PCO-003</span>
+                    <span class="badge gray">…</span>
+                </div>
+                <div class="dev-note" style="margin-top:10px;">Generated from <code>COUNT(*) + 1</code> of existing PCOs on that job. Zero-padded to 3 digits.</div>
+            </div>
+            <h4 style="margin-top:1rem;">Reverse Relations</h4>
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>Model</th><th>Field</th></tr></thead>
+                <tbody>
+                    <tr><td class="mono">Job</td><td class="mono">PotentialChangeOrders PotentialChangeOrder[]</td></tr>
+                    <tr><td class="mono">Project</td><td class="mono">PotentialChangeOrders PotentialChangeOrder[]</td></tr>
+                    <tr><td class="mono">User</td><td class="mono">PCOsCreated @relation("PCOCreatedBy")</td></tr>
+                    <tr><td class="mono">User</td><td class="mono">PCOsApproved @relation("PCOApprovedBy")</td></tr>
+                    <tr><td class="mono">CostCode</td><td class="mono">PCOLineItems PCOLineItem[]</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PotentialChangeOrder schema -->
+    <div class="wireframe" style="margin-bottom:1rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">schema.prisma — PotentialChangeOrder</div>
+        </div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.65rem; line-height:1.65; margin:0; color:var(--text);">model PotentialChangeOrder {
+    id              String    @id @db.VarChar(21)
+    jobId           String    @db.VarChar(21)
+    projectId       String?   @db.VarChar(21)
+    instanceId      String    @db.VarChar(21)
+    title           String    @db.VarChar(255)
+    description     String?   @db.Text
+    pcoNumber       String    @db.VarChar(50)
+    type            PCOType
+    status          PCOStatus @default(DRAFT)
+    estimatedAmount Decimal?  @db.Decimal(10, 2)
+    approvedAmount  Decimal?  @db.Decimal(10, 2)
+    invoicedAmount  Decimal?  @db.Decimal(10, 2)
+    submittedDate   DateTime?
+    approvedDate    DateTime?
+    invoicedDate    DateTime?
+    dueDate         DateTime?
+    createdById     String    @db.VarChar(21)
+    approvedById    String?   @db.VarChar(21)
+    isDeleted       Boolean   @default(false)
+    isArchived      Boolean   @default(false)
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @default(now()) @updatedAt
+
+    Job             Job       @relation(...)
+    Project         Project?  @relation(...)
+    Instance        Instance  @relation(...)
+    CreatedBy       User      @relation("PCOCreatedBy", ...)
+    ApprovedBy      User?     @relation("PCOApprovedBy", ...)
+    LineItems       PCOLineItem[]
+    Assets          Asset[]
+
+    @@index([jobId])
+    @@index([projectId])
+    @@index([instanceId])
+    @@index([createdById])
+    @@index([approvedById])
+    @@index([status])
+}</pre>
+        </div>
+    </div>
+
+    <!-- PCOLineItem schema -->
+    <div class="wireframe" style="margin-bottom:1.5rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">schema.prisma — PCOLineItem</div>
+        </div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.65rem; line-height:1.65; margin:0; color:var(--text);">model PCOLineItem {
+    id              String    @id @db.VarChar(21)
+    pcoId           String    @db.VarChar(21)
+    description     String    @db.VarChar(255)
+    quantity        Decimal   @db.Decimal(10, 2)
+    unitCost        Decimal   @db.Decimal(10, 2)
+    totalCost       Decimal   @db.Decimal(10, 2)
+    costCodeId      String?   @db.VarChar(21)
+    sortOrder       Int       @default(0)
+    isDeleted       Boolean   @default(false)
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @default(now()) @updatedAt
+
+    PCO             PotentialChangeOrder @relation(...)
+    CostCode        CostCode? @relation(...)
+
+    @@index([pcoId])
+    @@index([costCodeId])
+}</pre>
+        </div>
+    </div>
+
+    <!-- ── STEP 2 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 2 — Model Layer Classes</h3>
+    <p class="desc">Model classes wrap Prisma and enforce business rules. GraphQL resolvers call model methods — never <code>prisma.*</code> directly.</p>
+
+    <div class="two-col" style="gap:1.25rem;">
+        <div>
+            <div class="concept-card tm" style="border-top-width:3px;">
+                <h4>PotentialChangeOrder.ts</h4>
+                <div class="abbr">apps/api/src/models/</div>
+                <p>Extends <strong>BaseAuditableModel</strong> — every create, edit, delete, and status transition is automatically logged in the <code>Audit</code> table.</p>
+                <div class="formula">BaseAuditableModel → audit trail on all writes</div>
+            </div>
+        </div>
+        <div>
+            <div class="concept-card pq" style="border-top-width:3px;">
+                <h4>PCOLineItem.ts</h4>
+                <div class="abbr">apps/api/src/models/</div>
+                <p>Extends <strong>BaseModel</strong>. Handles CRUD for line items with automatic <code>totalCost = quantity × unitCost</code> calculation.</p>
+                <div class="formula">BaseModel → lightweight, no audit overhead</div>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top:0.75rem;">Architecture hierarchy: Prisma ← Models ← GraphQL. Models CANNOT import from GraphQL. Prisma CANNOT import from Models.</div>
+
+    <!-- ── STEP 3 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 3 — GraphQL Layer</h3>
+    <p class="desc">Create the resolver file and register it in <code>schema.ts</code> (5 places: import, typeDef, Query, Mutation, Type resolvers).</p>
+
+    <div class="wireframe" style="margin-bottom:1rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">GraphQL — Types</div>
+        </div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.65rem; line-height:1.65; margin:0; color:var(--text);">type PotentialChangeOrder {
+    id: ID!
+    job: Job!
+    project: Project
+    title: String!
+    pcoNumber: String!
+    type: PCOType!
+    status: PCOStatus!
+    estimatedAmount: Float
+    approvedAmount: Float
+    invoicedAmount: Float
+    submittedDate: DateTime
+    approvedDate: DateTime
+    dueDate: DateTime
+    createdBy: User!
+    approvedBy: User
+    lineItems: [PCOLineItem!]!
+    createdAt: DateTime!
+}
+
+type PCOLineItem {
+    id: ID!
+    description: String!
+    quantity: Float!
+    unitCost: Float!
+    totalCost: Float!
+    costCode: CostCode
+}</pre>
+        </div>
+    </div>
+
+    <div class="two-col" style="gap:1.25rem; margin-bottom:1.5rem;">
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">GraphQL — Queries</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <pre style="font-family:var(--mono); font-size:0.65rem; line-height:1.65; margin:0; color:var(--text);">type Query {
+    potentialChangeOrders(
+        jobId: String!
+        options: GetListOptions
+    ): [PotentialChangeOrder!]!
+
+    potentialChangeOrder(
+        id: ID!
+    ): PotentialChangeOrder
+}</pre>
+            </div>
+        </div>
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">GraphQL — Mutations</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <pre style="font-family:var(--mono); font-size:0.65rem; line-height:1.65; margin:0; color:var(--text);">type Mutation {
+    createPotentialChangeOrder(
+        data: CreatePCOInput!
+    ): PotentialChangeOrder!
+    editPotentialChangeOrder(
+        id: ID!, data: EditPCOInput!
+    ): PotentialChangeOrder!
+    transitionPCOStatus(
+        id: ID!, status: PCOStatus!, notes: String
+    ): PotentialChangeOrder!
+    deletePotentialChangeOrder(
+        id: ID!
+    ): PotentialChangeOrder!
+    addPCOLineItem(
+        pcoId: ID!, data: CreatePCOLineItemInput!
+    ): PCOLineItem!
+    editPCOLineItem(
+        id: ID!, data: EditPCOLineItemInput!
+    ): PCOLineItem!
+    deletePCOLineItem(
+        id: ID!
+    ): PCOLineItem!
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="dev-note">Register in <code>apps/api/src/graphql/schema.ts</code> — 5 places: (1) Import, (2) typeDef array, (3) Query spread, (4) Mutation spread, (5) Type resolvers.</div>
+
+    <!-- ── STEP 4 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 4 — Frontend: PCO Tab on Job Detail</h3>
+    <p class="desc">Add a "PCOs" tab to the job detail page. The tab renders a list view with filtering, color-coded status badges, and a create/edit form with inline line items.</p>
+
+    <div class="dev-note" style="margin-bottom:1rem;">Target file: <code>apps/frontend/src/components/DetailsPage/JobDetailsPage/index.tsx</code> (line ~138). Permission: <code>hasPermissions({ job: { view: true } }, permissions)</code>.</div>
+
+    <!-- List View wireframe -->
+    <h4>List View</h4>
+    <div class="wireframe" style="margin-bottom:1.25rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">PCO List — Job Detail Tab</div>
+        </div>
+        <div class="wireframe-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <div style="display:flex; gap:8px;">
+                    <div class="wf-field" style="gap:0;"><div class="input select" style="font-size:0.72rem; padding:6px 10px; min-height:28px;">Status ▾</div></div>
+                    <div class="wf-field" style="gap:0;"><div class="input select" style="font-size:0.72rem; padding:6px 10px; min-height:28px;">Type ▾</div></div>
+                </div>
+                <button class="wf-btn primary" style="font-size:0.72rem; padding:6px 14px;">+ New PCO</button>
+            </div>
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>PCO #</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Amount</th>
+                        <th>Submitted</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="mono">PCO-001</td>
+                        <td>Fire alarm reroute — 3rd floor</td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge blue">Submitted</span></td>
+                        <td class="amount">$4,280.00</td>
+                        <td>Mar 3, 2026</td>
+                        <td>Mar 15, 2026</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-002</td>
+                        <td>Additional panel in loading dock</td>
+                        <td><span class="badge orange">Pending Quote</span></td>
+                        <td><span class="badge gray">Draft</span></td>
+                        <td class="amount">$12,500.00</td>
+                        <td>—</td>
+                        <td>Mar 20, 2026</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-003</td>
+                        <td>Emergency generator hookup</td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge green">Approved</span></td>
+                        <td class="amount">$8,750.00</td>
+                        <td>Feb 28, 2026</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td class="mono">PCO-004</td>
+                        <td>Conduit run extension — east wing</td>
+                        <td><span class="badge green">T&M</span></td>
+                        <td><span class="badge purple">Invoiced</span></td>
+                        <td class="amount">$3,200.00</td>
+                        <td>Feb 15, 2026</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create/Edit form wireframe -->
+    <h4>Create / Edit Form</h4>
+    <div class="wireframe" style="margin-bottom:1.5rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">Create PCO — Flyout Form</div>
+        </div>
+        <div class="wireframe-body">
+            <div class="wf-form">
+                <div class="wf-form-row col2">
+                    <div class="wf-field">
+                        <label>Title <span class="req">*</span></label>
+                        <div class="input">Fire alarm reroute — 3rd floor</div>
+                    </div>
+                    <div class="wf-form-row col2" style="margin:0;">
+                        <div class="wf-field">
+                            <label>Type <span class="req">*</span></label>
+                            <div class="input select">T&M</div>
+                        </div>
+                        <div class="wf-field">
+                            <label>Due Date</label>
+                            <div class="input">Mar 15, 2026</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wf-field">
+                    <label>Description</label>
+                    <div class="input textarea">GC requested reroute of fire alarm conduit on 3rd floor due to HVAC duct conflict discovered during rough-in.</div>
+                </div>
+
+                <div class="wf-section-title">Line Items</div>
+                <table class="wf-table" style="font-size:0.72rem;">
+                    <thead>
+                        <tr>
+                            <th style="width:35%;">Description</th>
+                            <th style="width:12%;">Qty</th>
+                            <th style="width:15%;">Unit Cost</th>
+                            <th style="width:15%; text-align:right;">Total</th>
+                            <th style="width:18%;">Cost Code</th>
+                            <th style="width:5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Journeyman electrician — 6 hrs</td>
+                            <td class="mono">6.00</td>
+                            <td class="mono">$85.00</td>
+                            <td class="amount">$510.00</td>
+                            <td class="mono" style="font-size:0.65rem;">26-100</td>
+                            <td style="text-align:center; color:var(--danger); cursor:pointer;">✕</td>
+                        </tr>
+                        <tr>
+                            <td>Apprentice — 6 hrs</td>
+                            <td class="mono">6.00</td>
+                            <td class="mono">$45.00</td>
+                            <td class="amount">$270.00</td>
+                            <td class="mono" style="font-size:0.65rem;">26-100</td>
+                            <td style="text-align:center; color:var(--danger); cursor:pointer;">✕</td>
+                        </tr>
+                        <tr>
+                            <td>EMT conduit 3/4" — 200 ft</td>
+                            <td class="mono">200.00</td>
+                            <td class="mono">$3.50</td>
+                            <td class="amount">$700.00</td>
+                            <td class="mono" style="font-size:0.65rem;">26-200</td>
+                            <td style="text-align:center; color:var(--danger); cursor:pointer;">✕</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align:right;">Total</td>
+                            <td class="amount">$1,480.00</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="wf-btn secondary" style="font-size:0.68rem; padding:5px 12px; align-self:flex-start;">+ Add Line Item</button>
+
+                <div class="wf-section-title">Attachments</div>
+                <div class="wf-field">
+                    <div class="input file" style="font-size:0.72rem;">📎 Drop files or click to upload (uses existing Asset system)</div>
+                </div>
+
+                <div class="wf-btn-row">
+                    <button class="wf-btn secondary">Cancel</button>
+                    <button class="wf-btn primary">Save PCO</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── STEP 5 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 5 — Digital T&M Worksheet</h3>
+    <p class="desc">Recommendation: <strong>Option A</strong> (built into PCO form) for v1. The PCO line items model IS the digital worksheet.</p>
+
+    <div class="compare-grid">
+        <div class="compare-card after">
+            <h3>✓ Option A — Built into PCO <span class="badge green" style="margin-left:8px;">v1 Recommended</span></h3>
+            <div class="compare-step"><div class="step-num">1</div> PCO line items serve as the T&M worksheet</div>
+            <div class="compare-step"><div class="step-num">2</div> Description, Qty, Unit Cost, Cost Code per line</div>
+            <div class="compare-step"><div class="step-num">3</div> Auto-totals calculated on the line item model</div>
+            <div class="compare-step"><div class="step-num">4</div> PDF export generates customer-ready T&M sheet</div>
+            <div class="compare-step"><div class="step-num">5</div> Zero additional models — leverages PCOLineItem</div>
+        </div>
+        <div class="compare-card before">
+            <h3>○ Option B — Forms System <span class="badge gray" style="margin-left:8px;">Deferred</span></h3>
+            <div class="compare-step"><div class="step-num">1</div> Leverage existing form builder for complex templates</div>
+            <div class="compare-step"><div class="step-num">2</div> Supports custom fields per contractor</div>
+            <div class="compare-step"><div class="step-num">3</div> More flexible, but higher implementation cost</div>
+            <div class="compare-step"><div class="step-num">4</div> Can be integrated as v2 enhancement</div>
+            <div class="compare-step"><div class="step-num">5</div> Requires form ↔ PCO linking infrastructure</div>
+        </div>
+    </div>
+
+    <!-- ── STEP 6 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 6 — PDF Export for T&M</h3>
+    <p class="desc">When a T&M PCO needs to be sent to a customer, generate a professional PDF via the existing PSPDFKit/Nutrient pipeline.</p>
+
+    <div class="flow">
+        <div class="flow-node active">
+            <h4>1. Add <code>case "pco":</code></h4>
+            <p>In <code>apps/frontend/src/pages/api/pdf-export.ts</code> (line ~367)</p>
+        </div>
+        <div class="flow-arrow"><div class="label">fetch data</div></div>
+        <div class="flow-node">
+            <h4>2. Fetch PCO via GraphQL</h4>
+            <p>Job details, PCO number, all line items, totals</p>
+        </div>
+        <div class="flow-arrow"><div class="label">render</div></div>
+        <div class="flow-node">
+            <h4>3. Render as HTML</h4>
+            <p>Professional layout: header, line item table, totals, signature fields</p>
+        </div>
+        <div class="flow-arrow"><div class="label">convert</div></div>
+        <div class="flow-node success">
+            <h4>4. PSPDFKit → PDF</h4>
+            <p>Send HTML + CSS to Nutrient cloud API for conversion</p>
+        </div>
+        <div class="flow-arrow"><div class="label">optional</div></div>
+        <div class="flow-node" style="border-style:dashed;">
+            <h4>5. Merge (if SP5 done)</h4>
+            <p><code>pdf-merger-js</code> can combine multiple PCOs into one document</p>
+        </div>
+    </div>
+
+    <div class="dev-note">PDF includes: job name &amp; number, PCO number &amp; title, line item table with cost codes, subtotals &amp; grand total, date, and signature/approval fields.</div>
+
+    <!-- ── STEP 7 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 7 — Status Transition Actions</h3>
+    <p class="desc">Each status transition enforces validation and records metadata. The <code>transitionPCOStatus</code> mutation handles all transitions.</p>
+
+    <div class="wireframe" style="margin-bottom:1.5rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">Status Transition Matrix</div>
+        </div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead>
+                    <tr>
+                        <th>Transition</th>
+                        <th>Validation</th>
+                        <th>Side Effects</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge gray">Draft</span> → <span class="badge blue">Submitted</span></td>
+                        <td>Required fields present (title, type, ≥ 1 line item)</td>
+                        <td>Record <code>submittedDate = now()</code></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">Submitted</span> → <span class="badge green">Approved</span></td>
+                        <td>Approver has permission</td>
+                        <td>Record <code>approvedDate</code>, <code>approvedById</code>, set <code>approvedAmount</code></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge blue">Submitted</span> → <span class="badge red">Rejected</span></td>
+                        <td>Rejection reason required</td>
+                        <td>Record reason in audit log; PCO can be re-submitted</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge green">Approved</span> → <span class="badge purple">Invoiced</span></td>
+                        <td>Link to existing invoice record</td>
+                        <td>Set <code>invoicedAmount</code>, <code>invoicedDate</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── STEP 8 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 8 — Job Financial Integration</h3>
+    <p class="desc">PCO data flows into the existing financial summary. The WIP calculation incorporates approved PCOs.</p>
+
+    <div style="background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; margin-bottom:1.25rem;">
+        <h4 style="margin-bottom:8px;">WIP Calculation Formula</h4>
+        <div style="font-family:var(--mono); font-size:0.82rem; color:var(--accent); text-align:center; padding:10px; background:var(--bg-white); border-radius:var(--radius); border:1px solid var(--border);">
+            WIP = Original Contract + Approved COs + <strong style="color:var(--purple);">Approved PCOs</strong> − Billed to Date
+        </div>
+    </div>
+
+    <h4>PCO Aggregates Added to Financial Views</h4>
+    <div class="kpi-grid col5" style="margin-top:0.75rem; margin-bottom:1rem;">
+        <div class="kpi">
+            <div class="kpi-label">Draft PCOs</div>
+            <div class="kpi-value" style="font-size:1.2rem;">$12,500</div>
+            <div class="kpi-sub">1 PCO</div>
+        </div>
+        <div class="kpi blue">
+            <div class="kpi-label">Submitted</div>
+            <div class="kpi-value" style="font-size:1.2rem;">$4,280</div>
+            <div class="kpi-sub">1 PCO</div>
+        </div>
+        <div class="kpi green">
+            <div class="kpi-label">Approved</div>
+            <div class="kpi-value" style="font-size:1.2rem;">$8,750</div>
+            <div class="kpi-sub">1 PCO</div>
+        </div>
+        <div class="kpi purple">
+            <div class="kpi-label">Invoiced</div>
+            <div class="kpi-value" style="font-size:1.2rem;">$3,200</div>
+            <div class="kpi-sub">1 PCO</div>
+        </div>
+        <div class="kpi amber">
+            <div class="kpi-label">Uninvoiced Approved</div>
+            <div class="kpi-value" style="font-size:1.2rem;">$5,550</div>
+            <div class="kpi-sub">Revenue at risk</div>
+        </div>
+    </div>
+
+    <div class="dev-note">This data appears on: <strong>Job Financial Overview</strong> tab, <strong>Job Costing Report</strong>, and <strong>Dashboard metrics</strong>.</div>
+
+    <!-- ── STEP 9 ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Step 9 — Notifications &amp; Follow-up</h3>
+    <p class="desc">Push notifications on status changes and proactive reminders for approaching due dates.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:1.5rem;">
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+            <div style="font-size:0.72rem; font-weight:700; color:var(--accent); margin-bottom:6px;">Status Change</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">Notify relevant users when a PCO transitions status (submitted, approved, rejected, invoiced).</div>
+        </div>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+            <div style="font-size:0.72rem; font-weight:700; color:var(--orange); margin-bottom:6px;">Due Date Alerts</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">T&M type PCOs: alert when approaching due date. Configurable lead time (e.g., 3 days before).</div>
+        </div>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+            <div style="font-size:0.72rem; font-weight:700; color:var(--purple); margin-bottom:6px;">Follow-up Action</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary);">Consider "Follow Up" action with scheduled date and reminder notifications.</div>
+        </div>
+    </div>
+
+    <!-- ── RELATIONSHIP TO EXISTING COs ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Relationship to Existing Change Orders</h3>
+    <p class="desc">PCOs are a <strong>pre-change-order</strong> concept. They track field work and pending quotes before a formal change order is created.</p>
+
+    <div class="wireframe" style="margin-bottom:1rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">Entity Relationship — PCO → Change Order</div>
+        </div>
+        <div class="wireframe-body" style="padding:1.25rem;">
+            <div class="flow" style="margin:0;">
+                <div class="flow-node active" style="min-width:320px;">
+                    <h4>PotentialChangeOrder</h4>
+                    <p><span class="badge blue" style="font-size:0.6rem;">NEW</span> Tracks field work, T&M, pending quotes</p>
+                </div>
+                <div class="flow-arrow"><div class="label">PCO APPROVED → may become</div></div>
+                <div class="flow-node success" style="min-width:320px;">
+                    <h4>EstimateChangeOrderRecord</h4>
+                    <p><span class="badge green" style="font-size:0.6rem;">EXISTING</span> Formal change orders</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dev-note">For v1 these are separate entities. Future enhancement: "Convert to Change Order" action that creates an <code>EstimateChangeOrderRecord</code> pre-populated from the PCO.</div>
+
+    <!-- ── TESTING ── -->
+    <hr style="border:none; border-top:1px dashed var(--border); margin:2.5rem 0;">
+    <h3>Testing</h3>
+    <p class="desc">Comprehensive test plan covering CRUD, status workflow, T&M worksheet, financial integration, and edge cases.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+
+        <!-- Core CRUD -->
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">Core CRUD</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <table class="wf-table" style="font-size:0.68rem;">
+                    <thead><tr><th>Test</th><th>Expected</th></tr></thead>
+                    <tbody>
+                        <tr><td>Create PCO (T&M type)</td><td><span class="badge green">PCO saved, number auto-assigned</span></td></tr>
+                        <tr><td>Create PCO (Pending Quote)</td><td><span class="badge green">PCO saved, correct type</span></td></tr>
+                        <tr><td>Add line items</td><td><span class="badge green">Total auto-calculates</span></td></tr>
+                        <tr><td>Edit PCO details</td><td><span class="badge green">Changes persist</span></td></tr>
+                        <tr><td>Delete PCO (soft)</td><td><span class="badge green">isDeleted=true, hidden from list</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Status Workflow -->
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">Status Workflow</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <table class="wf-table" style="font-size:0.68rem;">
+                    <thead><tr><th>Test</th><th>Expected</th></tr></thead>
+                    <tbody>
+                        <tr><td>Draft → Submit → Approve → Invoice</td><td><span class="badge green">Happy path completes</span></td></tr>
+                        <tr><td>Draft → Submit → Reject</td><td><span class="badge green">Rejection recorded</span></td></tr>
+                        <tr><td>Each transition records who/when</td><td><span class="badge green">Audit trail populated</span></td></tr>
+                        <tr><td>Unauthorized user transitions</td><td><span class="badge red">Permission denied</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- T&M Worksheet -->
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">T&M Worksheet</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <table class="wf-table" style="font-size:0.68rem;">
+                    <thead><tr><th>Test</th><th>Expected</th></tr></thead>
+                    <tbody>
+                        <tr><td>Create T&M with detailed line items</td><td><span class="badge green">All items saved</span></td></tr>
+                        <tr><td>Export PDF</td><td><span class="badge green">Content matches data</span></td></tr>
+                        <tr><td>PDF format suitable for customers</td><td><span class="badge green">Professional layout</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Financial Integration -->
+        <div class="wireframe">
+            <div class="wireframe-header">
+                <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+                <div class="title">Financial Integration</div>
+            </div>
+            <div class="wireframe-body" style="padding:1rem;">
+                <table class="wf-table" style="font-size:0.68rem;">
+                    <thead><tr><th>Test</th><th>Expected</th></tr></thead>
+                    <tbody>
+                        <tr><td>Approve multiple PCOs on a job</td><td><span class="badge green">Summary includes PCO data</span></td></tr>
+                        <tr><td>Verify WIP calculation</td><td><span class="badge green">Formula correct</span></td></tr>
+                        <tr><td>Invoice a PCO</td><td><span class="badge green">Amounts flow through</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Edge Cases -->
+    <h4 style="margin-top:1.25rem;">Edge Cases</h4>
+    <div class="wireframe" style="margin-bottom:1.5rem;">
+        <div class="wireframe-header">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">Edge Cases</div>
+        </div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <table class="wf-table" style="font-size:0.72rem;">
+                <thead><tr><th>Scenario</th><th>Expected Behavior</th></tr></thead>
+                <tbody>
+                    <tr><td>Job with no PCOs</td><td>Financial summary shows $0 for all PCO fields</td></tr>
+                    <tr><td>PCO with no line items</td><td>Saveable as Draft only (Submit blocked)</td></tr>
+                    <tr><td>Multiple PCOs on one job</td><td>Auto-numbering: PCO-001, PCO-002, PCO-003…</td></tr>
+                    <tr><td>Archived job</td><td>PCOs should not be editable — read-only view</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div><!-- /section implementation-plan -->
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>

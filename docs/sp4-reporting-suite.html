@@ -801,6 +801,283 @@ p.desc { font-size: 0.88rem; color: var(--text-secondary); max-width: 680px; mar
     </div>
 </div>
 
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: IMPLEMENTATION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-plan">
+    <div class="section-tag purple">Engineering</div>
+    <h2 id="implementation-plan-heading">Implementation Plan</h2>
+    <p class="desc">Step-by-step implementation instructions for each report, including architecture decisions, code references, and testing checklists.</p>
+
+    <!-- ─── 4A. Sales by Job Type ─── -->
+    <h3 style="margin-top:2rem;">4A. Sales by Job Type Report</h3>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1rem;">
+        <span class="badge blue">Q21030-11012</span>
+    </div>
+
+    <h4>Architecture (Verified — Everything Exists)</h4>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:1.5rem;">
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge green">Exists</span> <code style="font-size:0.68rem;">EstimateChangeOrderListFeed</code> SQL view — has <code style="font-size:0.68rem;">jobTypeId</code>, <code style="font-size:0.68rem;">jobTypeName</code>, <code style="font-size:0.68rem;">jobTypeSlug</code>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge green">Exists</span> <code style="font-size:0.68rem;">EstimateChangeOrderListFeedWhere</code> GraphQL input — supports <code style="font-size:0.68rem;">jobTypeId: [String]</code>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge green">Exists</span> <code style="font-size:0.68rem;">PivotTable</code> component — supports <code style="font-size:0.68rem;">groupBy</code>, <code style="font-size:0.68rem;">groupByName</code>, <code style="font-size:0.68rem;">pivotFrom</code>, <code style="font-size:0.68rem;">pivotFields</code>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge green">Exists</span> Template to clone: <code style="font-size:0.68rem;">apps/frontend/src/pages/reports/sales-by-customer-type.tsx</code>
+        </div>
+    </div>
+
+    <h4>Step 1: Create the report page</h4>
+    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.5rem;">Create <code style="font-size:0.72rem;">apps/frontend/src/pages/reports/sales-by-job-type.tsx</code> by cloning <code style="font-size:0.72rem;">sales-by-customer-type.tsx</code>:</p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">PivotTable Configuration</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;">&lt;PivotTable
+    id={"sales-by-job-type"}
+    referenceTable={"Estimate"}
+    allowedFilters={["jobType", "status"]}
+    groupBy={"jobTypeId"}
+    groupByName={"jobTypeName"}
+    orderByPropertyName={{ level: "1", propertyName: "job type" }}
+    pivotFields={[
+        { fieldName: "type", name: "Type", type: "string" },
+        { fieldName: "total", name: "Quantity", type: "length" },
+        { fieldName: "bid", name: "SUM of Bid Amount", type: "number" }
+    ]}
+    pivotFrom={"type"}
+    dateRangeFilter={["estimateDate"]}
+/&gt;</pre>
+        </div>
+    </div>
+
+    <h4 style="margin-top:1rem;">Step 2: Register in reports structure</h4>
+    <div class="dev-note">
+        Add to <code>apps/frontend/src/lib/static-data/reportsStructure.ts</code>: add <code>"sales-by-job-type"</code> to the <code>ReportID</code> type, add entry in Sales category.
+    </div>
+
+    <h4 style="margin-top:1rem;">Step 3: Add permission if needed</h4>
+    <div class="dev-note">
+        Check how <code>salesByCustomerType</code> is defined and follow the same pattern.
+    </div>
+
+    <h4 style="margin-top:1rem;">Testing</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-top:0.5rem;">
+        <thead><tr><th style="width:30px;">✓</th><th>Test Case</th></tr></thead>
+        <tbody>
+            <tr><td>☐</td><td>Navigate to Reports &gt; Sales &gt; Sales by Job Type</td></tr>
+            <tr><td>☐</td><td>Verify grouping by Job Type with Estimate/Change Order breakdown</td></tr>
+            <tr><td>☐</td><td>Verify date range and status filters work</td></tr>
+            <tr><td>☐</td><td>Compare totals with Sales by Customer Type report</td></tr>
+        </tbody>
+    </table>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 4B. Annual Labor Hours ─── -->
+    <h3>4B. Annual Labor Hours Report</h3>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1rem;">
+        <span class="badge blue">Q21030-10964</span>
+    </div>
+
+    <h4>Key Technical Decisions</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-bottom:1.5rem;">
+        <thead><tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Query</strong></td><td><code style="font-size:0.65rem;">timesheetReport</code> with year-spanning <code style="font-size:0.65rem;">dateRange</code></td><td>Existing query supports date range filtering</td></tr>
+            <tr><td><strong>Aggregation</strong></td><td>Client-side (aggregate returned records by month)</td><td>Simpler for v1</td></tr>
+            <tr><td><strong>Chart</strong></td><td><code style="font-size:0.65rem;">@nivo/bar</code> (already in codebase)</td><td>Stacked bar for visual trend</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Step 1: Create the report page</h4>
+    <div class="dev-note">
+        Create <code>apps/frontend/src/pages/reports/annual-labor-hours.tsx</code>:<br>
+        • Year selector (default: previous calendar year)<br>
+        • Query <code>timesheetReport</code> with <code>dateRange: [yearStart, yearEnd]</code><br>
+        • Aggregate by month (group <code>workDate</code> into months)<br>
+        • Table: Month | Total Hours | Regular | Overtime | Double Time<br>
+        • Bold total row
+    </div>
+
+    <h4 style="margin-top:1rem;">Step 2: Add visualization</h4>
+    <div class="dev-note">
+        Add a stacked bar chart using <code>@nivo/bar</code> showing hours by month.
+    </div>
+
+    <h4 style="margin-top:1rem;">Step 3: Register in reports structure</h4>
+    <div class="dev-note">
+        Add under a "Labor" or "Timesheet" category in <code>reportsStructure.ts</code>.
+    </div>
+
+    <h4 style="margin-top:1rem;">Step 4: Employee drill-down (optional)</h4>
+    <div class="dev-note">
+        Allow clicking a month to see per-employee breakdown.
+    </div>
+
+    <div class="prereq-callout" style="background:var(--info-light); border-color:var(--info); margin-top:1rem;">
+        <div class="prereq-icon">⚡</div>
+        <div class="prereq-text" style="color:#1d4ed8;">
+            <strong>Performance Note:</strong> A year of timesheet data could be large. Consider whether the backend can handle a 365-day dateRange efficiently. The <code style="font-family:var(--mono);font-size:0.72rem;">TimesheetReportWhere</code> input type supports <code style="font-family:var(--mono);font-size:0.72rem;">dateRange: [LocalDate]</code>.
+        </div>
+    </div>
+
+    <h4 style="margin-top:1rem;">Testing</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-top:0.5rem;">
+        <thead><tr><th style="width:30px;">✓</th><th>Test Case</th></tr></thead>
+        <tbody>
+            <tr><td>☐</td><td>Select year 2025. Verify 12 months with correct totals.</td></tr>
+            <tr><td>☐</td><td>Verify Regular/Overtime/Double Time breakdown matches payroll reports.</td></tr>
+            <tr><td>☐</td><td>Select current year (2026). Verify only months with data show values.</td></tr>
+            <tr><td>☐</td><td>Verify totals row sums correctly.</td></tr>
+        </tbody>
+    </table>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 4C. Year-End Margin Review ─── -->
+    <h3>4C. Year-End Margin Review</h3>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1rem;">
+        <span class="badge blue">Q21030-10996</span>
+    </div>
+
+    <div class="prereq-callout">
+        <div class="prereq-icon">⚠</div>
+        <div class="prereq-text">
+            <strong>Blocking Prerequisite:</strong> Review Thermec's example spreadsheet from HubSpot (file ID <code style="font-family:var(--mono);font-size:0.72rem;">205677800078</code>) BEFORE building. This determines whether the existing Job Costing Report can be enhanced or a new report is needed.
+        </div>
+    </div>
+
+    <h4 style="margin-top:1.5rem;">Approach: Enhance Job Costing Report</h4>
+    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.75rem;">Add to the existing Job Costing Report (<code style="font-size:0.72rem;">apps/frontend/src/pages/reports/job-completion.tsx</code>):</p>
+
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:1.5rem;">
+        <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0; margin-top:2px;">1</span>
+            <div><strong>"Open Jobs Only" toggle</strong> — filter to non-completed/closed/archived jobs</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0; margin-top:2px;">2</span>
+            <div><strong>Year-end date selector</strong> — "As of December 31, 2025". Filter jobs where <code style="font-size:0.68rem;">startDate &lt;= reportDate</code> AND (<code style="font-size:0.68rem;">completionDate &gt; reportDate</code> OR <code style="font-size:0.68rem;">completionDate IS NULL</code>)</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--bg-white); border:1px solid var(--border); border-radius:8px; font-size:0.78rem;">
+            <span class="badge blue" style="flex-shrink:0; margin-top:2px;">3</span>
+            <div><strong>Additional columns</strong>: Contract Value, Costs to Date, Revenue Recognized, Margin ($ and %), % Complete, Est. Cost to Complete</div>
+        </div>
+    </div>
+
+    <h4>Key Decision</h4>
+    <div class="compare-grid" style="margin-bottom:1.5rem;">
+        <div class="compare-card">
+            <div class="cc-header exists">Option A — Current Margin (Recommended)</div>
+            <div class="cc-body">
+                Current margin for jobs open at year-end.<br><br>
+                <strong>Approach:</strong> Filter by status/date — simpler implementation.<br>
+                <span class="badge green" style="margin-top:6px;">Recommended for v1</span>
+            </div>
+        </div>
+        <div class="compare-card">
+            <div class="cc-header new">Option B — Point-in-Time Snapshot</div>
+            <div class="cc-body">
+                Snapshot of what margin <em>was</em> at year-end.<br><br>
+                <strong>Approach:</strong> Requires historical data reconstruction — complex.<br>
+                <span class="badge orange" style="margin-top:6px;">Deferred — Confirm with Thermec</span>
+            </div>
+        </div>
+    </div>
+
+    <h4>Testing</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-top:0.5rem;">
+        <thead><tr><th style="width:30px;">✓</th><th>Test Case</th></tr></thead>
+        <tbody>
+            <tr><td>☐</td><td>Filter to "Open Jobs Only" at year-end</td></tr>
+            <tr><td>☐</td><td>Verify margin calculations are correct</td></tr>
+            <tr><td>☐</td><td>Verify format matches Thermec's example</td></tr>
+        </tbody>
+    </table>
+
+    <hr class="section-divider" style="margin:2.5rem 0;">
+
+    <!-- ─── 4D. Job Audit Log ─── -->
+    <h3>4D. Job Audit Log</h3>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:1rem;">
+        <span class="badge blue">Q21030-11101</span>
+    </div>
+
+    <h4>Existing Infrastructure (NO backend work needed)</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-bottom:1.5rem;">
+        <thead><tr><th>Component</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Prisma Model</strong></td><td><code style="font-size:0.65rem;">schema.prisma</code> line 661</td><td><span class="badge green">Exists</span> — <code style="font-size:0.62rem;">Audit { referenceModel, referenceId, operationType, beforeData, afterData, modifiedByUserId, createdAt }</code></td></tr>
+            <tr><td><strong>Model Class</strong></td><td><code style="font-size:0.65rem;">apps/api/src/models/Audit.ts</code></td><td><span class="badge green">Exists</span></td></tr>
+            <tr><td><strong>GraphQL Resolver</strong></td><td><code style="font-size:0.65rem;">apps/api/src/graphql/models/Audit.ts</code></td><td><span class="badge green">Exists</span> — Registered in schema.ts</td></tr>
+            <tr><td><strong>GraphQL Query</strong></td><td><code style="font-size:0.65rem;">apps/frontend/src/graphql/queries/audit.query.graphql</code></td><td><span class="badge green">Exists</span> — <code style="font-size:0.62rem;">GetAuditDataForEntity</code> defined</td></tr>
+            <tr><td><strong>Generated Hook</strong></td><td><code style="font-size:0.65rem;">__generated__/audit.query.tsx</code></td><td><span class="badge green">Exists</span> — <code style="font-size:0.62rem;">useGetAuditDataForEntityQuery</code> ready</td></tr>
+            <tr><td><strong>Audit Logging</strong></td><td><code style="font-size:0.65rem;">_BaseAuditableModel.ts</code></td><td><span class="badge green">Exists</span> — All auditable models auto-log via <code style="font-size:0.62rem;">createAuditModel()</code></td></tr>
+        </tbody>
+    </table>
+
+    <h4>Step 1: Add Audit Log tab to Job detail</h4>
+    <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.5rem;">Add tab entry to <code style="font-size:0.72rem;">apps/frontend/src/components/DetailsPage/JobDetailsPage/index.tsx</code> (line ~138):</p>
+    <div class="wireframe">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Tab Registration Code</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <pre style="font-family:var(--mono); font-size:0.68rem; color:var(--text-secondary); background:var(--bg-panel); padding:14px; border-radius:8px; overflow-x:auto; line-height:1.7; margin:0;">{
+    label: "Audit Log",
+    component: &lt;JobAuditLog jobId={router.query.id as string} /&gt;,
+    param: "audit-log",
+    permission: hasPermissions({ audit: { view: true } }, permissions)
+}</pre>
+        </div>
+    </div>
+    <div class="dev-note" style="margin-top:0.5rem;">
+        Add to BOTH tab arrays (rate_type-training branch at line ~99 AND main branch at line ~138).
+    </div>
+
+    <h4 style="margin-top:1.5rem;">Step 2: Create JobAuditLog component</h4>
+    <div class="dev-note">
+        Create <code>apps/frontend/src/components/DetailsPage/JobDetailsPage/JobAuditLog.tsx</code>:<br>
+        • Use <code>useGetAuditDataForEntityQuery</code> with <code>referenceModel: "Job"</code> and <code>referenceId: jobId</code><br>
+        • Parse <code>beforeData</code>/<code>afterData</code> JSON, diff to show field-level changes<br>
+        • Display as timeline:
+    </div>
+    <div class="wireframe" style="margin-top:0.75rem;">
+        <div class="wireframe-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="title">Timeline Entry Example</div></div>
+        <div class="wireframe-body" style="padding:1rem;">
+            <div class="timeline" style="margin:0;">
+                <div class="timeline-entry">
+                    <div class="tl-date">Mar 1, 2026 at 2:30 PM</div>
+                    <div class="tl-user">Chris Tremberth</div>
+                    <div class="tl-change">
+                        Changed <strong>Status</strong> from <span class="old-val">Archived</span> to <span class="new-val">In Progress</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 style="margin-top:1.5rem;">Step 3: Permission check</h4>
+    <div class="dev-note">
+        Use <code>hasPermissions({ audit: { view: true } }, permissions)</code> — permission already exists in schema.
+    </div>
+
+    <h4 style="margin-top:1rem;">Testing</h4>
+    <table class="wf-table" style="font-size:0.72rem; margin-top:0.5rem;">
+        <thead><tr><th style="width:30px;">✓</th><th>Test Case</th></tr></thead>
+        <tbody>
+            <tr><td>☐</td><td>Make changes to a job (status, project lead, archive/unarchive)</td></tr>
+            <tr><td>☐</td><td>Navigate to Audit Log tab. Verify each change recorded with correct who/what/when/old/new.</td></tr>
+            <tr><td>☐</td><td>Verify non-admin users cannot see the tab.</td></tr>
+            <tr><td>☐</td><td>Archive then un-archive a job. Verify both actions logged.</td></tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- FOOTER -->
 <div style="text-align:center; padding:3rem 0; border-top:2px solid var(--border); margin-top:3rem;">
     <div style="font-weight:800; font-size:0.85rem; color:var(--accent); letter-spacing:0.04em; margin-bottom:4px;">APPELLO</div>
