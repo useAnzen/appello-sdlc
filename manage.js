@@ -90,8 +90,7 @@
             '<button class="btn-secondary" id="mg-add-dep">Add Dep</button>' +
             '<div class="mg-tickets" id="mg-dep-list"></div>' +
             '<div class="mg-sep"></div>' +
-            '<button class="btn-secondary" id="mg-add-plan">+ Plan</button>' +
-            '<button class="btn-secondary" id="mg-add-canvas">+ Canvas</button>' +
+            '<button class="btn-secondary" id="mg-add-plan">+ Implementation Plan</button>' +
             '<div class="mg-tickets" id="mg-doc-list"></div>' +
             '<div class="mg-sep"></div>' +
             '<button class="btn-success" id="mg-trigger-sdlc">Trigger SDLC</button>' +
@@ -144,7 +143,6 @@
         document.getElementById("mg-add-dep").addEventListener("click", addDependency);
         document.getElementById("mg-trigger-sdlc").addEventListener("click", triggerSdlc);
         document.getElementById("mg-add-plan").addEventListener("click", function () { openDocModal("plan"); });
-        document.getElementById("mg-add-canvas").addEventListener("click", function () { openDocModal("canvas"); });
         document.getElementById("dm-cancel").addEventListener("click", closeDocModal);
         document.getElementById("dm-save").addEventListener("click", saveDocument);
         document.getElementById("dm-delete").addEventListener("click", deleteDocument);
@@ -477,11 +475,11 @@
     function openDocModal(docType, doc) {
         editingDocType = docType;
         editingDocId = doc ? doc.id : null;
-        var title = (doc ? "Edit " : "Add ") + (docType === "plan" ? "Plan" : "Canvas");
+        var title = (doc ? "Edit " : "Add ") + "Implementation Plan";
         document.getElementById("dm-title").textContent = title;
-        document.getElementById("dm-doc-title").value = doc ? doc.title : "";
+        document.getElementById("dm-doc-title").value = doc ? doc.title : "Implementation Plan";
         document.getElementById("dm-doc-content").value = doc ? doc.content : "";
-        document.getElementById("dm-doc-content").placeholder = docType === "plan" ? "Paste markdown content..." : "Paste full HTML content...";
+        document.getElementById("dm-doc-content").placeholder = "Paste markdown content...";
         document.getElementById("dm-delete").style.display = doc ? "" : "none";
         document.getElementById("mg-doc-modal").classList.add("visible");
     }

@@ -82,22 +82,12 @@
         html += '<span class="badge ' + meta.cls + '">' + esc(meta.label) + '</span>';
         html += '</div>';
 
-        var plans = documents.filter(function (d) { return d.doc_type === "plan"; });
-        if (plans.length > 0) {
-            html += '<div class="sb-section">';
-            html += '<div class="sb-label">Plans</div>';
-            plans.forEach(function (doc) {
-                html += '<a href="#" class="sb-link" data-view="plan" data-doc-id="' + doc.id + '">' + esc(doc.title) + '</a>';
-            });
-            html += '</div>';
-        }
-
         html += '<div class="sb-section">';
-        html += '<div class="sb-label">Canvases</div>';
-        html += '<a href="#" class="sb-link active" data-view="spec">Design Specification</a>';
-        var canvases = documents.filter(function (d) { return d.doc_type === "canvas"; });
-        canvases.forEach(function (doc) {
-            html += '<a href="#" class="sb-link" data-view="canvas" data-doc-id="' + doc.id + '">' + esc(doc.title) + '</a>';
+        html += '<div class="sb-label">Documents</div>';
+        html += '<a href="#" class="sb-link active" data-view="spec">Design Spec</a>';
+        var plans = documents.filter(function (d) { return d.doc_type === "plan"; });
+        plans.forEach(function (doc) {
+            html += '<a href="#" class="sb-link" data-view="plan" data-doc-id="' + doc.id + '">Implementation Plan</a>';
         });
         html += '</div>';
 
@@ -182,11 +172,6 @@
             }
         }
 
-        if (view === "canvas") {
-            var doc = documents.find(function (d) { return d.id === docId; });
-            if (!doc) return;
-            dynamicContent.innerHTML = '<iframe class="canvas-frame" sandbox="allow-scripts allow-same-origin" srcdoc="' + doc.content.replace(/"/g, "&quot;") + '"></iframe>';
-        }
     }
 
     if (document.readyState === "loading") {
