@@ -311,11 +311,14 @@
         Promise.all([
             fetch(API + "/pipeline_runs?select=*&order=dispatched_at.desc&limit=50", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; }),
             fetch(API + "/pulse_constraints?select=*&is_active=eq.true&order=created_at.desc&limit=20", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; }),
-            fetch(API + "/work_packages?select=id,slug,title,status&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; })
+            fetch(API + "/work_packages?select=id,slug,title,status&order=created_at.desc", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; }),
+            fetch(API + "/pulse_state?select=*&limit=1", { headers: hdrs }).then(function (r) { return r.json(); }).catch(function () { return []; })
         ]).then(function (results) {
             var runs = results[0] || [];
             var constraints = results[1] || [];
             var wps = results[2] || [];
+            var pulseStateArr = results[3] || [];
+            var pulseState = pulseStateArr.length ? pulseStateArr[0] : null;
             var wpMap = {};
             wps.forEach(function (w) { wpMap[w.id] = w; });
 
@@ -328,7 +331,8 @@
             var inFlight = recent.filter(function (r) { return r.status === "queued" || r.status === "dispatched" || r.status === "coding"; }).length;
             var avgTrust = completed.length ? (completed.reduce(function (sum, r) { return sum + (r.trust_score || 0); }, 0) / completed.length) : 0;
 
-            var agents = [
+            var defaultColors = ["#6366f1","#0ea5e9","#8b5cf6","#f59e0b","#10b981","#ef4444","#ec4899","#14b8a6"];
+            var fallbackAgents = [
                 { name: "SDLC God Agent", role: "Orchestrator", color: "#6366f1", letter: "G" },
                 { name: "Signal Harvester", role: "Scout", color: "#0ea5e9", letter: "H" },
                 { name: "Signal Synthesizer", role: "Analyst", color: "#8b5cf6", letter: "S" },
@@ -339,22 +343,52 @@
                 { name: "Prioritizer", role: "Analyst", color: "#14b8a6", letter: "I" }
             ];
 
-            var milestones = [
+            var agents = fallbackAgents;
+            if (pulseState && pulseState.members && pulseState.members.length) {
+                agents = pulseState.members.map(function (m, i) {
+                    return {
+                        name: m.name || "Agent",
+                        role: m.role || "Member",
+                        color: m.color || defaultColors[i % defaultColors.length],
+                        letter: m.letter || (m.name || "A").charAt(0).toUpperCase()
+                    };
+                });
+            }
+
+            var fallbackMilestones = [
                 { title: "First Pipeline Success", target: 1, current: successful.length >= 1 ? 1 : 0, status: successful.length >= 1 ? "completed" : "pending" },
                 { title: "10 Pipeline Runs", target: 10, current: Math.min(runs.length, 10), status: runs.length >= 10 ? "completed" : "in_progress" },
                 { title: "50% Success Rate", target: 50, current: rate, status: rate >= 50 ? "completed" : "pending" },
                 { title: "80% Target Score", target: 80, current: rate, status: rate >= 80 ? "completed" : "pending" }
             ];
 
+            var milestones = fallbackMilestones;
+            if (pulseState && pulseState.milestones && pulseState.milestones.length) {
+                milestones = pulseState.milestones.map(function (m) {
+                    return {
+                        title: m.title || "Milestone",
+                        target: m.target || 1,
+                        current: m.current || 0,
+                        status: m.status || "pending"
+                    };
+                });
+            }
+
+            var pulseName = (pulseState && pulseState.name) ? pulseState.name : "SDLC Software Factory";
+            var pulseStatus = (pulseState && pulseState.status) ? pulseState.status : "Active";
+            var pulseGoal = (pulseState && pulseState.goal) ? pulseState.goal : "";
+            var pulseTargetScore = (pulseState && pulseState.target_score != null) ? pulseState.target_score : 80;
+
             var html = '';
 
             html += '<div class="pulse-hero">' +
                 '<div class="pulse-hero-top">' +
-                    '<div class="pulse-hero-title"><span class="dot"></span><h2>SDLC Software Factory</h2></div>' +
-                    '<span class="pulse-hero-badge">Active</span>' +
+                    '<div class="pulse-hero-title"><span class="dot"></span><h2>' + esc(pulseName) + '</h2></div>' +
+                    '<span class="pulse-hero-badge">' + esc(pulseStatus) + '</span>' +
                 '</div>' +
+                (pulseGoal ? '<div style="font-size:13px;color:#4b5563;margin-bottom:14px;">' + esc(pulseGoal) + '</div>' : '') +
                 '<div class="score-row">' +
-                    '<div class="score-card"><div class="sc-value">' + rate + '%</div><div class="sc-label">Success Rate (14d)</div><div class="sc-sub">Target: 80%</div></div>' +
+                    '<div class="score-card"><div class="sc-value">' + rate + '%</div><div class="sc-label">Success Rate (14d)</div><div class="sc-sub">Target: ' + pulseTargetScore + '%</div></div>' +
                     '<div class="score-card"><div class="sc-value">' + successful.length + '</div><div class="sc-label">Merged (14d)</div><div class="sc-sub">' + completed.length + ' total completed</div></div>' +
                     '<div class="score-card"><div class="sc-value">' + inFlight + '</div><div class="sc-label">In Flight</div><div class="sc-sub">' + runs.length + ' all-time runs</div></div>' +
                     '<div class="score-card"><div class="sc-value">' + avgTrust.toFixed(2) + '</div><div class="sc-label">Avg Trust Score</div><div class="sc-sub">Threshold: 0.70</div></div>' +
